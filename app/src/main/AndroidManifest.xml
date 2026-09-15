@@ -148,6 +148,25 @@
     </service>
 
     <service
+      android:name=".service.KeepAliveService"
+      android:exported="false"
+      android:stopWithTask="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="keep assistant alive in background so scheduled messages arrive on time" />
+    </service>
+
+    <receiver
+      android:name=".service.KeepAliveRestartReceiver"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="me.rerere.rikkahub.RESTART_KEEP_ALIVE" />
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
+
+    <service
       android:name=".data.service.RikkaNotificationListenerService"
       android:exported="true"
       android:label="@string/app_name"

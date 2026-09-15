@@ -23,15 +23,17 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK platform 37
+      - name: Check Android SDK
         run: |
           mkdir -p ci-logs
-          (yes | sdkmanager "platforms;android-37" || yes | sdkmanager --channel=3 "platforms;android-37") 2>&1 | tee ci-logs/sdkmanager.log || true
-          echo "--- installed platforms ---" | tee -a ci-logs/sdkmanager.log
-          ls "$ANDROID_HOME/platforms" | tee -a ci-logs/sdkmanager.log || true
+          {
+            echo "ANDROID_HOME=$ANDROID_HOME"
+            echo "--- platforms ---"
+            ls "$ANDROID_HOME/platforms"
+            echo "--- build-tools ---"
+            ls "$ANDROID_HOME/build-tools"
+          } > ci-logs/sdk.log 2>&1 || true
+          cat ci-logs/sdk.log
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -107,12 +109,10 @@ jobs:
           {
             echo "=== failure at $(date -u) ==="
             echo "--- java ---"; java -version 2>&1 || true
-            echo "--- node pnpm ---"; node -v 2>&1 || true; pnpm -v 2>&1 || true
-            echo "--- platforms ---"; ls "$ANDROID_HOME/platforms" 2>&1 || true
-            echo "--- build-tools ---"; ls "$ANDROID_HOME/build-tools" 2>&1 || true
-            echo "--- wrapper ---"; cat gradle/wrapper/gradle-wrapper.properties 2>&1 || true
-            echo "--- sdkmanager tail ---"; tail -n 60 ci-logs/sdkmanager.log 2>/dev/null || true
-            echo "--- pnpm tail ---"; tail -n 60 ci-logs/pnpm.log 2>/dev/null || true
+            echo "--- node ---"; node -v 2>&1 || true
+            echo "--- pnpm ---"; pnpm -v 2>&1 || true
+            echo "--- sdk ---"; cat ci-logs/sdk.log 2>/dev/null || true
+            echo "--- pnpm tail ---"; tail -n 80 ci-logs/pnpm.log 2>/dev/null || true
             echo "--- gradle tail ---"; tail -n 400 ci-logs/gradle.log 2>/dev/null || true
           } > .ci-failure.txt
           git config user.name "ci-bot"

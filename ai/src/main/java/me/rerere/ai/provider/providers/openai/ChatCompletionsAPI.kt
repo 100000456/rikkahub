@@ -230,15 +230,21 @@ class ChatCompletionsAPI(
     ): JsonObject {
         val host = providerSetting.baseUrl.toHttpUrl().host
         val isOpenRouter = host == "openrouter.ai"
+        // DeepSeek 方言：thinking 模式下，两个 user 消息之间只要发生过工具调用，
+        // 中间那条 assistant 消息的 reasoning_content 就必须在后续请求里回传，
+        // 否则接口直接 400。这是服务端硬要求，和「回传历史思考过程」开关无关，
+        // 所以这里对 DeepSeek 强制生效，避免用户关掉开关后必挂。
+        val isDeepSeekDialect = isDeepSeekHost(host)
         return buildJsonObject {
             put("model", params.model.modelId)
             put(
                 "messages",
                 buildMessages(
                     messages = messages,
-                    includeHistoryReasoning = providerSetting.includeHistoryReasoning,
+                    includeHistoryReasoning = providerSetting.includeHistoryReasoning || isDeepSeekDialect,
                     includeOpenRouterReasoningDetails = isOpenRouter,
                     supportInputModalities = params.model.inputModalities,
+                    replayEmptyReasoningWithTools = isDeepSeekDialect,
                 )
             )
 
@@ -450,11 +456,18 @@ class ChatCompletionsAPI(
                !isMoonshotRestricted
     }
 
+    /**
+     * DeepSeek 官方及其同源网关：thinking + 工具调用时必须回传历史推理。
+     */
+    private fun isDeepSeekHost(host: String): Boolean =
+        host.contains("deepseek", ignoreCase = true)
+
     private fun buildMessages(
         messages: List<UIMessage>,
         includeHistoryReasoning: Boolean = true,
         includeOpenRouterReasoningDetails: Boolean = false,
         supportInputModalities: List<Modality> = listOf(Modality.TEXT, Modality.IMAGE),
+        replayEmptyReasoningWithTools: Boolean = false,
     ) = buildJsonArray {
         val filteredMessages = messages.filter { it.isValidToUpload() }
 
@@ -465,6 +478,7 @@ class ChatCompletionsAPI(
                     includeReasoning = includeHistoryReasoning,
                     includeOpenRouterReasoningDetails = includeOpenRouterReasoningDetails,
                     supportInputModalities = supportInputModalities,
+                    replayEmptyReasoningWithTools = replayEmptyReasoningWithTools,
                 )
             } else {
                 addNonAssistantMessage(message)
@@ -477,6 +491,7 @@ class ChatCompletionsAPI(
         includeReasoning: Boolean,
         includeOpenRouterReasoningDetails: Boolean,
         supportInputModalities: List<Modality>,
+        replayEmptyReasoningWithTools: Boolean,
     ) {
         val groups = groupPartsByToolBoundary(message.parts)
         val contentBuffer = mutableListOf<UIMessagePart>()
@@ -503,6 +518,7 @@ class ChatCompletionsAPI(
                         tools = group.tools,
                         reasoningPart = reasoningPart,
                         includeOpenRouterReasoningDetails = includeOpenRouterReasoningDetails,
+                        replayEmptyReasoningWithTools = replayEmptyReasoningWithTools,
                     )?.let { assistantMessage ->
                         add(assistantMessage)
                     }
@@ -529,6 +545,7 @@ class ChatCompletionsAPI(
                 tools = emptyList(),
                 reasoningPart = reasoningPart,
                 includeOpenRouterReasoningDetails = includeOpenRouterReasoningDetails,
+                replayEmptyReasoningWithTools = replayEmptyReasoningWithTools,
             )?.let { assistantMessage ->
                 add(assistantMessage)
             }
@@ -540,6 +557,7 @@ class ChatCompletionsAPI(
         tools: List<UIMessagePart.Tool>,
         reasoningPart: UIMessagePart.Reasoning?,
         includeOpenRouterReasoningDetails: Boolean,
+        replayEmptyReasoningWithTools: Boolean,
     ): JsonObject? {
         val hasUsableContent = contentParts.any { part ->
             when (part) {
@@ -568,6 +586,10 @@ class ChatCompletionsAPI(
                 } else {
                     put("reasoning_content", reasoningPart?.reasoning.orEmpty())
                 }
+            } else if (replayEmptyReasoningWithTools && tools.isNotEmpty()) {
+                // DeepSeek 这类服务端要求：带工具调用的 assistant 消息必须带上该字段，
+                // 缺了就直接 400。历史里确实没有思考内容时补一个空串占位。
+                put("reasoning_content", "")
             }
 
             // content

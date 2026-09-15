@@ -121,4 +121,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-15T22:05+08:00 proactive ambient context
+# rebuild marker: 2026-09-16T00:20+08:00 deepseek thinking reasoning_content replay fix

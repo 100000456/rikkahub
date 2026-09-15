@@ -17,18 +17,21 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install SDK platform
+      - name: Install SDK platform 37
         run: |
-          sdkmanager "platforms;android-37" > /dev/null 2>&1 || echo "platform 37 preinstalled"
+          mkdir -p ci-logs
+          (yes | sdkmanager "platforms;android-37" || yes | sdkmanager --channel=3 "platforms;android-37") 2>&1 | tee ci-logs/sdkmanager.log || true
+          echo "--- installed platforms ---" | tee -a ci-logs/sdkmanager.log
+          ls "$ANDROID_HOME/platforms" | tee -a ci-logs/sdkmanager.log || true
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -44,7 +47,9 @@ jobs:
 
       - name: Install web-ui dependencies
         working-directory: web-ui
-        run: pnpm install --frozen-lockfile
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
 
       - name: Gradle cache
         uses: actions/cache@v4
@@ -56,7 +61,7 @@ jobs:
 
       - name: Write placeholder google-services.json
         run: |
-          mkdir -p app
+          mkdir -p app ci-logs
           cat > app/google-services.json <<'JSON_EOF'
           {
             "project_info": {
@@ -93,21 +98,28 @@ jobs:
       - name: Build debug APK
         run: |
           chmod +x gradlew
-          ./gradlew :app:assembleDebug --stacktrace
+          set -o pipefail
+          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee ci-logs/gradle.log
 
-      - name: Collect logs on failure
+      - name: Dump failure info
         if: failure()
         run: |
-          mkdir -p build-logs
-          ./gradlew :app:assembleDebug --stacktrace > build-logs/retry.log 2>&1 || true
-          tail -n 400 build-logs/retry.log > build-logs/error-tail.txt || true
-
-      - name: Upload logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: build-logs/
+          {
+            echo "=== failure at $(date -u) ==="
+            echo "--- java ---"; java -version 2>&1 || true
+            echo "--- node pnpm ---"; node -v 2>&1 || true; pnpm -v 2>&1 || true
+            echo "--- platforms ---"; ls "$ANDROID_HOME/platforms" 2>&1 || true
+            echo "--- build-tools ---"; ls "$ANDROID_HOME/build-tools" 2>&1 || true
+            echo "--- wrapper ---"; cat gradle/wrapper/gradle-wrapper.properties 2>&1 || true
+            echo "--- sdkmanager tail ---"; tail -n 60 ci-logs/sdkmanager.log 2>/dev/null || true
+            echo "--- pnpm tail ---"; tail -n 60 ci-logs/pnpm.log 2>/dev/null || true
+            echo "--- gradle tail ---"; tail -n 400 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure.txt
+          git commit -m "ci: dump failure log" || true
+          git push origin HEAD:master || true
 
       - name: Publish debug APK
         if: success()

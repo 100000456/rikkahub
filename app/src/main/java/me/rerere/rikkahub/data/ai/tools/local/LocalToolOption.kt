@@ -76,4 +76,8 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("device_info")
     data object DeviceInfo : LocalToolOption()
+
+    @Serializable
+    @SerialName("gadgetbridge")
+    data object Gadgetbridge : LocalToolOption()
 }

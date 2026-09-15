@@ -74,6 +74,8 @@ class LocalTools(
 
     val telephonyInfoTool by lazy { buildTelephonyInfoTool(context) }
 
+    val gadgetbridgeTool by lazy { buildGadgetbridgeTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -142,6 +144,9 @@ class LocalTools(
             tools.add(wifiInfoTool)
             tools.add(telephonyInfoTool)
             tools.add(appUsageTool)
+        }
+        if (options.contains(LocalToolOption.Gadgetbridge)) {
+            tools.add(gadgetbridgeTool)
         }
         return tools
     }

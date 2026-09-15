@@ -167,6 +167,24 @@
     </receiver>
 
     <service
+      android:name=".service.QqBotService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="keep qq bot websocket connected to reply to private messages" />
+    </service>
+
+    <service
+      android:name=".service.WeixinBotService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="long poll wechat messages for the assistant" />
+    </service>
+
+    <service
       android:name=".data.service.RikkaNotificationListenerService"
       android:exported="true"
       android:label="@string/app_name"

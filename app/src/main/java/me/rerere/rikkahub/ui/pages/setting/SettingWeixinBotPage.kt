@@ -1,9 +1,7 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +52,7 @@ import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.utils.plus
+import okhttp3.OkHttpClient
 import org.koin.compose.koinInject
 
 /**
@@ -63,7 +62,8 @@ import org.koin.compose.koinInject
 @Composable
 fun SettingWeixinBotPage() {
     val context = LocalContext.current
-    val client: WeixinBotClient = koinInject()
+    val okHttpClient: OkHttpClient = koinInject()
+    val client = remember(okHttpClient) { WeixinBotClient(okHttpClient) }
     val scope = rememberCoroutineScope()
     val setting by BotSettingStore.weixin.collectAsState()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()

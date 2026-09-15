@@ -68,4 +68,12 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("camera")
     data object Camera : LocalToolOption()
+
+    @Serializable
+    @SerialName("app_control")
+    data object AppControl : LocalToolOption()
+
+    @Serializable
+    @SerialName("device_info")
+    data object DeviceInfo : LocalToolOption()
 }

@@ -40,6 +40,8 @@ private val SYSTEM_TOOL_ROWS = listOf(
     SystemToolRow(LocalToolOption.Share, "分享", "把内容丢进系统分享面板"),
     SystemToolRow(LocalToolOption.Music, "音乐", "看现在在放什么，也能切歌、暂停、拖进度"),
     SystemToolRow(LocalToolOption.Camera, "相机", "让我拍一张，看看你眼前是什么"),
+    SystemToolRow(LocalToolOption.AppControl, "应用控制", "帮你开应用、开网页，也能把你拉回聊天"),
+    SystemToolRow(LocalToolOption.DeviceInfo, "设备信息", "看联网状态、SIM 卡信号、今天各应用用了多久"),
 )
 
 @Composable

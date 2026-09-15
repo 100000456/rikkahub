@@ -66,6 +66,14 @@ class LocalTools(
 
     val cameraTool by lazy { buildCameraTool(context) }
 
+    val appSwitchTool by lazy { buildAppSwitchTool(context) }
+
+    val appUsageTool by lazy { buildAppUsageTool(context) }
+
+    val wifiInfoTool by lazy { buildWifiInfoTool(context) }
+
+    val telephonyInfoTool by lazy { buildTelephonyInfoTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -126,6 +134,14 @@ class LocalTools(
         }
         if (options.contains(LocalToolOption.Camera)) {
             tools.add(cameraTool)
+        }
+        if (options.contains(LocalToolOption.AppControl)) {
+            tools.add(appSwitchTool)
+        }
+        if (options.contains(LocalToolOption.DeviceInfo)) {
+            tools.add(wifiInfoTool)
+            tools.add(telephonyInfoTool)
+            tools.add(appUsageTool)
         }
         return tools
     }

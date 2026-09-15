@@ -254,6 +254,62 @@ private fun AssistantLocalToolContent(
                     )
                 }
             )
+            item(
+                headlineContent = {
+                    Text("通知")
+                },
+                supportingContent = {
+                    Text("让我给你推一条系统通知")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.Notification),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Notification, it) }
+                    )
+                }
+            )
+            item(
+                headlineContent = {
+                    Text("短信")
+                },
+                supportingContent = {
+                    Text("读手机收件箱里的短信")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.Sms),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Sms, it) }
+                    )
+                }
+            )
+            item(
+                headlineContent = {
+                    Text("相册刷新")
+                },
+                supportingContent = {
+                    Text("把新存的文件扫进相册里")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.MediaScanner),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.MediaScanner, it) }
+                    )
+                }
+            )
+            item(
+                headlineContent = {
+                    Text("分享")
+                },
+                supportingContent = {
+                    Text("把内容丢进系统分享面板")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.Share),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Share, it) }
+                    )
+                }
+            )
         }
     }
 }

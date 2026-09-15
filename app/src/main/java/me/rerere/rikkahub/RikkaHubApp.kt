@@ -31,9 +31,11 @@ import me.rerere.rikkahub.di.dataSourceModule
 import me.rerere.rikkahub.di.repositoryModule
 import me.rerere.rikkahub.di.viewModelModule
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.datastore.KeepAliveStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.sync.BackupManager
 import me.rerere.rikkahub.data.sync.RestoreFailedException
+import me.rerere.rikkahub.service.KeepAliveService
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.utils.CrashHandler
@@ -102,10 +104,25 @@ class RikkaHubApp : Application() {
         // Start WebServer if enabled in settings
         startWebServerIfEnabled()
 
+        // Bring back the keep-alive notification if she left it on
+        startKeepAliveIfEnabled()
+
         // Increment launch count
         incrementLaunchCount()
 
         // Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
+    }
+
+    private fun startKeepAliveIfEnabled() {
+        get<AppScope>().launch(Dispatchers.IO) {
+            runCatching {
+                if (KeepAliveStore.load(this@RikkaHubApp).enabled) {
+                    KeepAliveService.start(this@RikkaHubApp)
+                }
+            }.onFailure {
+                Log.e(TAG, "startKeepAliveIfEnabled failed", it)
+            }
+        }
     }
 
     private fun incrementLaunchCount() {

@@ -121,4 +121,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-15T20:16+08:00 local tool rows for camera music notifications
+# rebuild marker: 2026-09-15T20:42+08:00 global system tools setting page

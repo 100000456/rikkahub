@@ -19,6 +19,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import me.rerere.ai.core.MessageRole
@@ -36,6 +37,7 @@ import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.model.Conversation
 import me.rerere.rikkahub.data.model.toMessageNode
 import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.service.ChatService
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.text.SimpleDateFormat
@@ -154,6 +156,12 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
     private val conversationRepository: ConversationRepository by inject()
     private val providerManager: ProviderManager by inject()
 
+    // 消息不能只写数据库，得接住聊天页内存里那份，否则聊天框里永远看不到这条。
+    private val chatServiceInjected: ChatService by inject()
+    private val chatService: ChatService? by lazy {
+        runCatching { chatServiceInjected }.getOrNull()
+    }
+
     companion object {
         private const val CHANNEL_ID = "proactive_message"
         private const val CHANNEL_NAME = "主动消息"
@@ -228,10 +236,29 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
         }
         val provider = providerManager.getProviderByType(providerSetting)
 
-        val conversation = conversationRepository.getRecentConversations(assistant.id, limit = 1)
+        var conversation = conversationRepository.getRecentConversations(assistant.id, limit = 1)
             .firstOrNull()
             ?.let { summary -> conversationRepository.getConversationById(summary.id) }
-        val history = conversation?.currentMessages?.takeLast(20) ?: emptyList()
+        if (conversation == null) {
+            // 一条会话都没有时先建一条，后面正文才好落进去。
+            val fresh = Conversation(
+                id = Uuid.random(),
+                assistantId = assistant.id,
+                messageNodes = emptyList()
+            )
+            conversationRepository.insertConversation(fresh)
+            conversation = fresh
+        }
+        val conversationId = conversation.id
+
+        // 正在生成就这轮不冒头：两条请求撞在一起，后一条会被上游掐断，
+        // 掐断后什么也没写进会话，但通知已经弹了，点进去就是空的。
+        if (isConversationBusy(conversationId)) {
+            Log.d(TAG, "conversation is generating, skip this round")
+            return
+        }
+
+        val history = conversation.currentMessages.takeLast(20)
 
         val idleMinutes = history.lastOrNull()?.createdAt?.let { createdAt ->
             val millis = createdAt.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
@@ -304,23 +331,63 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             parts = listOf(UIMessagePart.Text(replyText))
         )
 
-        val base = conversation ?: Conversation(
-            id = Uuid.random(),
-            assistantId = assistant.id,
-            messageNodes = emptyList()
-        )
-        val updated = base.copy(
-            messageNodes = base.messageNodes + aiMessage.toMessageNode(),
-            updateAt = Instant.now()
-        )
-        if (conversation == null) {
-            conversationRepository.insertConversation(updated)
-        } else {
-            conversationRepository.updateConversation(updated)
+        if (!deliverToConversation(conversationId, aiMessage)) {
+            Log.e(TAG, "proactive message generated but not delivered")
+            return
         }
 
-        notifyArrival(updated.id.toString(), assistant.name.ifBlank { "AI" }, replyText)
+        notifyArrival(conversationId.toString(), assistant.name.ifBlank { "AI" }, replyText)
         Log.d(TAG, "proactive message delivered: ${replyText.take(60)}")
+    }
+
+    /**
+     * 这条会话是不是正在生成。拿不到 ChatService 就当作不忙（宁可多冒一次，不卡死）。
+     */
+    private suspend fun isConversationBusy(conversationId: Uuid): Boolean {
+        val service = chatService ?: return false
+        return runCatching {
+            withTimeoutOrNull(2_000L) {
+                service.getConversationJobs().first()[conversationId]?.isActive == true
+            } ?: false
+        }.getOrDefault(false)
+    }
+
+    /**
+     * 把这条 AI 消息接进会话。
+     *
+     * 优先走 ChatService：它会同时改内存里那份和数据库，聊天页当场就能看见；
+     * 只改数据库的话，聊天页停在旧的那份上，而且下一次整对象保存会把这条覆盖掉。
+     */
+    private suspend fun deliverToConversation(conversationId: Uuid, message: UIMessage): Boolean {
+        val stored = conversationRepository.getConversationById(conversationId) ?: run {
+            Log.e(TAG, "conversation $conversationId not found")
+            return false
+        }
+        val updated = stored.copy(
+            messageNodes = stored.messageNodes + message.toMessageNode(),
+            updateAt = Instant.now()
+        )
+
+        val service = chatService
+        if (service != null) {
+            val ok = runCatching {
+                service.saveConversation(conversationId, updated)
+            }.onFailure {
+                Log.e(TAG, "save via ChatService failed, falling back to repository", it)
+            }.isSuccess
+            if (ok) return true
+        }
+
+        return runCatching {
+            if (conversationRepository.existsConversationById(conversationId)) {
+                conversationRepository.updateConversation(updated)
+            } else {
+                conversationRepository.insertConversation(updated)
+            }
+            true
+        }.onFailure {
+            Log.e(TAG, "fallback save failed", it)
+        }.getOrDefault(false)
     }
 
     private fun buildForegroundNotification(): Notification {

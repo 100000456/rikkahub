@@ -91,6 +91,10 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
             contentPadding = innerPadding + PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            item("proactiveMessage") {
+                ProactiveMessageSection()
+            }
+
             item("systemTools") {
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),

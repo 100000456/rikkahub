@@ -109,6 +109,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNetworkPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
+import me.rerere.rikkahub.ui.pages.setting.SettingProactiveMessagePage
 import me.rerere.rikkahub.ui.pages.setting.SettingSystemToolsPage
 import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
@@ -479,6 +480,10 @@ class RouteActivity : ComponentActivity() {
                                 SettingSystemToolsPage()
                             }
 
+                            entry<Screen.SettingProactiveMessage> {
+                                SettingProactiveMessagePage()
+                            }
+
                             entry<Screen.Debug> {
                                 DebugPage()
                             }
@@ -570,7 +575,7 @@ class RouteActivity : ComponentActivity() {
                                 )
                                 if (state != null) {
                                     Text(
-                                        text = "v${state.from} → v${state.to}",
+                                        text = "v${state.from} → ${state.to}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -700,6 +705,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingSystemTools : Screen
+
+    @Serializable
+    data object SettingProactiveMessage : Screen
 
     @Serializable
     data object Debug : Screen

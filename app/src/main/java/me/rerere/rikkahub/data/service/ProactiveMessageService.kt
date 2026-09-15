@@ -50,6 +50,7 @@ private const val TAG = "ProactiveMessage"
 
 object ProactiveMessageScheduler {
     const val ACTION_FIRE = "me.rerere.rikkahub.action.PROACTIVE_MESSAGE"
+    const val EXTRA_FORCE = "force_trigger"
     const val PREFS_NAME = "proactive_message_runtime"
     const val KEY_NEXT_TRIGGER = "next_trigger_time"
     const val KEY_LAST_TRIGGER = "last_trigger_time"
@@ -112,9 +113,20 @@ object ProactiveMessageScheduler {
         return if (value > 0L) value else null
     }
 
+    /**
+     * 立刻跑一次，不管开关开没开，都走完整流程。
+     */
     fun triggerNow(context: Context, setting: ProactiveMessageSetting) {
-        if (setting.enabled) scheduleNext(context, setting)
-        context.startForegroundService(Intent(context, ProactiveMessageTriggerService::class.java))
+        if (setting.enabled) {
+            scheduleNext(context, setting)
+        }
+        val intent = Intent(context, ProactiveMessageTriggerService::class.java)
+            .putExtra(EXTRA_FORCE, true)
+        try {
+            context.startForegroundService(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "failed to start trigger service", e)
+        }
     }
 }
 
@@ -147,17 +159,20 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
         private const val CHANNEL_NAME = "主动消息"
         private const val FOREGROUND_ID = 20011
         private const val MESSAGE_NOTIFICATION_ID = 20012
+        private const val ERROR_NOTIFICATION_ID = 20013
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val force = intent?.getBooleanExtra(ProactiveMessageScheduler.EXTRA_FORCE, false) ?: false
         startForeground(FOREGROUND_ID, buildForegroundNotification())
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                runTrigger()
+                runTrigger(force)
             } catch (e: Exception) {
                 Log.e(TAG, "proactive trigger failed", e)
+                notifyFailure(e)
             } finally {
                 withContext(NonCancellable) {
                     val setting = ProactiveMessageStore.load(this@ProactiveMessageTriggerService)
@@ -174,9 +189,10 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
         return START_NOT_STICKY
     }
 
-    private suspend fun runTrigger() {
+    private suspend fun runTrigger(force: Boolean) {
         val setting = ProactiveMessageStore.load(this)
-        if (!setting.enabled) {
+        if (!setting.enabled && !force) {
+            Log.d(TAG, "proactive message disabled, skip")
             ProactiveMessageScheduler.cancel(this)
             return
         }
@@ -185,11 +201,13 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             ProactiveMessageScheduler.PREFS_NAME,
             Context.MODE_PRIVATE
         )
-        val lastTrigger = runtimePrefs.getLong(ProactiveMessageScheduler.KEY_LAST_TRIGGER, 0L)
-        val minGapMs = setting.minIntervalMinutes.coerceAtLeast(1) * 60_000L
-        if (lastTrigger > 0L && System.currentTimeMillis() - lastTrigger < minGapMs / 2) {
-            Log.d(TAG, "duplicated trigger, skip")
-            return
+        if (!force) {
+            val lastTrigger = runtimePrefs.getLong(ProactiveMessageScheduler.KEY_LAST_TRIGGER, 0L)
+            val minGapMs = setting.minIntervalMinutes.coerceAtLeast(1) * 60_000L
+            if (lastTrigger > 0L && System.currentTimeMillis() - lastTrigger < minGapMs / 2) {
+                Log.d(TAG, "duplicated trigger, skip")
+                return
+            }
         }
         runtimePrefs.edit()
             .putLong(ProactiveMessageScheduler.KEY_LAST_TRIGGER, System.currentTimeMillis())
@@ -200,10 +218,12 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             ?: settings.getCurrentAssistant()
         val model = settings.findModelById(assistant.chatModelId ?: settings.chatModelId) ?: run {
             Log.e(TAG, "no model configured")
+            notifyFailure(IllegalStateException("没找到可用的模型"))
             return
         }
         val providerSetting = model.findProvider(settings.providers) ?: run {
             Log.e(TAG, "no provider for model")
+            notifyFailure(IllegalStateException("这个模型没挂在任何供应商下面"))
             return
         }
         val provider = providerManager.getProviderByType(providerSetting)
@@ -334,6 +354,29 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             .build()
         try {
             manager.notify(MESSAGE_NOTIFICATION_ID, notification)
+        } catch (e: SecurityException) {
+            Log.w(TAG, "notification permission missing", e)
+        }
+    }
+
+    private fun notifyFailure(error: Throwable) {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        ensureChannel()
+        val detail = buildString {
+            append(error::class.simpleName ?: "Error")
+            append(": ")
+            append(error.message ?: "没有更多信息")
+        }
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setContentTitle("主动消息没跑起来")
+            .setContentText(detail.take(160))
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+        try {
+            manager.notify(ERROR_NOTIFICATION_ID, notification)
         } catch (e: SecurityException) {
             Log.w(TAG, "notification permission missing", e)
         }

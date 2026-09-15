@@ -226,6 +226,20 @@ private fun AssistantLocalToolContent(
                     )
                 }
             )
+            item(
+                headlineContent = {
+                    Text("闹钟与计时器")
+                },
+                supportingContent = {
+                    Text("让我替你设闹钟、设倒计时")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.Alarm),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Alarm, it) }
+                    )
+                }
+            )
         }
     }
 }

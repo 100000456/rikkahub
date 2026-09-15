@@ -14,6 +14,10 @@ data class ProactiveMessageSetting(
     val maxIntervalMinutes: Int = 90,
     val assistantId: String = "",
     val jumpIdleThresholdMinutes: Int = 120,
+    /** true = 按她定的时间点冒头；false = 在最短/最长间隔里随机挑一个点 */
+    val useFixedTimes: Boolean = false,
+    /** 固定时间点，格式 HH:mm，按字符串排序即时间顺序 */
+    val fixedTimes: List<String> = listOf("12:30", "21:00"),
 )
 
 /**

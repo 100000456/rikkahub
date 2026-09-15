@@ -42,6 +42,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.text.SimpleDateFormat
 import java.time.Instant
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -74,10 +75,12 @@ object ProactiveMessageScheduler {
             cancel(context)
             return
         }
-        val min = setting.minIntervalMinutes.coerceAtLeast(1)
-        val max = setting.maxIntervalMinutes.coerceAtLeast(min)
-        val minutes = if (max <= min) min else Random.nextInt(min, max + 1)
-        val triggerAt = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(minutes.toLong())
+        val triggerAt = nextTriggerAt(setting)
+        if (triggerAt == null) {
+            Log.w(TAG, "no valid trigger time, cancel")
+            cancel(context)
+            return
+        }
 
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
@@ -96,7 +99,8 @@ object ProactiveMessageScheduler {
             Log.w(TAG, "exact alarm failed, fallback to inexact", e)
             alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
         }
-        Log.d(TAG, "next proactive message in $minutes minute(s)")
+        val gapMinutes = ((triggerAt - System.currentTimeMillis()) / 60_000L).coerceAtLeast(0L)
+        Log.d(TAG, "next proactive message in $gapMinutes minute(s)")
     }
 
     fun cancel(context: Context) {
@@ -113,6 +117,43 @@ object ProactiveMessageScheduler {
         val value = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getLong(KEY_NEXT_TRIGGER, 0L)
         return if (value > 0L) value else null
+    }
+
+    /**
+     * 下一次该冒头的时刻。
+     *
+     * 固定时间点模式：取所有时间点里最近的一个（今天过了就算明天）。
+     * 随机模式：在最短/最长间隔之间掷一次。
+     */
+    fun nextTriggerAt(setting: ProactiveMessageSetting): Long? {
+        if (setting.useFixedTimes) {
+            val candidates = setting.fixedTimes
+                .mapNotNull { parseTimeOfDay(it) }
+                .filter { it > System.currentTimeMillis() }
+            return candidates.minOrNull()
+        }
+        val min = setting.minIntervalMinutes.coerceAtLeast(1)
+        val max = setting.maxIntervalMinutes.coerceAtLeast(min)
+        val minutes = if (max <= min) min else Random.nextInt(min, max + 1)
+        return System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(minutes.toLong())
+    }
+
+    /** "21:40" → 今天或明天那个点的亳秒时间戳；解析不了就返回 null。 */
+    private fun parseTimeOfDay(value: String): Long? {
+        val parts = value.trim().split(":")
+        if (parts.size != 2) return null
+        val hour = parts[0].trim().toIntOrNull() ?: return null
+        val minute = parts[1].trim().toIntOrNull() ?: return null
+        if (hour !in 0..23 || minute !in 0..59) return null
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, hour)
+        cal.set(Calendar.MINUTE, minute)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        if (cal.timeInMillis <= System.currentTimeMillis()) {
+            cal.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        return cal.timeInMillis
     }
 
     /**
@@ -209,7 +250,8 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             ProactiveMessageScheduler.PREFS_NAME,
             Context.MODE_PRIVATE
         )
-        if (!force) {
+        // 固定时间点模式下两个点可能靠得近，不能用间隔去当去重标准
+        if (!force && !setting.useFixedTimes) {
             val lastTrigger = runtimePrefs.getLong(ProactiveMessageScheduler.KEY_LAST_TRIGGER, 0L)
             val minGapMs = setting.minIntervalMinutes.coerceAtLeast(1) * 60_000L
             if (lastTrigger > 0L && System.currentTimeMillis() - lastTrigger < minGapMs / 2) {

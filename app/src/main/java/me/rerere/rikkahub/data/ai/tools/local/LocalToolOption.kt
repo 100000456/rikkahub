@@ -56,4 +56,16 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("share")
     data object Share : LocalToolOption()
+
+    @Serializable
+    @SerialName("notifications_reader")
+    data object NotificationsReader : LocalToolOption()
+
+    @Serializable
+    @SerialName("music")
+    data object Music : LocalToolOption()
+
+    @Serializable
+    @SerialName("camera")
+    data object Camera : LocalToolOption()
 }

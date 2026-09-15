@@ -60,6 +60,12 @@ class LocalTools(
 
     val shareTool by lazy { buildShareTool(context) }
 
+    val notificationsTool by lazy { buildNotificationsTool(context) }
+
+    val musicTool by lazy { buildMusicTool(context) }
+
+    val cameraTool by lazy { buildCameraTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -111,6 +117,15 @@ class LocalTools(
         }
         if (options.contains(LocalToolOption.Share)) {
             tools.add(shareTool)
+        }
+        if (options.contains(LocalToolOption.NotificationsReader)) {
+            tools.add(notificationsTool)
+        }
+        if (options.contains(LocalToolOption.Music)) {
+            tools.add(musicTool)
+        }
+        if (options.contains(LocalToolOption.Camera)) {
+            tools.add(cameraTool)
         }
         return tools
     }

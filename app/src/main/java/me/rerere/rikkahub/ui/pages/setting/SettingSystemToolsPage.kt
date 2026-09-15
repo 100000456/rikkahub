@@ -92,6 +92,10 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
             contentPadding = innerPadding + PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            item("keepAlive") {
+                KeepAliveSection()
+            }
+
             item("proactiveMessage") {
                 ProactiveMessageSection()
             }

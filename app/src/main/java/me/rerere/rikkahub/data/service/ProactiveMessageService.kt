@@ -253,6 +253,12 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             if (idleMinutes >= 0) {
                 appendLine("距离上次说话已经过去 $idleMinutes 分钟。")
             }
+            val ambientText =
+                AmbientSnapshot.capture(this@ProactiveMessageTriggerService).describe()
+            if (ambientText.isNotBlank()) {
+                appendLine("她现在的情况：$ambientText")
+                appendLine("可以顺口带一句，但别像在报数据，也别编你看不见的东西。")
+            }
             appendLine("像突然想起对方那样，主动说一句话。可以是一句关心，一个话题，或者随口一句。")
             appendLine("不要复述上一轮聊过的内容，换个角度。")
             appendLine("不要提定时、数据、监测这类事，也不要说自己是被触发来的。")

@@ -23,18 +23,6 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Check Android SDK
-        run: |
-          mkdir -p ci-logs
-          {
-            echo "ANDROID_HOME=$ANDROID_HOME"
-            echo "--- platforms ---"
-            ls "$ANDROID_HOME/platforms"
-            echo "--- build-tools ---"
-            ls "$ANDROID_HOME/build-tools"
-          } > ci-logs/sdk.log 2>&1 || true
-          cat ci-logs/sdk.log
-
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -111,9 +99,8 @@ jobs:
             echo "--- java ---"; java -version 2>&1 || true
             echo "--- node ---"; node -v 2>&1 || true
             echo "--- pnpm ---"; pnpm -v 2>&1 || true
-            echo "--- sdk ---"; cat ci-logs/sdk.log 2>/dev/null || true
             echo "--- pnpm tail ---"; tail -n 80 ci-logs/pnpm.log 2>/dev/null || true
-            echo "--- gradle tail ---"; tail -n 400 ci-logs/gradle.log 2>/dev/null || true
+            echo "--- gradle tail ---"; tail -n 500 ci-logs/gradle.log 2>/dev/null || true
           } > .ci-failure.txt
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
@@ -133,3 +120,5 @@ jobs:
 
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
+
+# rebuild marker: 2026-09-15T19:10+08:00 alarm+timer port

@@ -57,6 +57,8 @@ import me.rerere.hugeicons.stroke.InLove
 import me.rerere.hugeicons.stroke.LookTop
 import me.rerere.hugeicons.stroke.McpServer
 import me.rerere.hugeicons.stroke.Megaphone01
+import me.rerere.hugeicons.stroke.Message01
+import me.rerere.hugeicons.stroke.MessageMultiple01
 import me.rerere.hugeicons.stroke.Package
 import me.rerere.hugeicons.stroke.ServerStack01
 import me.rerere.hugeicons.stroke.Settings03
@@ -256,6 +258,18 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         leadingContent = { Icon(HugeIcons.WavingHand01, null) },
                         supportingContent = { Text("到点自己冒出来找你，几个点你定") },
                         headlineContent = { Text("主动消息") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingQqBot) },
+                        leadingContent = { Icon(HugeIcons.Message01, null) },
+                        supportingContent = { Text("填 AppID 和密钥，用 QQ 私聊跟 AI 说话") },
+                        headlineContent = { Text("QQ Bot") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingWeixinBot) },
+                        leadingContent = { Icon(HugeIcons.MessageMultiple01, null) },
+                        supportingContent = { Text("扫码登录，用微信收发消息") },
+                        headlineContent = { Text("微信 Bot") },
                     )
                 }
             }

@@ -32,6 +32,26 @@ class LocalTools(
 
     val timerTool by lazy { buildTimerTool(context) }
 
+    val torchTool by lazy { buildTorchTool(context) }
+
+    val getVolumeTool by lazy { buildGetVolumeTool(context) }
+
+    val setVolumeTool by lazy { buildSetVolumeTool(context) }
+
+    val getBrightnessTool by lazy { buildGetBrightnessTool(context) }
+
+    val setBrightnessTool by lazy { buildSetBrightnessTool(context) }
+
+    val vibrateTool by lazy { buildVibrateTool(context) }
+
+    val batteryTool by lazy { buildBatteryTool(context) }
+
+    val storageInfoTool by lazy { buildStorageInfoTool(context) }
+
+    val toastTool by lazy { buildToastTool(context) }
+
+    val wakeScreenTool by lazy { buildWakeScreenTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -59,6 +79,18 @@ class LocalTools(
         if (options.contains(LocalToolOption.Alarm)) {
             tools.add(alarmTool)
             tools.add(timerTool)
+        }
+        if (options.contains(LocalToolOption.SystemTools)) {
+            tools.add(torchTool)
+            tools.add(getVolumeTool)
+            tools.add(setVolumeTool)
+            tools.add(getBrightnessTool)
+            tools.add(setBrightnessTool)
+            tools.add(vibrateTool)
+            tools.add(batteryTool)
+            tools.add(storageInfoTool)
+            tools.add(toastTool)
+            tools.add(wakeScreenTool)
         }
         return tools
     }

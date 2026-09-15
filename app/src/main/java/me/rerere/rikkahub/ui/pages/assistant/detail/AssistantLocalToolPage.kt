@@ -240,6 +240,20 @@ private fun AssistantLocalToolContent(
                     )
                 }
             )
+            item(
+                headlineContent = {
+                    Text("系统工具")
+                },
+                supportingContent = {
+                    Text("手电筒、音量、亮度、震动、电量、存储、提示条、亮屏")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.SystemTools),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.SystemTools, it) }
+                    )
+                }
+            )
         }
     }
 }

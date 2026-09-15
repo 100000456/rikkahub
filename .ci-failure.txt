@@ -1,46 +1,579 @@
-=== failure at Tue Sep 15 09:42:32 UTC 2026 ===
+=== failure at Tue Sep 15 11:08:09 UTC 2026 ===
 --- java ---
 openjdk version "21.0.12.1" 2026-08-18 LTS
 OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)
 OpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)
---- node pnpm ---
+--- node ---
 v22.23.2
-/home/runner/work/_temp/6cff9559-92be-48bf-8eb2-6fe7f2f39f5f.sh: line 4: pnpm: command not found
---- platforms ---
-android-34
-android-34-ext10
-android-34-ext11
-android-34-ext12
-android-34-ext8
-android-35
-android-35-ext14
-android-35-ext15
-android-36
-android-36-ext18
-android-36-ext19
-android-36.1
-android-37.0
-android-37.1
-android-37.2
-android-37.2-beta1
-android-37.2-beta2
-android-37.2-beta3
---- build-tools ---
-34.0.0
-35.0.0
-35.0.1
-36.0.0
-36.1.0
-37.0.0
---- wrapper ---
-#Sat Jan 17 11:26:11 CST 2026
-distributionBase=GRADLE_USER_HOME
-distributionPath=wrapper/dists
-distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip
-networkTimeout=10000
-validateDistributionUrl=true
-zipStoreBase=GRADLE_USER_HOME
-zipStorePath=wrapper/dists
---- sdkmanager tail ---
+--- pnpm ---
+11.27.0
 --- pnpm tail ---
+? Verifying lockfile against supply-chain policies (714 entries)...
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +607
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 607, reused 278, downloaded 0, added 0
+Progress: resolved 607, reused 572, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 607, reused 607, downloaded 0, added 180
+Progress: resolved 607, reused 607, downloaded 0, added 607, done
+✓ Lockfile passes supply-chain policies (714 entries in 5s)
+
+dependencies:
++ @react-router/node 7.13.0
++ @react-router/serve 7.13.0
++ @streamdown/cjk 1.0.3
++ @tanstack/react-query 5.100.10
++ class-variance-authority 0.7.1
++ clsx 2.1.1
++ dayjs 1.11.20
++ file-type 21.3.4
++ i18next 25.10.10
++ immer 11.1.8
++ isbot 5.1.40
++ katex 0.16.45
++ ky 1.14.3
++ lucide-react 0.564.0
++ motion 12.38.0
++ radix-ui 1.4.3
++ react 19.2.6
++ react-dom 19.2.6
++ react-i18next 16.6.6
++ react-infinite-scroll-component 6.1.1
++ react-resizable-panels 4.11.1
++ react-router 7.13.0
++ rehype-katex 7.0.1
++ rehype-raw 7.0.0
++ remark-gfm 4.0.1
++ remark-math 6.0.0
++ shiki 3.23.0
++ sonner 2.0.7
++ streamdown 2.5.0
++ tailwind-merge 3.6.0
++ use-stick-to-bottom 1.1.4
++ uuid 13.0.2
++ vaul 1.1.2
++ zod 4.4.3
++ zustand 5.0.13
+
+devDependencies:
++ @react-router/dev 7.13.0
++ @tailwindcss/vite 4.3.0
++ @types/node 24.12.4
++ @types/react 19.2.14
++ @types/react-dom 19.2.3
++ oxfmt 0.32.0
++ oxlint 1.64.0
++ tailwindcss 4.3.0
++ tsx 4.21.0
++ tw-animate-css 1.4.0
++ typescript 5.9.3
++ vite 7.3.3
++ vite-plugin-svgr 4.5.0
++ vite-tsconfig-paths 5.1.4
+
+Done in 5.8s using pnpm v11.27.0
 --- gradle tail ---
+> Task :videogen:javaPreCompileDebug
+> Task :videogen:compileDebugJavaWithJavac NO-SOURCE
+> Task :videogen:bundleLibCompileToJarDebug
+> Task :web:generateDebugResources
+> Task :web:packageDebugResources
+> Task :web:parseDebugLocalResources
+> Task :web:generateDebugRFile
+> Task :web:compileDebugKotlin
+> Task :web:javaPreCompileDebug
+> Task :web:compileDebugJavaWithJavac NO-SOURCE
+> Task :web:bundleLibCompileToJarDebug
+> Task :workspace:generateDebugResources
+> Task :workspace:packageDebugResources
+> Task :workspace:parseDebugLocalResources
+> Task :workspace:generateDebugRFile
+
+> Task :material3:compileDebugKotlin
+w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities/kotlin/dynamiccolor/ColorSpec2025.kt:904:37 Unnecessary non-null assertion (!!) on a non-null receiver of type 'DynamicColor'.
+w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities/kotlin/dynamiccolor/ColorSpec2025.kt:1107:36 Unnecessary non-null assertion (!!) on a non-null receiver of type 'DynamicColor'.
+w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities/kotlin/dynamiccolor/ColorSpec2025.kt:1253:33 Unnecessary non-null assertion (!!) on a non-null receiver of type 'DynamicColor'.
+
+> Task :material3:compileDebugJavaWithJavac NO-SOURCE
+> Task :material3:bundleLibCompileToJarDebug
+> Task :workspace:javaPreCompileDebug
+> Task :app:javaPreCompileDebug
+> Task :ai:generateDebugAssets UP-TO-DATE
+> Task :ai:mergeDebugAssets
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :common:generateDebugAssets UP-TO-DATE
+> Task :common:mergeDebugAssets
+> Task :document:generateDebugAssets UP-TO-DATE
+> Task :document:mergeDebugAssets
+> Task :highlight:generateDebugAssets UP-TO-DATE
+> Task :highlight:mergeDebugAssets
+> Task :material3:generateDebugAssets UP-TO-DATE
+> Task :material3:mergeDebugAssets
+> Task :oauth:generateDebugAssets UP-TO-DATE
+> Task :oauth:mergeDebugAssets
+> Task :search:generateDebugAssets UP-TO-DATE
+> Task :search:mergeDebugAssets
+> Task :speech:generateDebugAssets UP-TO-DATE
+> Task :speech:mergeDebugAssets
+> Task :videogen:generateDebugAssets UP-TO-DATE
+> Task :videogen:mergeDebugAssets
+> Task :web:generateDebugAssets UP-TO-DATE
+> Task :web:mergeDebugAssets
+> Task :workspace:generateDebugAssets UP-TO-DATE
+> Task :workspace:mergeDebugAssets
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :workspace:compileDebugKotlin
+> Task :workspace:compileDebugJavaWithJavac NO-SOURCE
+> Task :workspace:bundleLibCompileToJarDebug
+> Task :common:processDebugJavaRes
+> Task :document:processDebugJavaRes
+> Task :highlight:processDebugJavaRes
+> Task :material3:processDebugJavaRes
+> Task :oauth:processDebugJavaRes
+> Task :videogen:processDebugJavaRes
+> Task :web:processDebugJavaRes
+> Task :workspace:processDebugJavaRes
+> Task :ai:compileDebugKotlin
+> Task :app:checkDebugDuplicateClasses
+> Task :app:desugarDebugFileDependencies
+
+> Task :speech:compileDebugKotlin
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/asr/providers/MiMoASRController.kt:256:41 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/ElevenLabsTTSProvider.kt:53:42 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/FishAudioTTSProvider.kt:61:42 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/GroqTTSProvider.kt:52:56 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/StepTTSProvider.kt:79:56 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/StepTTSProvider.kt:86:39 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/SystemTTSProvider.kt:79:34 This declaration overrides a deprecated member but is not marked as deprecated itself. Add the '@Deprecated' annotation or suppress the diagnostic.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/SystemTTSProvider.kt:112:16 Unnecessary safe call on a non-null receiver of type 'TextToSpeech'.
+w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/XAITTSProvider.kt:50:42 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+
+> Task :speech:compileDebugJavaWithJavac NO-SOURCE
+> Task :speech:bundleLibCompileToJarDebug
+> Task :speech:processDebugJavaRes
+> Task :web:bundleLibRuntimeToDirDebug
+> Task :document:bundleLibRuntimeToDirDebug
+> Task :app:generateDebugGlobalSynthetics
+> Task :highlight:bundleLibRuntimeToDirDebug
+
+> Task :ai:compileDebugKotlin
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/claude/ClaudeProvider.kt:258:78 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/claude/ClaudeProvider.kt:261:40 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/claude/ClaudeProvider.kt:314:86 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/claude/ClaudeProvider.kt:317:36 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/google/GoogleProvider.kt:138:41 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/google/GoogleProvider.kt:196:86 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/google/GoogleProvider.kt:199:36 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/ChatCompletionsAPI.kt:106:86 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/ChatCompletionsAPI.kt:109:36 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:69:78 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:72:40 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:101:75 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:182:82 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:185:36 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:242:82 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/openai/OpenAIProvider.kt:306:78 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/Message.kt:239:30 'data class ToolCall : UIMessagePart' is deprecated. Use UIMessagePart.Tool instead.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/Message.kt:240:30 'data class ToolResult : UIMessagePart' is deprecated. Use UIMessagePart.Tool instead.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/Message.kt:241:30 'data object Search : UIMessagePart' is deprecated. Deprecated.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/UIMessagePart.kt:140:26 'data class ToolCall : UIMessagePart' is deprecated. Use UIMessagePart.Tool instead.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/UIMessagePart.kt:140:37 'data class ToolCall : UIMessagePart' is deprecated. Use UIMessagePart.Tool instead.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/UIMessagePart.kt:141:20 'constructor(toolCallId: String, toolName: String, arguments: String, approvalState: ToolApprovalState = ..., metadata: JsonObject? = ...): UIMessagePart.ToolCall' is deprecated. Use UIMessagePart.Tool instead.
+w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/util/ErrorParser.kt:46:9 'when' is exhaustive so 'else' is redundant here.
+
+> Task :ai:compileDebugJavaWithJavac NO-SOURCE
+> Task :ai:bundleLibCompileToJarDebug
+> Task :ai:processDebugJavaRes
+> Task :ai:bundleLibRuntimeToDirDebug
+> Task :speech:bundleLibRuntimeToDirDebug
+
+> Task :search:compileDebugKotlin
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/GrokSearchService.kt:136:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/LinkUpService.kt:107:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/LinkUpService.kt:151:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/MetasoSearchService.kt:76:44 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/MetasoSearchService.kt:97:46 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/PerplexitySearchService.kt:117:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/RikkaHubSearchService.kt:85:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/SearXNGService.kt:114:46 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/ZhipuSearchService.kt:75:44 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/ZhipuSearchService.kt:95:38 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
+
+> Task :videogen:bundleLibRuntimeToDirDebug
+> Task :search:compileDebugJavaWithJavac NO-SOURCE
+> Task :search:bundleLibCompileToJarDebug
+> Task :search:processDebugJavaRes
+> Task :search:bundleLibRuntimeToDirDebug
+> Task :common:bundleLibRuntimeToDirDebug
+> Task :material3:bundleLibRuntimeToDirDebug
+> Task :app:mergeExtDexDebug
+> Task :workspace:bundleLibRuntimeToDirDebug
+> Task :oauth:bundleLibRuntimeToDirDebug
+> Task :ai:mapDebugSourceSetPaths
+> Task :ai:compileDebugLibraryResources
+> Task :ai:writeDebugAarMetadata
+> Task :common:writeDebugAarMetadata
+> Task :document:writeDebugAarMetadata
+> Task :highlight:writeDebugAarMetadata
+> Task :material3:writeDebugAarMetadata
+> Task :oauth:writeDebugAarMetadata
+> Task :search:writeDebugAarMetadata
+> Task :speech:writeDebugAarMetadata
+> Task :videogen:writeDebugAarMetadata
+> Task :web:writeDebugAarMetadata
+> Task :workspace:writeDebugAarMetadata
+> Task :app:checkDebugAarMetadata
+> Task :app:compileDebugNavigationResources
+> Task :app:mergeLibDexDebug
+> Task :app:createDebugCompatibleScreenManifests
+> Task :ai:extractDeepLinksDebug
+> Task :ai:processDebugManifest
+> Task :app:extractDeepLinksDebug
+> Task :common:extractDeepLinksDebug
+> Task :common:processDebugManifest
+> Task :document:extractDeepLinksDebug
+> Task :document:processDebugManifest
+> Task :highlight:extractDeepLinksDebug
+> Task :highlight:processDebugManifest
+> Task :material3:extractDeepLinksDebug
+> Task :material3:processDebugManifest
+> Task :oauth:extractDeepLinksDebug
+> Task :oauth:processDebugManifest
+> Task :search:extractDeepLinksDebug
+> Task :search:processDebugManifest
+> Task :speech:extractDeepLinksDebug
+> Task :speech:processDebugManifest
+> Task :videogen:extractDeepLinksDebug
+> Task :videogen:processDebugManifest
+> Task :web:extractDeepLinksDebug
+> Task :web:processDebugManifest
+> Task :workspace:extractDeepLinksDebug
+> Task :workspace:processDebugManifest
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :common:mapDebugSourceSetPaths
+> Task :common:compileDebugLibraryResources
+> Task :document:mapDebugSourceSetPaths
+> Task :document:compileDebugLibraryResources
+> Task :highlight:mapDebugSourceSetPaths
+> Task :highlight:compileDebugLibraryResources
+> Task :material3:mapDebugSourceSetPaths
+> Task :material3:compileDebugLibraryResources
+> Task :oauth:mapDebugSourceSetPaths
+> Task :oauth:compileDebugLibraryResources
+> Task :search:mapDebugSourceSetPaths
+> Task :search:compileDebugLibraryResources
+> Task :speech:mapDebugSourceSetPaths
+> Task :speech:compileDebugLibraryResources
+> Task :videogen:mapDebugSourceSetPaths
+> Task :videogen:compileDebugLibraryResources
+> Task :web:mapDebugSourceSetPaths
+> Task :web:compileDebugLibraryResources
+> Task :workspace:mapDebugSourceSetPaths
+> Task :workspace:compileDebugLibraryResources
+> Task :ai:mergeDebugJniLibFolders
+> Task :ai:mergeDebugNativeLibs NO-SOURCE
+> Task :ai:copyDebugJniLibsProjectOnly
+> Task :app:mergeDebugJniLibFolders
+> Task :common:mergeDebugJniLibFolders
+> Task :common:mergeDebugNativeLibs NO-SOURCE
+> Task :common:copyDebugJniLibsProjectOnly
+> Task :document:mergeDebugJniLibFolders
+> Task :document:mergeDebugNativeLibs
+> Task :document:copyDebugJniLibsProjectOnly
+> Task :highlight:mergeDebugJniLibFolders
+> Task :highlight:mergeDebugNativeLibs NO-SOURCE
+> Task :highlight:copyDebugJniLibsProjectOnly
+> Task :material3:mergeDebugJniLibFolders
+> Task :material3:mergeDebugNativeLibs NO-SOURCE
+> Task :material3:copyDebugJniLibsProjectOnly
+> Task :oauth:mergeDebugJniLibFolders
+> Task :oauth:mergeDebugNativeLibs NO-SOURCE
+> Task :oauth:copyDebugJniLibsProjectOnly
+> Task :search:mergeDebugJniLibFolders
+> Task :search:mergeDebugNativeLibs NO-SOURCE
+> Task :search:copyDebugJniLibsProjectOnly
+> Task :speech:mergeDebugJniLibFolders
+> Task :speech:mergeDebugNativeLibs NO-SOURCE
+> Task :speech:copyDebugJniLibsProjectOnly
+> Task :videogen:mergeDebugJniLibFolders
+> Task :videogen:mergeDebugNativeLibs NO-SOURCE
+> Task :videogen:copyDebugJniLibsProjectOnly
+> Task :web:mergeDebugJniLibFolders
+> Task :web:mergeDebugNativeLibs NO-SOURCE
+> Task :web:copyDebugJniLibsProjectOnly
+
+> Task :workspace:configureCMakeDebug[arm64-v8a]
+Checking the license for package CMake 3.22.1 in /usr/local/lib/android/sdk/licenses
+License for package CMake 3.22.1 accepted.
+Preparing "Install CMake 3.22.1 v.3.22.1".
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
+
+> Task :app:mergeDebugResources
+
+> Task :workspace:configureCMakeDebug[arm64-v8a]
+"Install CMake 3.22.1 v.3.22.1" finished.
+
+> Task :app:kspDebugKotlin
+> Task :app:processDebugResources
+> Task :workspace:configureCMakeDebug[x86]
+> Task :workspace:configureCMakeDebug[armeabi-v7a]
+> Task :workspace:buildCMakeDebug[x86]
+> Task :workspace:buildCMakeDebug[armeabi-v7a]
+> Task :workspace:buildCMakeDebug[arm64-v8a]
+> Task :workspace:mergeDebugJniLibFolders
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :workspace:configureCMakeDebug[x86_64]
+> Task :app:validateSigningDebug
+> Task :workspace:buildCMakeDebug[x86_64]
+> Task :workspace:mergeDebugNativeLibs
+> Task :workspace:copyDebugJniLibsProjectOnly
+> Task :app:mergeDebugNativeLibs
+> Task :app:stripDebugDebugSymbols
+
+> Task :app:compileDebugKotlin FAILED
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt:23:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt:118:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
+
+[Incubating] Problems report is available at: file:///home/runner/work/rikkahub/rikkahub/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:compileDebugKotlin' (registered by plugin 'com.android.internal.application').
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:135)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:288)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:133)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:121)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.DefaultNodeExecutor.executeLocalTaskNode(DefaultNodeExecutor.java:55)
+	at org.gradle.execution.plan.DefaultNodeExecutor.execute(DefaultNodeExecutor.java:34)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:355)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:343)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:339)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:339)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:328)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:146)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:131)
+	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$11(DefaultBuildLifecycleController.java:323)
+	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:304)
+	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$9(StateTransitionController.java:215)
+	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:45)
+	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:215)
+	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:314)
+	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:300)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:298)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:294)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:286)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:130)
+	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:182)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:199)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
+	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:199)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:278)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:132)
+	at org.gradle.internal.Factories$1.create(Factories.java:30)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$withoutLocksBlocking$3(DefaultWorkerLeaseService.java:410)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withoutLocksBlocking(DefaultWorkerLeaseService.java:405)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.blocking(DefaultWorkerLeaseService.java:255)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.blocking(DefaultWorkerLeaseService.java:237)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$3(DefaultAsyncWorkTracker.java:128)
+	at org.gradle.internal.Factories$1.create(Factories.java:30)
+	at org.gradle.internal.resources.AbstractResourceLockRegistry.whileDisallowingLockChanges(AbstractResourceLockRegistry.java:50)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.whileDisallowingProjectLockChanges(DefaultWorkerLeaseService.java:260)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:127)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForItemsAndGatherFailures(DefaultAsyncWorkTracker.java:93)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForAll(DefaultAsyncWorkTracker.java:79)
+	at org.gradle.internal.work.DefaultAsyncWorkTracker.waitForCompletion(DefaultAsyncWorkTracker.java:67)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:267)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:244)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:227)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:210)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:176)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:167)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:47)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:137)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:134)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:134)
+	at org.gradle.internal.execution.steps.ExecuteStep$Mutable.execute(ExecuteStep.java:80)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:51)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:29)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.executeMutable(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.executeMutable(RemovePreviousOutputsStep.java:39)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:42)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:24)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.executeMutable(ResolveInputChangesStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.executeMutable(ResolveInputChangesStep.java:28)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:76)
+	at org.gradle.internal.Either$Right.fold(Either.java:176)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:74)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:49)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.executeMutable(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.executeMutable(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveMutableCachingStateStep.executeDelegate(ResolveMutableCachingStateStep.java:70)
+	at org.gradle.internal.execution.steps.ResolveMutableCachingStateStep.executeDelegate(ResolveMutableCachingStateStep.java:32)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:69)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:37)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.executeMutable(ResolveChangesStep.java:63)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.executeMutable(ResolveChangesStep.java:34)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.executeDelegate(ValidateStep.java:79)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.executeDelegate(ValidateStep.java:65)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:105)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.execute(ValidateStep.java:65)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.executeMutable(CaptureMutableStateBeforeExecutionStep.java:86)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.execute(CaptureMutableStateBeforeExecutionStep.java:65)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.execute(CaptureMutableStateBeforeExecutionStep.java:45)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeWithNonEmptySources(SkipEmptyMutableWorkStep.java:210)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeMutable(SkipEmptyMutableWorkStep.java:90)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeMutable(SkipEmptyMutableWorkStep.java:53)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.executeMutable(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.executeMutable(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.executeMutable(HandleStaleOutputsStep.java:77)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.executeMutable(HandleStaleOutputsStep.java:43)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$executeMutable$0(AssignMutableWorkspaceStep.java:34)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:305)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.executeMutable(AssignMutableWorkspaceStep.java:30)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.executeMutable(AssignMutableWorkspaceStep.java:21)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:56)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
+	... 61 more
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:320)
+	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:64)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:61)
+	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:102)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:61)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:58)
+	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:191)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$500(DefaultConditionalExecutionQueue.java:112)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:168)
+	at org.gradle.internal.Factories$1.create(Factories.java:30)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:300)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:298)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:294)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:286)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:130)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:135)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:163)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:125)
+	... 2 more
+
+
+BUILD FAILED in 3m 2s
+262 actionable tasks: 262 executed
+Configuration cache entry stored.

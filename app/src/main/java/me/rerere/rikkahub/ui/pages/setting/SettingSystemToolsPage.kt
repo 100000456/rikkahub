@@ -96,10 +96,6 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                 KeepAliveSection()
             }
 
-            item("proactiveMessage") {
-                ProactiveMessageSection()
-            }
-
             item("systemTools") {
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),

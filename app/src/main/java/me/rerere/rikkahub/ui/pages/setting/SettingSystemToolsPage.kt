@@ -96,6 +96,10 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                 KeepAliveSection()
             }
 
+            item("appLock") {
+                AppLockSection()
+            }
+
             item("systemTools") {
                 CardGroup(
                     modifier = Modifier.padding(horizontal = 8.dp),

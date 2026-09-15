@@ -245,6 +245,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         supportingContent = { Text(stringResource(R.string.setting_page_web_server_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_web_server)) },
                     )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingSystemTools) },
+                        leadingContent = { Icon(HugeIcons.Settings03, null) },
+                        supportingContent = { Text("通知、短信、相机、音乐这些，开一次全局生效") },
+                        headlineContent = { Text("系统工具") },
+                    )
                 }
             }
 

@@ -109,6 +109,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNetworkPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
+import me.rerere.rikkahub.ui.pages.setting.SettingSystemToolsPage
 import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
@@ -474,6 +475,10 @@ class RouteActivity : ComponentActivity() {
                                 SettingWebPage()
                             }
 
+                            entry<Screen.SettingSystemTools> {
+                                SettingSystemToolsPage()
+                            }
+
                             entry<Screen.Debug> {
                                 DebugPage()
                             }
@@ -692,6 +697,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingWeb : Screen
+
+    @Serializable
+    data object SettingSystemTools : Screen
 
     @Serializable
     data object Debug : Screen

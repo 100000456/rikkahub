@@ -1,0 +1,46 @@
+=== failure at Tue Sep 15 09:42:32 UTC 2026 ===
+--- java ---
+openjdk version "21.0.12.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)
+--- node pnpm ---
+v22.23.2
+/home/runner/work/_temp/6cff9559-92be-48bf-8eb2-6fe7f2f39f5f.sh: line 4: pnpm: command not found
+--- platforms ---
+android-34
+android-34-ext10
+android-34-ext11
+android-34-ext12
+android-34-ext8
+android-35
+android-35-ext14
+android-35-ext15
+android-36
+android-36-ext18
+android-36-ext19
+android-36.1
+android-37.0
+android-37.1
+android-37.2
+android-37.2-beta1
+android-37.2-beta2
+android-37.2-beta3
+--- build-tools ---
+34.0.0
+35.0.0
+35.0.1
+36.0.0
+36.1.0
+37.0.0
+--- wrapper ---
+#Sat Jan 17 11:26:11 CST 2026
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+--- sdkmanager tail ---
+--- pnpm tail ---
+--- gradle tail ---

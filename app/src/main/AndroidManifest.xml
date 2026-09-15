@@ -81,6 +81,12 @@
       android:label="@string/title_activity_safe_mode"
       android:theme="@style/Theme.Rikkahub" />
     <activity
+      android:name=".ui.activity.AppLockUnlockActivity"
+      android:excludeFromRecents="true"
+      android:exported="false"
+      android:launchMode="singleTop"
+      android:theme="@style/Theme.Rikkahub" />
+    <activity
       android:name=".RouteActivity"
       android:configChanges="keyboardHidden|orientation|screenSize"
       android:exported="true"
@@ -182,6 +188,19 @@
       <property
         android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
         android:value="long poll wechat messages for the assistant" />
+    </service>
+
+    <service
+      android:name=".data.service.AppLockGuardService"
+      android:exported="false"
+      android:label="@string/app_name"
+      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+      <intent-filter>
+        <action android:name="android.accessibilityservice.AccessibilityService" />
+      </intent-filter>
+      <meta-data
+        android:name="android.accessibilityservice"
+        android:resource="@xml/app_lock_accessibility" />
     </service>
 
     <service

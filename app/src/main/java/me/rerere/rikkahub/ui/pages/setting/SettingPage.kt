@@ -251,6 +251,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         supportingContent = { Text("通知、短信、相机、音乐这些，开一次全局生效") },
                         headlineContent = { Text("系统工具") },
                     )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingProactiveMessage) },
+                        leadingContent = { Icon(HugeIcons.WavingHand01, null) },
+                        supportingContent = { Text("到点自己冒出来找你，几个点你定") },
+                        headlineContent = { Text("主动消息") },
+                    )
                 }
             }
 

@@ -310,6 +310,48 @@ private fun AssistantLocalToolContent(
                     )
                 }
             )
+            item(
+                headlineContent = {
+                    Text("音乐")
+                },
+                supportingContent = {
+                    Text("看现在在放什么，也能切歌、暂停、拖进度")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.Music),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Music, it) }
+                    )
+                }
+            )
+            item(
+                headlineContent = {
+                    Text("相机")
+                },
+                supportingContent = {
+                    Text("让我拍一张，看看你眼前是什么")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.Camera),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.Camera, it) }
+                    )
+                }
+            )
+            item(
+                headlineContent = {
+                    Text("读通知")
+                },
+                supportingContent = {
+                    Text("读通知栏里的消息，要先给通知使用权")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.NotificationsReader),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.NotificationsReader, it) }
+                    )
+                }
+            )
         }
     }
 }

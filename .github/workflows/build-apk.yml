@@ -1,0 +1,123 @@
+name: Build Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK platform
+        run: |
+          sdkmanager "platforms;android-37" > /dev/null 2>&1 || echo "platform 37 preinstalled"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: pnpm install --frozen-lockfile
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-debug-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          mkdir -p build-logs
+          ./gradlew :app:assembleDebug --stacktrace > build-logs/retry.log 2>&1 || true
+          tail -n 400 build-logs/retry.log > build-logs/error-tail.txt || true
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build-logs/
+
+      - name: Publish debug APK
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-build
+          name: Debug Build
+          prerelease: true
+          body: |
+            自用调试包，来源 commit ${{ github.sha }}
+
+            基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
+          files: app/build/outputs/apk/debug/*.apk

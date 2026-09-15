@@ -28,6 +28,10 @@ class LocalTools(
 
     val calendarCreateTool by lazy { buildCalendarCreateTool(context) }
 
+    val alarmTool by lazy { buildAlarmTool(context) }
+
+    val timerTool by lazy { buildTimerTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -51,6 +55,10 @@ class LocalTools(
         if (options.contains(LocalToolOption.Calendar)) {
             tools.add(calendarQueryTool)
             tools.add(calendarCreateTool)
+        }
+        if (options.contains(LocalToolOption.Alarm)) {
+            tools.add(alarmTool)
+            tools.add(timerTool)
         }
         return tools
     }

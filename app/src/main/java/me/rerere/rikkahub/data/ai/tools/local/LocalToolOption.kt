@@ -40,4 +40,20 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("system_tools")
     data object SystemTools : LocalToolOption()
+
+    @Serializable
+    @SerialName("sms")
+    data object Sms : LocalToolOption()
+
+    @Serializable
+    @SerialName("notification")
+    data object Notification : LocalToolOption()
+
+    @Serializable
+    @SerialName("media_scanner")
+    data object MediaScanner : LocalToolOption()
+
+    @Serializable
+    @SerialName("share")
+    data object Share : LocalToolOption()
 }

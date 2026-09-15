@@ -52,6 +52,14 @@ class LocalTools(
 
     val wakeScreenTool by lazy { buildWakeScreenTool(context) }
 
+    val smsTool by lazy { buildSmsTool(context) }
+
+    val notificationPostTool by lazy { buildNotificationPostTool(context) }
+
+    val mediaScannerTool by lazy { buildMediaScannerTool(context) }
+
+    val shareTool by lazy { buildShareTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -91,6 +99,18 @@ class LocalTools(
             tools.add(storageInfoTool)
             tools.add(toastTool)
             tools.add(wakeScreenTool)
+        }
+        if (options.contains(LocalToolOption.Sms)) {
+            tools.add(smsTool)
+        }
+        if (options.contains(LocalToolOption.Notification)) {
+            tools.add(notificationPostTool)
+        }
+        if (options.contains(LocalToolOption.MediaScanner)) {
+            tools.add(mediaScannerTool)
+        }
+        if (options.contains(LocalToolOption.Share)) {
+            tools.add(shareTool)
         }
         return tools
     }

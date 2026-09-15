@@ -154,3 +154,5 @@ jobs:
 
             基于 RikkaHub 源码，正式签名，可与橘瓣共存。
           files: app/build/outputs/apk/release/*.apk
+
+# rebuild marker: 2026-09-15T19:05+08:00 alarm+timer port

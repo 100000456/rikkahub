@@ -1,5 +1,6 @@
 package me.rerere.rikkahub.service
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -18,14 +19,25 @@ import me.rerere.rikkahub.RouteActivity
  *
  * - START_STICKY：被系统收走后尽量自己爬起来
  * - stopWithTask=false（写在 Manifest 里）：从最近任务划掉也不带走它
- * - 一条最低优先级的常驻通知，不响不震不亮
+ * - 一条不响不震的常驻通知，系统想清后台时先绕开它
  * - 划掉任务时发一条广播，让接收器再拉一次，兼容国产 ROM
+ *
+ * 2026-09-16 修：原来这条通知走 IMPORTANCE_MIN，
+ * 系统会把它塞进折叠的静默区甚至彻底不显示，看起来就像「通知栏里什么都没有」。
+ * 渠道的重要性建出来之后应用就改不动了，只能换个新 id 重新建，
+ * 新渠道用 DEFAULT + 全静音：看得见，但不出声、不打扰。
  */
 class KeepAliveService : Service() {
 
     companion object {
         private const val TAG = "KeepAliveService"
-        private const val CHANNEL_ID = "keep_alive_channel"
+
+        /** 当前使用的渠道，设置页要跳这个渠道的系统设置 */
+        const val CHANNEL_ID = "keep_alive_channel_v2"
+
+        /** 老渠道，建的时候是最低重要性，留着只会误导，建完新渠道顺手清掉 */
+        private const val LEGACY_CHANNEL_ID = "keep_alive_channel"
+
         private const val NOTIFICATION_ID = 30001
         const val ACTION_RESTART_KEEP_ALIVE = "me.rerere.rikkahub.RESTART_KEEP_ALIVE"
 
@@ -81,16 +93,19 @@ class KeepAliveService : Service() {
             .setContentTitle("兔子在后台待着")
             .setContentText("到点好跟你说话，别把我划掉")
             .setSmallIcon(android.R.drawable.stat_notify_sync)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setContentIntent(pendingIntent)
             .setShowWhen(false)
             .setSilent(true)
             .build()
 
         // 用 specialUse 而不是 dataSync：dataSync 在 Android 14+ 有 24 小时内 6 小时的
-        // 累计配额，配额用完 startForeground 会直接抛异常。这里再兜一层，出问题就退场，
-        // 别把整个 App 带崩。
+        // 累计配额，配额用完 startForeground 会直接抛异常。带类型失败就退一步不带类型，
+        // 实在挂不上再退场，别把整个 App 带崩。
+        var started = false
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(
@@ -101,8 +116,14 @@ class KeepAliveService : Service() {
             } else {
                 startForeground(NOTIFICATION_ID, notification)
             }
+            started = true
         } catch (e: Exception) {
-            Log.e(TAG, "startForeground 失败，停止保活服务避免崩溃", e)
+            Log.e(TAG, "带头类型的前台通知没挂上，退一步再试", e)
+            started = runCatching { startForeground(NOTIFICATION_ID, notification) }.isSuccess
+        }
+
+        if (!started) {
+            Log.e(TAG, "前台通知始终挂不上，停掉保活服务，别把 App 带崩")
             running = false
             stopSelf()
             return START_NOT_STICKY
@@ -131,19 +152,23 @@ class KeepAliveService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "后台保活",
-                NotificationManager.IMPORTANCE_MIN
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "让兔子待在后台，到点能准时冒头"
                 setSound(null, null)
                 enableVibration(false)
                 enableLights(false)
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_SECRET
             }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
+            // 老渠道是 IMPORTANCE_MIN 建的，系统那边已经把它归到静默里，救不回来，删掉省心
+            runCatching { manager.deleteNotificationChannel(LEGACY_CHANNEL_ID) }
+                .onFailure { Log.w(TAG, "删老通知渠道失败", it) }
         }
     }
 }

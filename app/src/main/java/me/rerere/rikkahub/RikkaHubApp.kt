@@ -33,6 +33,7 @@ import me.rerere.rikkahub.di.viewModelModule
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.KeepAliveStore
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.SupabaseStore
 import me.rerere.rikkahub.data.sync.BackupManager
 import me.rerere.rikkahub.data.sync.RestoreFailedException
 import me.rerere.rikkahub.service.KeepAliveService
@@ -41,6 +42,8 @@ import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.DatabaseUtil
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.data.service.DeviceEventTrackingService
+import me.rerere.rikkahub.data.service.SupabaseSyncService
 import me.rerere.workspace.WorkspaceManager
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
@@ -107,6 +110,9 @@ class RikkaHubApp : Application() {
         // Bring back the keep-alive notification if she left it on
         startKeepAliveIfEnabled()
 
+        // 把云端同步和亮屏事件监听接回来
+        resumeDeviceSync()
+
         // Increment launch count
         incrementLaunchCount()
 
@@ -121,6 +127,21 @@ class RikkaHubApp : Application() {
                 }
             }.onFailure {
                 Log.e(TAG, "startKeepAliveIfEnabled failed", it)
+            }
+        }
+    }
+
+    private fun resumeDeviceSync() {
+        get<AppScope>().launch(Dispatchers.IO) {
+            runCatching {
+                if (SupabaseStore.isConfigured(this@RikkaHubApp)) {
+                    SupabaseSyncService.scheduleNext(this@RikkaHubApp)
+                    if (SupabaseStore.isEventTrackingEnabled(this@RikkaHubApp)) {
+                        DeviceEventTrackingService.startIfEnabled(this@RikkaHubApp)
+                    }
+                }
+            }.onFailure {
+                Log.e(TAG, "resumeDeviceSync failed", it)
             }
         }
     }

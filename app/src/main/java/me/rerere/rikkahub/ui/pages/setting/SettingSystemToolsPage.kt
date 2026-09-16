@@ -98,12 +98,16 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                 KeepAliveSection()
             }
 
-            item("appLock") {
-                AppLockSection()
+            item("supabase") {
+                SupabaseSection()
             }
 
             item("amapKey") {
                 AmapKeySection()
+            }
+
+            item("appLock") {
+                AppLockSection()
             }
 
             item("systemTools") {

@@ -18,6 +18,12 @@ data class ProactiveMessageSetting(
     val useFixedTimes: Boolean = false,
     /** 固定时间点，格式 HH:mm，按字符串排序即时间顺序 */
     val fixedTimes: List<String> = listOf("12:30", "21:00"),
+    /** 激进模式：盯着设备动静，一有变化就让我决定要不要主动开口 */
+    val aggressiveModeEnabled: Boolean = false,
+    /** 收到动静后等多久再动手，攒一攒一起看 */
+    val aggressiveDebounceSeconds: Int = 30,
+    /** 两次之间至少隔多久，免得我太碎嘴 */
+    val aggressiveMinIntervalSeconds: Int = 300,
 )
 
 /**

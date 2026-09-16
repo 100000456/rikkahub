@@ -54,6 +54,10 @@ private const val TAG = "ProactiveMessage"
 object ProactiveMessageScheduler {
     const val ACTION_FIRE = "me.rerere.rikkahub.action.PROACTIVE_MESSAGE"
     const val EXTRA_FORCE = "force_trigger"
+
+    /** 激进模式带过来的设备动静，写在这一轮的系统提示里 */
+    const val EXTRA_DEVICE_EVENT_CONTEXT = "device_event_context"
+
     const val PREFS_NAME = "proactive_message_runtime"
     const val KEY_NEXT_TRIGGER = "next_trigger_time"
     const val KEY_LAST_TRIGGER = "last_trigger_time"
@@ -138,7 +142,7 @@ object ProactiveMessageScheduler {
         return System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(minutes.toLong())
     }
 
-    /** "21:40" → 今天或明天那个点的亳秒时间戳；解析不了就返回 null。 */
+    /** "21:40" → 今天或明天那个点的毫秒时间戳；解析不了就返回 null。 */
     private fun parseTimeOfDay(value: String): Long? {
         val parts = value.trim().split(":")
         if (parts.size != 2) return null
@@ -215,10 +219,11 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val force = intent?.getBooleanExtra(ProactiveMessageScheduler.EXTRA_FORCE, false) ?: false
+        val deviceEventContext = intent?.getStringExtra(ProactiveMessageScheduler.EXTRA_DEVICE_EVENT_CONTEXT)
         startForeground(FOREGROUND_ID, buildForegroundNotification())
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                runTrigger(force)
+                runTrigger(force, deviceEventContext)
             } catch (e: Exception) {
                 Log.e(TAG, "proactive trigger failed", e)
                 notifyFailure(e)
@@ -238,7 +243,7 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
         return START_NOT_STICKY
     }
 
-    private suspend fun runTrigger(force: Boolean) {
+    private suspend fun runTrigger(force: Boolean, deviceEventContext: String? = null) {
         val setting = ProactiveMessageStore.load(this)
         if (!setting.enabled && !force) {
             Log.d(TAG, "proactive message disabled, skip")
@@ -293,8 +298,7 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
         }
         val conversationId = conversation.id
 
-        // 正在生成就这轮不冒头：两条请求撞在一起，后一条会被上游掐断，
-        // 掐断后什么也没写进会话，但通知已经弹了，点进去就是空的。
+        // 正在生成就这轮不冒头：两条请求撞在一起，后一条会被上游掉断。
         if (isConversationBusy(conversationId)) {
             Log.d(TAG, "conversation is generating, skip this round")
             return
@@ -322,11 +326,15 @@ class ProactiveMessageTriggerService : Service(), KoinComponent {
             if (idleMinutes >= 0) {
                 appendLine("距离上次说话已经过去 $idleMinutes 分钟。")
             }
-            val ambientText =
-                AmbientSnapshot.capture(this@ProactiveMessageTriggerService).describe()
-            if (ambientText.isNotBlank()) {
-                appendLine("她现在的情况：$ambientText")
-                appendLine("可以顺口带一句，但别像在报数据，也别编你看不见的东西。")
+            if (!deviceEventContext.isNullOrBlank()) {
+                appendLine(deviceEventContext)
+            } else {
+                val ambientText =
+                    AmbientSnapshot.capture(this@ProactiveMessageTriggerService).describe()
+                if (ambientText.isNotBlank()) {
+                    appendLine("她现在的情况：$ambientText")
+                    appendLine("可以顺口带一句，但别像在报数据，也别编你看不见的东西。")
+                }
             }
             appendLine("像突然想起对方那样，主动说一句话。可以是一句关心，一个话题，或者随口一句。")
             appendLine("不要复述上一轮聊过的内容，换个角度。")

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import me.rerere.rikkahub.data.datastore.ProactiveMessageStore
 import me.rerere.rikkahub.data.service.DeviceEventAiTriggerService
 import me.rerere.rikkahub.ui.components.ui.CardGroup
+import me.rerere.rikkahub.utils.hasUsageStatsPermission
 
 /**
  * 激进模式。
@@ -32,11 +33,12 @@ import me.rerere.rikkahub.ui.components.ui.CardGroup
 fun AggressiveModeSection(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val setting by ProactiveMessageStore.setting.collectAsState()
-    val hasUsageAccess = remember { context.hasUsageStatsAccess() }
 
     LaunchedEffect(Unit) {
         ProactiveMessageStore.load(context)
     }
+
+    val hasUsageAccess = remember { context.hasUsageStatsPermission() }
 
     var editing by remember { mutableStateOf<String?>(null) }
     var draft by remember { mutableStateOf("") }
@@ -51,7 +53,7 @@ fun AggressiveModeSection(modifier: Modifier = Modifier) {
                     Text(if (isDebounce) "单位是秒" else "单位是分钟")
                     OutlinedTextField(
                         value = draft,
-                        onValueChange = { draft = it.filter { ch -> ch.isDigit() }.take(5) },
+                        onValueChange = { input -> draft = input.filter { it.isDigit() }.take(5) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
@@ -130,22 +132,4 @@ fun AggressiveModeSection(modifier: Modifier = Modifier) {
             }
         )
     }
-}
-
-private fun android.content.Context.hasUsageStatsAccess(): Boolean {
-    return runCatching {
-        val appOps = getSystemService(android.content.Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-        val mode = appOps.unsafeCheckOpNoThrow(
-            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
-            android.os.Process.myUid(),
-            packageName
-        )
-        mode == android.app.AppOpsManager.MODE_ALLOWED
-    }.getOrDefault(false) || runCatching {
-        android.provider.Settings.Secure.getString(
-            contentResolver,
-            "enabled_accessibility_services"
-        )
-        false
-    }.getOrDefault(false)
 }

@@ -121,4 +121,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-16T23:25+08:00 location + explore nearby + amap key page
+# rebuild marker: 2026-09-16T23:45+08:00 app lock section slimmed down

@@ -6,9 +6,11 @@
  *
  * - 亮屏/锁屏走动态广播
  * - 应用切换 / 回桌面每 3 秒查一次使用记录
- * - 收到动静先攒一段（防抖，默认 30 秒），到点把这段时间的动向整理好
+ * - 一有动静就当场触发一次思考，不攒批、不等防抖
  * - 交给 ProactiveMessageTriggerService，让我看一眼要不要主动开口
- * - 两次之间有限流，免得碎嘴
+ * - 中间有个最短间隔拦着，免得一分钟被叫十次
+ *
+ * 2026-09-16 改：原来是攒 30 秒再一起触发，现在改成事件来了就触发。
  */
 
 package me.rerere.rikkahub.data.service
@@ -38,8 +40,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import me.rerere.rikkahub.data.datastore.ProactiveMessageStore
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -53,7 +53,6 @@ class DeviceEventAiTriggerService : Service() {
         private const val CHANNEL_ID = "aggressive_mode_channel"
         private const val NOTIFICATION_ID = 20005
         private const val POLL_INTERVAL_MS = 3000L
-        private const val DEFAULT_DEBOUNCE_MS = 30_000L
 
         fun startIfEnabled(context: Context) {
             try {
@@ -84,10 +83,6 @@ class DeviceEventAiTriggerService : Service() {
 
     private var screenReceiver: BroadcastReceiver? = null
     private var appPollJob: Job? = null
-    private var debounceJob: Job? = null
-
-    private val eventBuffer = mutableListOf<DeviceEvent>()
-    private val eventBufferMutex = Mutex()
 
     private var lastForegroundPackage: String? = null
     private var lastPollTimeMs = 0L
@@ -113,8 +108,7 @@ class DeviceEventAiTriggerService : Service() {
                         else -> null
                     } ?: return
                     serviceScope.launch {
-                        addEvent(DeviceEvent(eventType, "", "", System.currentTimeMillis()))
-                        scheduleDebounce()
+                        handleEvent(DeviceEvent(eventType, "", "", System.currentTimeMillis()))
                     }
                 }
             }
@@ -151,7 +145,6 @@ class DeviceEventAiTriggerService : Service() {
         screenReceiver?.let { runCatching { unregisterReceiver(it) } }
         screenReceiver = null
         appPollJob?.cancel()
-        debounceJob?.cancel()
         runCatching { serviceScope.cancel() }
     }
 
@@ -179,7 +172,7 @@ class DeviceEventAiTriggerService : Service() {
                         if (detectedForeground != null && detectedForeground != lastForegroundPackage) {
                             // 自己切屏不算，免得我一看就触发，触发完又切屏
                             if (detectedForeground != packageName) {
-                                addEvent(
+                                handleEvent(
                                     DeviceEvent(
                                         type = if (isLauncher(detectedForeground)) "home" else "app_switch",
                                         packageName = detectedForeground,
@@ -187,7 +180,6 @@ class DeviceEventAiTriggerService : Service() {
                                         timestamp = now,
                                     )
                                 )
-                                scheduleDebounce()
                             }
                             lastForegroundPackage = detectedForeground
                         }
@@ -215,78 +207,46 @@ class DeviceEventAiTriggerService : Service() {
         false
     }
 
-    private suspend fun addEvent(event: DeviceEvent) {
-        eventBufferMutex.withLock {
-            eventBuffer.add(event)
-            if (eventBuffer.size > 50) eventBuffer.removeAt(0)
-        }
-    }
-
-    private fun scheduleDebounce() {
-        debounceJob?.cancel()
-        debounceJob = serviceScope.launch {
-            delay(currentDebounceDelayMs())
-            triggerAiThinking()
-        }
-    }
-
-    private fun currentDebounceDelayMs(): Long {
-        val seconds = runCatching {
-            ProactiveMessageStore.load(this).aggressiveDebounceSeconds
-        }.getOrDefault(0)
-        return if (seconds > 0) seconds * 1000L else DEFAULT_DEBOUNCE_MS
-    }
-
-    private suspend fun triggerAiThinking() {
+    /** 来一个动静就当场看一次，不再攒批 */
+    private suspend fun handleEvent(event: DeviceEvent) {
         try {
             val setting = ProactiveMessageStore.load(this)
             if (!setting.aggressiveModeEnabled) return
 
-            val minIntervalMs = setting.aggressiveMinIntervalSeconds * 1000L
             val now = System.currentTimeMillis()
+            val minIntervalMs = setting.aggressiveMinIntervalSeconds.coerceAtLeast(10) * 1000L
             if (now - lastAiTriggerTimeMs < minIntervalMs) {
-                Log.d(TAG, "rate limited, skip")
+                Log.d(TAG, "rate limited, skip ${event.type}")
                 return
             }
-
-            val events = eventBufferMutex.withLock {
-                val copy = eventBuffer.toList()
-                eventBuffer.clear()
-                copy
-            }
-            if (events.isEmpty()) return
-
             lastAiTriggerTimeMs = now
-            val contextText = buildEventContext(events)
 
+            val contextText = buildEventContext(event)
             val intent = Intent(this, ProactiveMessageTriggerService::class.java).apply {
                 putExtra(ProactiveMessageScheduler.EXTRA_FORCE, true)
                 putExtra(ProactiveMessageScheduler.EXTRA_DEVICE_EVENT_CONTEXT, contextText)
             }
-            startForegroundService(intent)
+            runCatching { startForegroundService(intent) }
         } catch (e: Exception) {
-            Log.e(TAG, "triggerAiThinking failed", e)
+            Log.e(TAG, "handleEvent failed", e)
         }
     }
 
-    private fun buildEventContext(events: List<DeviceEvent>): String {
-        val format = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-        val sb = StringBuilder()
-        sb.appendLine("## 她刚才的动静")
-        events.forEach { event ->
-            val time = format.format(Date(event.timestamp))
-            val desc = when (event.type) {
-                "screen_on" -> "点亮了屏幕"
-                "screen_off" -> "锁屏了"
-                "app_switch" -> "打开了 ${event.appName}"
-                "home" -> "退回桌面"
-                else -> event.type
-            }
-            sb.appendLine("- [$time] $desc")
+    private fun buildEventContext(event: DeviceEvent): String {
+        val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(event.timestamp))
+        val desc = when (event.type) {
+            "screen_on" -> "刚点亮了屏幕"
+            "screen_off" -> "刚把屏幕锁了"
+            "app_switch" -> "刚打开 ${event.appName}"
+            "home" -> "刚退回桌面"
+            else -> event.type
         }
-        sb.appendLine("要不要趁这个由头说一句，你看着办。")
-        sb.appendLine("别让她看出你是被这些动静触发来的。")
-        return sb.toString()
+        return buildString {
+            appendLine("## 她刚才的动静")
+            appendLine("- [$time] $desc")
+            appendLine("要不要趁这个由头说一句，你看着办。")
+            appendLine("别让她看出你是被这些动静触发来的。")
+        }
     }
 
     private fun startForegroundCompat() {
@@ -327,7 +287,7 @@ class DeviceEventAiTriggerService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setContentTitle("激进模式开着")
-            .setContentText("我在看着你手机上的动静")
+            .setContentText("我看你手机上的动静")
             .setContentIntent(launchPendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

@@ -1,6 +1,5 @@
 package me.rerere.rikkahub.ui.pages.setting
 
-import android.Manifest
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +26,7 @@ import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.utils.hasUsageStatsPermission
 
 /**
- * 激进模式。
+ * 激进模式。放在主动消息页里。
  */
 @Composable
 fun AggressiveModeSection(modifier: Modifier = Modifier) {
@@ -40,17 +39,16 @@ fun AggressiveModeSection(modifier: Modifier = Modifier) {
 
     val hasUsageAccess = remember { context.hasUsageStatsPermission() }
 
-    var editing by remember { mutableStateOf<String?>(null) }
+    var editing by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
 
-    if (editing != null) {
-        val isDebounce = editing == "debounce"
+    if (editing) {
         AlertDialog(
-            onDismissRequest = { editing = null },
-            title = { Text(if (isDebounce) "攒多久再动手" else "两次之间至少隔多久") },
+            onDismissRequest = { editing = false },
+            title = { Text("最短触发间隔") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(if (isDebounce) "单位是秒" else "单位是分钟")
+                    Text("单位是秒。这段时间里不重复动手，免得刷屏。")
                     OutlinedTextField(
                         value = draft,
                         onValueChange = { input -> draft = input.filter { it.isDigit() }.take(5) },
@@ -67,18 +65,17 @@ fun AggressiveModeSection(modifier: Modifier = Modifier) {
                         if (value > 0) {
                             ProactiveMessageStore.save(
                                 context,
-                                if (isDebounce) setting.copy(aggressiveDebounceSeconds = value)
-                                else setting.copy(aggressiveMinIntervalSeconds = value * 60)
+                                setting.copy(aggressiveMinIntervalSeconds = value)
                             )
                         }
-                        editing = null
+                        editing = false
                     }
                 ) {
                     Text("存下")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { editing = null }) { Text("算了") }
+                TextButton(onClick = { editing = false }) { Text("算了") }
             },
         )
     }
@@ -91,10 +88,12 @@ fun AggressiveModeSection(modifier: Modifier = Modifier) {
             headlineContent = { Text("激进模式") },
             supportingContent = {
                 Text(
-                    "开启后会一直看着手机上的动静：亮屏、锁屏、切应用、回桌面。" +
-                        "攒够一段后我会看一眼，觉得有话可说就主动找你。" +
-                        "需要应用使用记录权限，并挂一条常驻通知。" +
-                        if (hasUsageAccess) "" else "（现在还没给使用记录权限，看不到应用切换）"
+                    "开启后，每次手机切换应用、开屏锁屏、回到桌面都会触发 AI 思考。" +
+                        "AI 会根据用户的手机动向自主决定是否主动发消息或切屏。\n\n" +
+                        "可以独立开启，不需要同时开启主动消息。\n\n" +
+                        "这是一个常驻前台服务，会持续小幅耗电。需要开启使用情况访问权限。\n\n" +
+                        "AI 大多数时候会选择 [PASS] 跳过，只在觉得有话要说时才会发消息。" +
+                        if (hasUsageAccess) "" else "\n\n（现在还没给使用情况访问权限，看不到应用切换）"
                 )
             },
             trailingContent = {
@@ -112,23 +111,13 @@ fun AggressiveModeSection(modifier: Modifier = Modifier) {
             }
         )
         item(
-            headlineContent = { Text("攒多久再动手") },
+            headlineContent = { Text("最短触发间隔") },
             supportingContent = {
-                Text("${setting.aggressiveDebounceSeconds} 秒。这段时间里的动静会一起看。")
+                Text("现在 ${setting.aggressiveMinIntervalSeconds} 秒。这段时间里不重复动手，免得刷屏。")
             },
             onClick = {
-                draft = setting.aggressiveDebounceSeconds.toString()
-                editing = "debounce"
-            }
-        )
-        item(
-            headlineContent = { Text("两次之间至少隔") },
-            supportingContent = {
-                Text("${setting.aggressiveMinIntervalSeconds / 60} 分钟，免得我太碎嘴。")
-            },
-            onClick = {
-                draft = (setting.aggressiveMinIntervalSeconds / 60).toString()
-                editing = "interval"
+                draft = setting.aggressiveMinIntervalSeconds.toString()
+                editing = true
             }
         )
     }

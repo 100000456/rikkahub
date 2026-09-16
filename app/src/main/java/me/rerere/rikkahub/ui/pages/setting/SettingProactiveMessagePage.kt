@@ -53,6 +53,10 @@ fun SettingProactiveMessagePage() {
                 ProactiveMessageSection()
             }
 
+            item("aggressiveMode") {
+                AggressiveModeSection()
+            }
+
             item("proactivePermissions") {
                 ProactivePermissionCards(context)
             }
@@ -90,8 +94,8 @@ private fun ProactivePermissionCards(context: Context) {
                 headlineContent = { Text("电池优化") },
                 supportingContent = {
                     Text(
-                        if (batteryOk) "已经在白名单里，后台不会把我掐掉"
-                        else "没进白名单，定时可能被系统掐掉，点这里去设"
+                        if (batteryOk) "已经在白名单里，后台不会把我掉"
+                        else "没进白名单，定时可能被系统掉，点这里去设"
                     )
                 },
                 onClick = if (batteryOk) {

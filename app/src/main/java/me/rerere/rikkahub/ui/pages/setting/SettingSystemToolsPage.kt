@@ -43,6 +43,8 @@ private val SYSTEM_TOOL_ROWS = listOf(
     SystemToolRow(LocalToolOption.AppControl, "应用控制", "帮你开应用、开网页，也能把你拉回聊天"),
     SystemToolRow(LocalToolOption.DeviceInfo, "设备信息", "看联网状态、SIM 卡信号、今天各应用用了多久"),
     SystemToolRow(LocalToolOption.Gadgetbridge, "手表健康", "读手环导出的库，看步数、心率、睡眠，要先给所有文件访问"),
+    SystemToolRow(LocalToolOption.Location, "位置", "看我人在哪，填了高德 key 还能把地址念出来"),
+    SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "找附近吃的、商店、医院，要填高德 key"),
 )
 
 @Composable
@@ -98,6 +100,10 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
 
             item("appLock") {
                 AppLockSection()
+            }
+
+            item("amapKey") {
+                AmapKeySection()
             }
 
             item("systemTools") {

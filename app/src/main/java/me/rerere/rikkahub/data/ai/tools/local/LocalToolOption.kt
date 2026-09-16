@@ -80,4 +80,12 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("gadgetbridge")
     data object Gadgetbridge : LocalToolOption()
+
+    @Serializable
+    @SerialName("location")
+    data object Location : LocalToolOption()
+
+    @Serializable
+    @SerialName("explore_nearby")
+    data object ExploreNearby : LocalToolOption()
 }

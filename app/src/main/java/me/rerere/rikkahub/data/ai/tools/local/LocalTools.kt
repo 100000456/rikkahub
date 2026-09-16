@@ -76,6 +76,10 @@ class LocalTools(
 
     val gadgetbridgeTool by lazy { buildGadgetbridgeTool(context) }
 
+    val locationTool by lazy { buildLocationTool(context) }
+
+    val exploreNearbyTool by lazy { buildExploreNearbyTool(context) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -147,6 +151,12 @@ class LocalTools(
         }
         if (options.contains(LocalToolOption.Gadgetbridge)) {
             tools.add(gadgetbridgeTool)
+        }
+        if (options.contains(LocalToolOption.Location)) {
+            tools.add(locationTool)
+        }
+        if (options.contains(LocalToolOption.ExploreNearby)) {
+            tools.add(exploreNearbyTool)
         }
         return tools
     }

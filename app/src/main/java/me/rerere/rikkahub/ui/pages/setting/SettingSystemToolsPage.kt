@@ -98,6 +98,10 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                 KeepAliveSection()
             }
 
+            item("aggressiveMode") {
+                AggressiveModeSection()
+            }
+
             item("supabase") {
                 SupabaseSection()
             }

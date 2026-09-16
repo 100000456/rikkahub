@@ -222,6 +222,15 @@
     </service>
 
     <service
+      android:name=".data.service.DeviceEventAiTriggerService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="watch device events to decide whether the assistant should speak up" />
+    </service>
+
+    <service
       android:name=".data.service.AppLockGuardService"
       android:exported="false"
       android:label="@string/app_name"

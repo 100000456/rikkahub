@@ -10,10 +10,17 @@ import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import me.rerere.rikkahub.data.datastore.KeepAliveStore
+import me.rerere.rikkahub.data.datastore.KeepAliveTexts
 import me.rerere.rikkahub.service.KeepAliveService
 import me.rerere.rikkahub.ui.components.ui.CardGroup
 
@@ -43,6 +51,10 @@ fun KeepAliveSection(modifier: Modifier = Modifier) {
     val notificationsOk = remember { canPostNotifications(context) }
     val channelImportance = remember { channelImportance(context) }
     var serviceRunning by remember { mutableStateOf(KeepAliveService.isRunning()) }
+
+    // 她自己写的那两行，先在本地敲，按了按钮才写盘
+    var draftTitle by remember(setting.notifyTitle) { mutableStateOf(setting.notifyTitle) }
+    var draftText by remember(setting.notifyText) { mutableStateOf(setting.notifyText) }
 
     // 服务是异步爬起来的，进页后盯着看一会儿，状态才准
     LaunchedEffect(setting.enabled) {
@@ -117,6 +129,82 @@ fun KeepAliveSection(modifier: Modifier = Modifier) {
             )
         }
 
+        CardGroup(
+            title = { Text("通知上写什么") },
+        ) {
+            item(
+                headlineContent = { Text("每次自己换一句") },
+                supportingContent = { Text("开着的话，那两行词会自己轮着变，不用管") },
+                trailingContent = {
+                    Switch(
+                        checked = setting.autoRotate,
+                        onCheckedChange = { rotate ->
+                            KeepAliveStore.setAutoRotate(context, rotate)
+                            if (setting.enabled) KeepAliveService.refresh(context)
+                        }
+                    )
+                }
+            )
+        }
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = "自己写",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                OutlinedTextField(
+                    value = draftTitle,
+                    onValueChange = { draftTitle = it },
+                    label = { Text("上面那行") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = draftText,
+                    onValueChange = { draftText = it },
+                    label = { Text("下面那行") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = "写不下就瞎写，反正只有你一个人看得见。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TextButton(
+                        onClick = {
+                            val pick = KeepAliveTexts.pick()
+                            draftTitle = pick.first
+                            draftText = pick.second
+                        }
+                    ) {
+                        Text("随便来一句")
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Button(
+                        onClick = {
+                            KeepAliveStore.setNotificationText(context, draftTitle, draftText)
+                            if (setting.enabled) KeepAliveService.refresh(context)
+                        }
+                    ) {
+                        Text("就这么写")
+                    }
+                }
+            }
+        }
+
         Text(
             text = "从最近任务划掉的那一刻，我会伸手再爬回来。国产系统管得严，想更稳就去电池设置里把我设成不受限制。",
             style = MaterialTheme.typography.bodySmall,
@@ -134,7 +222,7 @@ private fun canPostNotifications(context: Context): Boolean {
     ) == PackageManager.PERMISSION_GRANTED
 }
 
-/** 渠道的重要性，系统那边调低过的话应用自己看不到假象，读出来告诉她 */
+/** 渠道的重要性，被系统调低过的话她从通知栏里看不出来，读出来告诉她 */
 private fun channelImportance(context: Context): Int? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
     return runCatching {

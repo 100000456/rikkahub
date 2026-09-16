@@ -13,6 +13,9 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import me.rerere.rikkahub.RouteActivity
+import me.rerere.rikkahub.data.datastore.KeepAliveSetting
+import me.rerere.rikkahub.data.datastore.KeepAliveStore
+import me.rerere.rikkahub.data.datastore.KeepAliveTexts
 
 /**
  * 前台常驻服务，把 App 在后台的分量加重一点。
@@ -26,6 +29,8 @@ import me.rerere.rikkahub.RouteActivity
  * 系统会把它塞进折叠的静默区甚至彻底不显示，看起来就像「通知栏里什么都没有」。
  * 渠道的重要性建出来之后应用就改不动了，只能换个新 id 重新建，
  * 新渠道用 DEFAULT + 全静音：看得见，但不出声、不打扰。
+ *
+ * 2026-09-16 增：通知上那两行词可以她自己写，也可以开着让它自己轮着换。
  */
 class KeepAliveService : Service() {
 
@@ -40,6 +45,7 @@ class KeepAliveService : Service() {
 
         private const val NOTIFICATION_ID = 30001
         const val ACTION_RESTART_KEEP_ALIVE = "me.rerere.rikkahub.RESTART_KEEP_ALIVE"
+        private const val ACTION_REFRESH = "me.rerere.rikkahub.REFRESH_KEEP_ALIVE"
 
         // 高版本不让查正在跑的服务，自己记一个标志位
         @Volatile
@@ -69,6 +75,23 @@ class KeepAliveService : Service() {
             }
             running = false
         }
+
+        /** 改完词让它立刻把通知刷新一遍，不用等下次重启 */
+        fun refresh(context: Context) {
+            if (!running) return
+            try {
+                val intent = Intent(context, KeepAliveService::class.java).apply {
+                    action = ACTION_REFRESH
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "刷新保活通知失败", e)
+            }
+        }
     }
 
     override fun onCreate() {
@@ -89,9 +112,16 @@ class KeepAliveService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        val setting = runCatching { KeepAliveStore.load(this) }.getOrDefault(KeepAliveSetting())
+        val pick = if (setting.autoRotate) KeepAliveTexts.pick() else null
+        val title = pick?.first
+            ?: setting.notifyTitle.ifBlank { KeepAliveTexts.defaultTitle() }
+        val text = pick?.second
+            ?: setting.notifyText.ifBlank { KeepAliveTexts.defaultText() }
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("兔子在后台待着")
-            .setContentText("到点好跟你说话，别把我划掉")
+            .setContentTitle(title)
+            .setContentText(text)
             .setSmallIcon(android.R.drawable.stat_notify_sync)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)

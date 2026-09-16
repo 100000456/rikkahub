@@ -31,20 +31,20 @@ private data class SystemToolRow(
 )
 
 private val SYSTEM_TOOL_ROWS = listOf(
-    SystemToolRow(LocalToolOption.Alarm, "闹钟与计时器", "让我替你设闹钟、设倒计时"),
+    SystemToolRow(LocalToolOption.Alarm, "闹钟与计时器", "允许设置系统闹钟与倒计时，到点由系统提醒"),
     SystemToolRow(LocalToolOption.SystemTools, "系统工具", "手电筒、音量、亮度、震动、电量、存储、提示条、亮屏"),
-    SystemToolRow(LocalToolOption.Notification, "通知", "让我给你推一条系统通知"),
-    SystemToolRow(LocalToolOption.NotificationsReader, "读通知", "读通知栏里的消息，要先给通知使用权"),
-    SystemToolRow(LocalToolOption.Sms, "短信", "读手机收件箱里的短信"),
-    SystemToolRow(LocalToolOption.MediaScanner, "相册刷新", "把新存的文件扫进相册里"),
-    SystemToolRow(LocalToolOption.Share, "分享", "把内容丢进系统分享面板"),
-    SystemToolRow(LocalToolOption.Music, "音乐", "看现在在放什么，也能切歌、暂停、拖进度"),
-    SystemToolRow(LocalToolOption.Camera, "相机", "让我拍一张，看看你眼前是什么"),
-    SystemToolRow(LocalToolOption.AppControl, "应用控制", "帮你开应用、开网页，也能把你拉回聊天"),
-    SystemToolRow(LocalToolOption.DeviceInfo, "设备信息", "看联网状态、SIM 卡信号、今天各应用用了多久"),
-    SystemToolRow(LocalToolOption.Gadgetbridge, "手表健康", "读手环导出的库，看步数、心率、睡眠，要先给所有文件访问"),
-    SystemToolRow(LocalToolOption.Location, "位置", "看我人在哪，填了高德 key 还能把地址念出来"),
-    SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "找附近吃的、商店、医院，要填高德 key"),
+    SystemToolRow(LocalToolOption.Notification, "通知", "允许向你推送一条系统通知"),
+    SystemToolRow(LocalToolOption.NotificationsReader, "读通知", "允许读取今日通知，了解消息动态，需要通知使用权"),
+    SystemToolRow(LocalToolOption.Sms, "短信", "允许读取手机收件箱中的短信"),
+    SystemToolRow(LocalToolOption.MediaScanner, "相册刷新", "把新生成的文件扫描进系统相册"),
+    SystemToolRow(LocalToolOption.Share, "分享", "把内容交给系统分享面板，由你选择发到哪个应用"),
+    SystemToolRow(LocalToolOption.Music, "音乐", "查看当前播放内容，支持切歌、暂停与拖动进度"),
+    SystemToolRow(LocalToolOption.Camera, "相机", "允许调用相机拍一张，用于了解眼前场景"),
+    SystemToolRow(LocalToolOption.AppControl, "应用控制", "允许打开应用或网页，也可以把聊天界面拉回前台"),
+    SystemToolRow(LocalToolOption.DeviceInfo, "设备信息", "查看网络状态、SIM 卡信号、今日各应用使用时长"),
+    SystemToolRow(LocalToolOption.Gadgetbridge, "手表健康", "读取 Gadgetbridge 导出的数据库，获取步数、心率、睡眠，需要所有文件访问权限"),
+    SystemToolRow(LocalToolOption.Location, "位置", "允许获取你的当前位置，并用高德 API 转换为地址"),
+    SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "允许用高德 API 搜索周边地点，如餐厅、商店、景点"),
 )
 
 @Composable
@@ -136,7 +136,7 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
 
             item("systemToolsHint") {
                 Text(
-                    text = "这里开一次就够，所有助手通用，不用再一个个开。",
+                    text = "这里开一次就够了，所有助手通用，不用一个个去开。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp),

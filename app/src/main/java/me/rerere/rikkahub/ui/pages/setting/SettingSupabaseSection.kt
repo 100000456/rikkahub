@@ -2,12 +2,9 @@ package me.rerere.rikkahub.ui.pages.setting
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -24,10 +21,16 @@ import com.dokar.sonner.ToastType
 import me.rerere.rikkahub.data.datastore.SupabaseStore
 import me.rerere.rikkahub.data.service.DeviceEventTrackingService
 import me.rerere.rikkahub.data.service.SupabaseSyncService
+import me.rerere.rikkahub.ui.components.ui.CardGroup
 import me.rerere.rikkahub.ui.context.LocalToaster
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private val statusDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
 
 /**
- * 云端同步：把手机现在的样子定时存一份到自己的 Supabase，去哪、在用什么、收到什么通知都在里面。
+ * 云端同步。开关、事件推送、状态各一行，地址和钥匙收进配置对话框。
  */
 @Composable
 fun SupabaseSection(modifier: Modifier = Modifier) {
@@ -40,38 +43,77 @@ fun SupabaseSection(modifier: Modifier = Modifier) {
     var apiKey by remember { mutableStateOf(SupabaseStore.readApiKey(context)) }
     var table by remember { mutableStateOf(SupabaseStore.readTable(context)) }
     var lastResult by remember { mutableStateOf(SupabaseSyncService.getLastResult(context)) }
+    var showConfigDialog by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+    val nextTime = SupabaseSyncService.getNextTriggerTime(context)
+
+    if (showConfigDialog) {
+        AlertDialog(
+            onDismissRequest = { showConfigDialog = false },
+            title = { Text("同步往哪儿送") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = url,
+                        onValueChange = { url = it },
+                        label = { Text("Supabase URL") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = apiKey,
+                        onValueChange = { apiKey = it },
+                        label = { Text("Supabase API Key") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = table,
+                        onValueChange = { table = it },
+                        label = { Text("数据表名") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        SupabaseStore.save(context, url, apiKey, table)
+                        table = SupabaseStore.readTable(context)
+                        if (SupabaseStore.isConfigured(context)) {
+                            SupabaseSyncService.scheduleNext(context)
+                            toaster.show(message = "存好了", type = ToastType.Success)
+                        } else {
+                            toaster.show(message = "还差地址或者钥匙", type = ToastType.Warning)
+                        }
+                        showConfigDialog = false
+                    }
+                ) {
+                    Text("存下")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfigDialog = false }) { Text("算了") }
+            },
+        )
+    }
+
+    CardGroup(
+        modifier = modifier,
+        title = { Text("Supabase 数据同步") },
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = "云端同步",
-                style = MaterialTheme.typography.titleMedium,
-            )
-            Text(
-                text = "每十五分钟把手机现在的样子传一份上去：人在哪、在用什么应用、收到什么通知、手表的数据。地址和钥匙都在你自己手里。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text("打开同步")
+        item(
+            headlineContent = { Text("启用 Supabase 同步") },
+            supportingContent = { Text("开启后立即同步一次，之后每 15 分钟自动同步") },
+            trailingContent = {
                 Switch(
                     checked = enabled,
                     onCheckedChange = { on ->
                         enabled = on
                         SupabaseStore.setEnabled(context, on)
                         if (on && SupabaseStore.isConfigured(context)) {
-                            SupabaseSyncService.scheduleNext(context)
+                            SupabaseSyncService.triggerNow(context)
                         } else if (!on) {
                             SupabaseSyncService.cancel(context)
                             DeviceEventTrackingService.stop(context)
@@ -79,90 +121,50 @@ fun SupabaseSection(modifier: Modifier = Modifier) {
                     },
                 )
             }
-
-            OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                label = { Text("项目地址") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = apiKey,
-                onValueChange = { apiKey = it },
-                label = { Text("钥匙") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = table,
-                onValueChange = { table = it },
-                label = { Text("存哪张表") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text("亮屏熄屏也记一笔")
+        )
+        item(
+            headlineContent = { Text("开机 / 亮屏 / 黑屏事件推送") },
+            supportingContent = {
+                Text(
+                    "开启后会在设备开机、亮屏、黑屏时立即推送一条事件记录到同一张数据表。" +
+                        "需要保持一个常驻通知以实时监听亮屏/黑屏状态，会有持续小幅耗电。"
+                )
+            },
+            trailingContent = {
                 Switch(
                     checked = eventTracking,
                     onCheckedChange = { on ->
                         eventTracking = on
                         SupabaseStore.setEventTrackingEnabled(context, on)
-                        if (on) {
-                            DeviceEventTrackingService.startIfEnabled(context)
-                        } else {
-                            DeviceEventTrackingService.stop(context)
-                        }
+                        if (on) DeviceEventTrackingService.startIfEnabled(context)
+                        else DeviceEventTrackingService.stop(context)
                     },
                 )
             }
-
-            if (lastResult.isNotBlank()) {
+        )
+        item(
+            headlineContent = { Text("同步状态") },
+            supportingContent = {
+                val next = nextTime?.let { "下次：${statusDateFormat.format(Date(it))}" } ?: "未安排"
+                val last = if (lastResult.isBlank()) "还没传过" else "上次：${lastResult}"
+                Text("$next\n$last")
+            },
+            onClick = {
+                if (SupabaseStore.isConfigured(context)) {
+                    SupabaseSyncService.triggerNow(context)
+                    lastResult = SupabaseSyncService.getLastResult(context)
+                }
+            }
+        )
+        item(
+            headlineContent = { Text("同步配置") },
+            supportingContent = {
                 Text(
-                    text = "上次结果：$lastResult",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    if (SupabaseStore.isConfigured(context)) "已配置，点这里可以改"
+                    else "还没填地址和钥匙，点这里填"
                 )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                TextButton(
-                    onClick = {
-                        SupabaseStore.save(context, url, apiKey, table)
-                        table = SupabaseStore.readTable(context)
-                        toaster.show(
-                            message = if (SupabaseStore.isConfigured(context)) "存好了" else "还差地址或者钥匙",
-                            type = if (SupabaseStore.isConfigured(context)) ToastType.Success else ToastType.Warning
-                        )
-                        if (SupabaseStore.isConfigured(context)) {
-                            SupabaseSyncService.scheduleNext(context)
-                        }
-                    }
-                ) {
-                    Text("存下")
-                }
-                TextButton(
-                    onClick = {
-                        SupabaseStore.save(context, url, apiKey, table)
-                        if (SupabaseStore.isConfigured(context)) {
-                            SupabaseSyncService.triggerNow(context)
-                            toaster.show(message = "让它现在跑一次", type = ToastType.Success)
-                        } else {
-                            toaster.show(message = "还差地址或者钥匙", type = ToastType.Warning)
-                        }
-                        lastResult = SupabaseSyncService.getLastResult(context)
-                    }
-                ) {
-                    Text("现在传一次")
-                }
-            }
-        }
+            },
+            onClick = { showConfigDialog = true }
+        )
     }
 }

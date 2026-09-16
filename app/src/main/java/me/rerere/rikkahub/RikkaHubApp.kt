@@ -42,6 +42,7 @@ import me.rerere.rikkahub.service.WebServerService
 import me.rerere.rikkahub.utils.CrashHandler
 import me.rerere.rikkahub.utils.DatabaseUtil
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.data.service.DeviceEventAiTriggerService
 import me.rerere.rikkahub.data.service.DeviceEventTrackingService
 import me.rerere.rikkahub.data.service.SupabaseSyncService
 import me.rerere.workspace.WorkspaceManager
@@ -113,6 +114,9 @@ class RikkaHubApp : Application() {
         // 把云端同步和亮屏事件监听接回来
         resumeDeviceSync()
 
+        // 激进模式：盯着设备动静
+        startAggressiveModeIfEnabled()
+
         // Increment launch count
         incrementLaunchCount()
 
@@ -143,6 +147,14 @@ class RikkaHubApp : Application() {
             }.onFailure {
                 Log.e(TAG, "resumeDeviceSync failed", it)
             }
+        }
+    }
+
+    private fun startAggressiveModeIfEnabled() {
+        runCatching {
+            DeviceEventAiTriggerService.startIfEnabled(this)
+        }.onFailure {
+            Log.e(TAG, "startAggressiveModeIfEnabled failed", it)
         }
     }
 

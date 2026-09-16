@@ -121,4 +121,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-17T01:40+08:00 aggressive mode service wired
+# rebuild marker: 2026-09-17T01:55+08:00 aggressive mode startup resume

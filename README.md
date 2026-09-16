@@ -1,6 +1,6 @@
 <div align="center">
   <img src="docs/icon.png" alt="App Icon" width="100" />
-  <h1>兔子 / Tuzi</h1>
+  <h1>Tuzi</h1>
   <p>一个安卓上的 AI 聊天客户端 / An Android AI chat client</p>
 
   [![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
@@ -14,7 +14,7 @@ A personal fork of RikkaHub. 中文在前，English below.
 
 ### 简介
 
-兔子是一个安卓上的 AI 聊天客户端。它基于 RikkaHub 二次开发，并把另一个非官方二改版本「橘瓣」中的部分功能移植回来，主要用于个人日常使用。
+Tuzi 是一个安卓上的 AI 聊天客户端。它基于 RikkaHub 二次开发，并把另一个非官方二改版本「橘瓣」中的部分功能移植回来，主要用于个人日常使用。
 
 本仓库为个人自用版本，非官方发行版，与 RikkaHub、橘瓣的作者均无隶属或合作关系。
 
@@ -44,10 +44,12 @@ A personal fork of RikkaHub. 中文在前，English below.
 
 - 后台保活：常驻通知 + 开机自启 + 被清理后自动恢复；通知文案可自定义或自动轮换
 - 主动消息：按固定时间点或随机间隔主动发消息
+- 激进模式：每次切应用、亮屏锁屏、回桌面都会触发一次思考，由 AI 自行决定要不要开口
 - 应用锁：基于无障碍服务，对指定应用加解锁页
+- 云端同步：定时把设备状态（位置、应用使用、通知、手表数据）写入 Supabase
 - 云编译：推送后由 GitHub Actions 自动构建并发布安装包
 
-计划继续移植：插件系统、工作流、记忆库、云同步。
+计划继续移植：插件系统、工作流、记忆库。
 
 ### 构建
 
@@ -103,10 +105,12 @@ Others:
 
 - Keep-alive: a persistent notification, auto start on boot, and recovery after being killed; the notification text can be customized or rotated automatically
 - Proactive messages: send a message on fixed times or at random intervals
+- Aggressive mode: every app switch, screen on/off, or return to home triggers a thought, and the AI decides whether to speak up
 - App lock: blocks selected apps with an unlock screen, built on the accessibility service
+- Cloud sync: periodically writes device state (location, app usage, notifications, wearable data) to Supabase
 - Cloud build: GitHub Actions builds and publishes the APK on push
 
-Planned ports: plugin system, workflows, memory bank, cloud sync.
+Planned ports: plugin system, workflows, memory bank.
 
 ### Build
 

@@ -60,6 +60,7 @@ import me.rerere.hugeicons.stroke.Megaphone01
 import me.rerere.hugeicons.stroke.Message01
 import me.rerere.hugeicons.stroke.MessageMultiple01
 import me.rerere.hugeicons.stroke.Package
+import me.rerere.hugeicons.stroke.Puzzle
 import me.rerere.hugeicons.stroke.ServerStack01
 import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Share04
@@ -270,6 +271,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         leadingContent = { Icon(HugeIcons.MessageMultiple01, null) },
                         supportingContent = { Text("扫码登录，用微信收发消息") },
                         headlineContent = { Text("微信 Bot") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingPlugins) },
+                        leadingContent = { Icon(HugeIcons.Puzzle, null) },
+                        supportingContent = { Text("装插件给我加新本事，装了就能在这管") },
+                        headlineContent = { Text("插件") },
                     )
                 }
             }

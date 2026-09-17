@@ -1,7 +1,7 @@
 /*
- * 插件管理页（文件夹 + 未分组列表）
- * 移植自橘瓣 OrangeChat
- * 修改：安全提醒文案改为硬编码，去掉未使用的 RiskConfirmDialog 引用
+ * Tuzi
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
 package me.rerere.rikkahub.plugin.ui
@@ -355,17 +355,17 @@ private fun PluginFolderContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "装插件前先看一眼",
+                        text = "⚠️ 安装前先确认来源",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = "插件能用到你手机上的东西，也能上网。只装你信得过来源的包。",
+                        text = "插件是外部代码，能读你的聊天记录、设备信息，也能联网。不要随意安装未知来源的插件。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
                     Text(
-                        text = "安装前它会把自己要用的工具和权限列出来，看一眼再按确认。",
+                        text = "已经装的插件，也可以随时在这里关掉或删除。",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )

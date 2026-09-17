@@ -1,11 +1,12 @@
 /*
- * 插件沙箱里的音乐播放服务（ExoPlayer 实现）
- * 移植自橘瓣 OrangeChat
- * 依赖：MediaPlayerNotificationChannelId、R.drawable.small_icon、androidx.media3
+ * Tuzi
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
 package me.rerere.rikkahub.plugin.webview
 
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -24,12 +25,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import me.rerere.rikkahub.MUSIC_PLAYER_NOTIFICATION_CHANNEL_ID
 import me.rerere.rikkahub.R
 import java.io.File
 
 private const val TAG = "MusicPlayerService"
 private const val NOTIFICATION_ID = 2001
+private const val MUSIC_PLAYER_NOTIFICATION_CHANNEL_ID = "music_player"
 
 private const val ACTION_PLAY = "me.rerere.rikkahub.MUSIC_PLAY"
 private const val ACTION_PAUSE = "me.rerere.rikkahub.MUSIC_PAUSE"
@@ -119,7 +120,7 @@ class MusicPlayerService : Service() {
         }
 
         // ExoPlayer 的 currentPosition/duration 本身是 Long（毫秒），且只能在创建它的那个线程
-        // （这里是 Service 所在的主线程）访问，不能跨线程调用
+        // （这里是 Service 所在的主线程）访问，不能跨线程调用，这点跟原来 MediaPlayer 比要求更严格
         fun getCurrentPosition(): Int = synchronized(stateLock) {
             try {
                 exoPlayer?.currentPosition?.toInt() ?: 0
@@ -140,6 +141,11 @@ class MusicPlayerService : Service() {
                 0
             }
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        ensureNotificationChannel()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -168,6 +174,24 @@ class MusicPlayerService : Service() {
         return START_NOT_STICKY
     }
 
+    private fun ensureNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                if (nm.getNotificationChannel(MUSIC_PLAYER_NOTIFICATION_CHANNEL_ID) == null) {
+                    val channel = android.app.NotificationChannel(
+                        MUSIC_PLAYER_NOTIFICATION_CHANNEL_ID,
+                        "音乐播放",
+                        NotificationManager.IMPORTANCE_LOW
+                    )
+                    nm.createNotificationChannel(channel)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "ensureNotificationChannel failed: ${e.message}", e)
+            }
+        }
+    }
+
     private fun startPlayback(filePath: String, title: String, artist: String) {
         var startedOk = false
 
@@ -191,7 +215,8 @@ class MusicPlayerService : Service() {
                 player.setAudioAttributes(audioAttributes, true)
 
                 // ExoPlayer 的 prepare() 是异步的：调用后立即返回，真正"是否能正常播放/是否出错"
-                // 都要靠下面这个监听器异步上报。STATE_ENDED 是官方标准的"播放到底了"信号。
+                // 都要靠下面这个监听器异步上报，不再像原来 MediaPlayer 那样能在同一行代码里 try-catch 拿到结果。
+                // STATE_ENDED 是 ExoPlayer 官方标准的"播放到底了"信号，比原来 MediaPlayer 的 onCompletion 更可靠。
                 player.addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(playbackState: Int) {
                         if (playbackState == Player.STATE_ENDED) {
@@ -366,7 +391,7 @@ class MusicPlayerService : Service() {
                 startForeground(NOTIFICATION_ID, notification)
             }
         } else {
-            val nm = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             nm.notify(NOTIFICATION_ID, notification)
         }
     }

@@ -1,4 +1,4 @@
-=== failure at Tue Sep 15 11:08:09 UTC 2026 ===
+=== failure at Thu Sep 17 15:33:17 UTC 2026 ===
 --- java ---
 openjdk version "21.0.12.1" 2026-08-18 LTS
 OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)
@@ -13,14 +13,14 @@ Lockfile is up to date, resolution step is skipped
 Progress: resolved 1, reused 0, downloaded 0, added 0
 Packages: +607
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-Progress: resolved 607, reused 278, downloaded 0, added 0
-Progress: resolved 607, reused 572, downloaded 0, added 0
 Packages are hard linked from the content-addressable store to the virtual store.
   Content-addressable store is at: /home/runner/setup-pnpm/node_modules/.bin/store/v11
   Virtual store is at:             node_modules/.pnpm
-Progress: resolved 607, reused 607, downloaded 0, added 180
+Progress: resolved 607, reused 607, downloaded 0, added 35
+Progress: resolved 607, reused 607, downloaded 0, added 467
+Progress: resolved 607, reused 607, downloaded 0, added 533
 Progress: resolved 607, reused 607, downloaded 0, added 607, done
-✓ Lockfile passes supply-chain policies (714 entries in 5s)
+✓ Lockfile passes supply-chain policies (714 entries in 4.8s)
 
 dependencies:
 + @react-router/node 7.13.0
@@ -77,6 +77,30 @@ devDependencies:
 
 Done in 5.8s using pnpm v11.27.0
 --- gradle tail ---
+> Task :oauth:packageDebugResources
+> Task :oauth:parseDebugLocalResources
+> Task :oauth:generateDebugRFile
+> Task :highlight:compileDebugJavaWithJavac NO-SOURCE
+> Task :highlight:bundleLibCompileToJarDebug
+> Task :oauth:javaPreCompileDebug
+> Task :search:generateDebugResources
+> Task :search:packageDebugResources
+> Task :search:parseDebugLocalResources
+> Task :search:generateDebugRFile
+> Task :search:javaPreCompileDebug
+> Task :speech:generateDebugResources
+> Task :speech:packageDebugResources
+> Task :speech:parseDebugLocalResources
+> Task :speech:generateDebugRFile
+> Task :oauth:compileDebugKotlin
+> Task :oauth:compileDebugJavaWithJavac NO-SOURCE
+> Task :oauth:bundleLibCompileToJarDebug
+> Task :speech:javaPreCompileDebug
+> Task :videogen:generateDebugResources
+> Task :videogen:packageDebugResources
+> Task :videogen:parseDebugLocalResources
+> Task :videogen:generateDebugRFile
+> Task :videogen:compileDebugKotlin
 > Task :videogen:javaPreCompileDebug
 > Task :videogen:compileDebugJavaWithJavac NO-SOURCE
 > Task :videogen:bundleLibCompileToJarDebug
@@ -84,14 +108,6 @@ Done in 5.8s using pnpm v11.27.0
 > Task :web:packageDebugResources
 > Task :web:parseDebugLocalResources
 > Task :web:generateDebugRFile
-> Task :web:compileDebugKotlin
-> Task :web:javaPreCompileDebug
-> Task :web:compileDebugJavaWithJavac NO-SOURCE
-> Task :web:bundleLibCompileToJarDebug
-> Task :workspace:generateDebugResources
-> Task :workspace:packageDebugResources
-> Task :workspace:parseDebugLocalResources
-> Task :workspace:generateDebugRFile
 
 > Task :material3:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities/kotlin/dynamiccolor/ColorSpec2025.kt:904:37 Unnecessary non-null assertion (!!) on a non-null receiver of type 'DynamicColor'.
@@ -100,6 +116,14 @@ w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities
 
 > Task :material3:compileDebugJavaWithJavac NO-SOURCE
 > Task :material3:bundleLibCompileToJarDebug
+> Task :web:javaPreCompileDebug
+> Task :workspace:generateDebugResources
+> Task :workspace:packageDebugResources
+> Task :workspace:parseDebugLocalResources
+> Task :workspace:generateDebugRFile
+> Task :web:compileDebugKotlin
+> Task :web:compileDebugJavaWithJavac NO-SOURCE
+> Task :web:bundleLibCompileToJarDebug
 > Task :workspace:javaPreCompileDebug
 > Task :app:javaPreCompileDebug
 > Task :ai:generateDebugAssets UP-TO-DATE
@@ -126,21 +150,16 @@ w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities
 > Task :workspace:generateDebugAssets UP-TO-DATE
 > Task :workspace:mergeDebugAssets
 > Task :app:mergeDebugAssets
-> Task :app:compressDebugAssets
 > Task :workspace:compileDebugKotlin
 > Task :workspace:compileDebugJavaWithJavac NO-SOURCE
 > Task :workspace:bundleLibCompileToJarDebug
+> Task :app:compressDebugAssets
 > Task :common:processDebugJavaRes
 > Task :document:processDebugJavaRes
 > Task :highlight:processDebugJavaRes
 > Task :material3:processDebugJavaRes
 > Task :oauth:processDebugJavaRes
 > Task :videogen:processDebugJavaRes
-> Task :web:processDebugJavaRes
-> Task :workspace:processDebugJavaRes
-> Task :ai:compileDebugKotlin
-> Task :app:checkDebugDuplicateClasses
-> Task :app:desugarDebugFileDependencies
 
 > Task :speech:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/asr/providers/MiMoASRController.kt:256:41 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
@@ -153,13 +172,9 @@ w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts
 w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/SystemTTSProvider.kt:112:16 Unnecessary safe call on a non-null receiver of type 'TextToSpeech'.
 w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/XAITTSProvider.kt:50:42 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
 
+> Task :web:processDebugJavaRes
+> Task :workspace:processDebugJavaRes
 > Task :speech:compileDebugJavaWithJavac NO-SOURCE
-> Task :speech:bundleLibCompileToJarDebug
-> Task :speech:processDebugJavaRes
-> Task :web:bundleLibRuntimeToDirDebug
-> Task :document:bundleLibRuntimeToDirDebug
-> Task :app:generateDebugGlobalSynthetics
-> Task :highlight:bundleLibRuntimeToDirDebug
 
 > Task :ai:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/claude/ClaudeProvider.kt:258:78 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
@@ -186,11 +201,21 @@ w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/U
 w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/UIMessagePart.kt:141:20 'constructor(toolCallId: String, toolName: String, arguments: String, approvalState: ToolApprovalState = ..., metadata: JsonObject? = ...): UIMessagePart.ToolCall' is deprecated. Use UIMessagePart.Tool instead.
 w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/util/ErrorParser.kt:46:9 'when' is exhaustive so 'else' is redundant here.
 
+> Task :speech:bundleLibCompileToJarDebug
+> Task :speech:processDebugJavaRes
+> Task :app:desugarDebugFileDependencies
 > Task :ai:compileDebugJavaWithJavac NO-SOURCE
-> Task :ai:bundleLibCompileToJarDebug
+> Task :web:bundleLibRuntimeToDirDebug
 > Task :ai:processDebugJavaRes
+> Task :ai:bundleLibCompileToJarDebug
+> Task :app:generateDebugGlobalSynthetics
 > Task :ai:bundleLibRuntimeToDirDebug
+> Task :document:bundleLibRuntimeToDirDebug
+> Task :app:checkDebugDuplicateClasses
+> Task :highlight:bundleLibRuntimeToDirDebug
 > Task :speech:bundleLibRuntimeToDirDebug
+> Task :videogen:bundleLibRuntimeToDirDebug
+> Task :common:bundleLibRuntimeToDirDebug
 
 > Task :search:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/GrokSearchService.kt:136:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
@@ -204,14 +229,11 @@ w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/sea
 w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/ZhipuSearchService.kt:75:44 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
 w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/ZhipuSearchService.kt:95:38 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
 
-> Task :videogen:bundleLibRuntimeToDirDebug
 > Task :search:compileDebugJavaWithJavac NO-SOURCE
 > Task :search:bundleLibCompileToJarDebug
+> Task :material3:bundleLibRuntimeToDirDebug
 > Task :search:processDebugJavaRes
 > Task :search:bundleLibRuntimeToDirDebug
-> Task :common:bundleLibRuntimeToDirDebug
-> Task :material3:bundleLibRuntimeToDirDebug
-> Task :app:mergeExtDexDebug
 > Task :workspace:bundleLibRuntimeToDirDebug
 > Task :oauth:bundleLibRuntimeToDirDebug
 > Task :ai:mapDebugSourceSetPaths
@@ -313,36 +335,45 @@ w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/sea
 Checking the license for package CMake 3.22.1 in /usr/local/lib/android/sdk/licenses
 License for package CMake 3.22.1 accepted.
 Preparing "Install CMake 3.22.1 v.3.22.1".
-"Install CMake 3.22.1 v.3.22.1" ready.
-Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
-"Install CMake 3.22.1 v.3.22.1" complete.
 
 > Task :app:mergeDebugResources
 
 > Task :workspace:configureCMakeDebug[arm64-v8a]
+"Install CMake 3.22.1 v.3.22.1" ready.
+Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
+"Install CMake 3.22.1 v.3.22.1" complete.
 "Install CMake 3.22.1 v.3.22.1" finished.
 
-> Task :app:kspDebugKotlin
+> Task :app:mergeExtDexDebug
 > Task :app:processDebugResources
-> Task :workspace:configureCMakeDebug[x86]
 > Task :workspace:configureCMakeDebug[armeabi-v7a]
-> Task :workspace:buildCMakeDebug[x86]
+> Task :app:kspDebugKotlin
 > Task :workspace:buildCMakeDebug[armeabi-v7a]
 > Task :workspace:buildCMakeDebug[arm64-v8a]
-> Task :workspace:mergeDebugJniLibFolders
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
+> Task :workspace:configureCMakeDebug[x86]
 > Task :workspace:configureCMakeDebug[x86_64]
-> Task :app:validateSigningDebug
+> Task :workspace:buildCMakeDebug[x86]
 > Task :workspace:buildCMakeDebug[x86_64]
+> Task :workspace:mergeDebugJniLibFolders
 > Task :workspace:mergeDebugNativeLibs
 > Task :workspace:copyDebugJniLibsProjectOnly
 > Task :app:mergeDebugNativeLibs
+> Task :app:validateSigningDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
 > Task :app:stripDebugDebugSymbols
+> Task :app:compileDebugKotlin
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:277:66 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:401:66 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:666:101 Unresolved reference 'choices'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:666:124 Unresolved reference 'message'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:668:94 Unresolved reference 'text'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:1053:66 Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type 'String?'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:1346:41 Unresolved reference 'choices'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:1346:64 Unresolved reference 'message'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:1348:34 Unresolved reference 'text'.
 
 > Task :app:compileDebugKotlin FAILED
-e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt:23:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
-e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt:118:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
 
 [Incubating] Problems report is available at: file:///home/runner/work/rikkahub/rikkahub/build/reports/problems/problems-report.html
 
@@ -391,37 +422,6 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:com
 	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:328)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
 	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
-	at org.gradle.execution.plan.DefaultPlanExecutor.process(DefaultPlanExecutor.java:111)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.executeWithServices(DefaultTaskExecutionGraph.java:146)
-	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph.execute(DefaultTaskExecutionGraph.java:131)
-	at org.gradle.execution.SelectedTaskExecutionAction.execute(SelectedTaskExecutionAction.java:35)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:54)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor$ExecuteTasks.call(BuildOperationFiringBuildWorkerExecutor.java:43)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
-	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
-	at org.gradle.execution.BuildOperationFiringBuildWorkerExecutor.execute(BuildOperationFiringBuildWorkerExecutor.java:40)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.lambda$executeTasks$11(DefaultBuildLifecycleController.java:323)
-	at org.gradle.internal.model.StateTransitionController.doTransition(StateTransitionController.java:304)
-	at org.gradle.internal.model.StateTransitionController.lambda$tryTransition$9(StateTransitionController.java:215)
-	at org.gradle.internal.work.DefaultSynchronizer.withLock(DefaultSynchronizer.java:45)
-	at org.gradle.internal.model.StateTransitionController.tryTransition(StateTransitionController.java:215)
-	at org.gradle.internal.build.DefaultBuildLifecycleController.executeTasks(DefaultBuildLifecycleController.java:314)
-	at org.gradle.internal.build.DefaultBuildWorkGraphController$DefaultBuildWorkGraph.runWork(DefaultBuildWorkGraphController.java:220)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:300)
-	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:298)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:294)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:286)
-	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:130)
-	at org.gradle.composite.internal.DefaultBuildController.doRun(DefaultBuildController.java:182)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.lambda$run$0(DefaultBuildController.java:199)
-	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:84)
-	at org.gradle.composite.internal.DefaultBuildController$BuildOpRunnable.run(DefaultBuildController.java:199)
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
@@ -537,7 +537,7 @@ Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionExcept
 	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
 	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
 	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
-	... 61 more
+	... 30 more
 Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
 	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
 	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:320)
@@ -574,6 +574,6 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	... 2 more
 
 
-BUILD FAILED in 3m 2s
+BUILD FAILED in 6m 38s
 262 actionable tasks: 262 executed
 Configuration cache entry stored.

@@ -62,6 +62,12 @@ import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
 import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.plugin.manager.PluginManager
+import me.rerere.rikkahub.plugin.ui.PluginDetailPage
+import me.rerere.rikkahub.plugin.ui.PluginFolderPage
+import me.rerere.rikkahub.plugin.ui.PluginManagePage
+import me.rerere.rikkahub.plugin.ui.PluginUIDeclarativePage
+import me.rerere.rikkahub.plugin.webview.PluginWebViewPage
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalASRState
@@ -494,6 +500,60 @@ class RouteActivity : ComponentActivity() {
                                 SettingWeixinBotPage()
                             }
 
+                            entry<Screen.SettingPlugins> {
+                                val nav = LocalNavController.current
+                                PluginManagePage(
+                                    onNavigateToFolder = { folderId ->
+                                        nav.navigate(Screen.PluginFolder(folderId))
+                                    },
+                                    onNavigateToDetail = { pluginId ->
+                                        nav.navigate(Screen.PluginDetail(pluginId))
+                                    }
+                                )
+                            }
+
+                            entry<Screen.PluginFolder> { key ->
+                                val nav = LocalNavController.current
+                                PluginFolderPage(
+                                    folderId = key.folderId,
+                                    onNavigateBack = { backStack.removeLastOrNull() },
+                                    onNavigateToDetail = { pluginId ->
+                                        nav.navigate(Screen.PluginDetail(pluginId))
+                                    }
+                                )
+                            }
+
+                            entry<Screen.PluginDetail> { key ->
+                                val nav = LocalNavController.current
+                                PluginDetailPage(
+                                    pluginId = key.pluginId,
+                                    onNavigateBack = { backStack.removeLastOrNull() },
+                                    onNavigateToWebView = { pluginId, entryPath ->
+                                        nav.navigate(Screen.PluginWebView(pluginId, entryPath))
+                                    },
+                                    onNavigateToDeclarativeUI = { pluginId ->
+                                        nav.navigate(Screen.PluginUIDeclarative(pluginId))
+                                    }
+                                )
+                            }
+
+                            entry<Screen.PluginUIDeclarative> { key ->
+                                PluginUIDeclarativePage(
+                                    pluginId = key.pluginId,
+                                    pluginManager = koinInject<PluginManager>(),
+                                    onNavigateBack = { backStack.removeLastOrNull() }
+                                )
+                            }
+
+                            entry<Screen.PluginWebView> { key ->
+                                PluginWebViewPage(
+                                    pluginId = key.pluginId,
+                                    htmlEntryPath = key.entryPath,
+                                    pluginManager = koinInject<PluginManager>(),
+                                    onNavigateBack = { backStack.removeLastOrNull() }
+                                )
+                            }
+
                             entry<Screen.Debug> {
                                 DebugPage()
                             }
@@ -724,6 +784,21 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingWeixinBot : Screen
+
+    @Serializable
+    data object SettingPlugins : Screen
+
+    @Serializable
+    data class PluginFolder(val folderId: String) : Screen
+
+    @Serializable
+    data class PluginDetail(val pluginId: String) : Screen
+
+    @Serializable
+    data class PluginUIDeclarative(val pluginId: String) : Screen
+
+    @Serializable
+    data class PluginWebView(val pluginId: String, val entryPath: String) : Screen
 
     @Serializable
     data object Debug : Screen

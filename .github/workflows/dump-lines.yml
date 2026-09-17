@@ -1,0 +1,42 @@
+name: Dump code windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/dump-lines.yml'
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dump windows and signatures
+        run: |
+          F=app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt
+          {
+            echo "======== PluginWebViewPage.kt windows ========"
+            for R in "258:300" "382:412" "645:690" "1030:1070" "1325:1370"; do
+              A=${R%%:*}; B=${R##*:}
+              echo "----- lines $A-$B -----"
+              awk -v a=$A -v b=$B 'NR>=a && NR<=b {printf "%d| %s\n", NR, $0}' "$F"
+            done
+            echo "======== generateText signatures ========"
+            grep -rn "fun generateText" ai/src/main/java/ | head -40
+            echo "======== choices refs ========"
+            grep -rn "choices" ai/src/main/java/ | head -30
+            echo "======== ChatResponse def ========"
+            grep -rn "class ChatResponse\|data class ChatResponse\|ChatChoice" ai/src/main/java/ | head -30
+            echo "======== UIMessagePart.Text ========"
+            grep -rn "data class Text" ai/src/main/java/me/rerere/ai/ui/ | head -20
+            echo "======== ProviderManager.getProviderByType ========"
+            grep -rn "fun getProviderByType" ai/src/main/java/ | head -10
+          } > .ci-lines.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-lines.txt
+          git commit -m "ci: dump lines" || true
+          git push origin HEAD:master

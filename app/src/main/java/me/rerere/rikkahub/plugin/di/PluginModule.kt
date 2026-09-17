@@ -1,6 +1,7 @@
 /*
- * 插件模块依赖注入
- * 移植自橘瓣 OrangeChat
+ * Tuzi
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
 package me.rerere.rikkahub.plugin.di
@@ -18,6 +19,9 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
+/**
+ * 插件模块依赖注入
+ */
 val pluginModule = module {
     // Scanner
     single { PluginScanner(androidContext(), get()) }
@@ -25,13 +29,13 @@ val pluginModule = module {
     // Repository
     single { PluginRepository(androidContext()) }
 
-    // Loader - 需要 OkHttpClient、MemoryBankService 和 SettingsStore
+    // Loader - 需要OkHttpClient、MemoryBankService和SettingsStore
     single { PluginLoader(androidContext(), get<OkHttpClient>(), get<MemoryBankService>(), get<SettingsStore>()) }
 
     // Manager
     single { PluginManager(androidContext(), get(), get(), get(), get()) }
 
-    // Provider - 需要 PluginManager 确保插件已初始化
+    // Provider - 需要PluginManager来确保插件已初始化
     single { PluginToolProvider(get(), get()) }
 
     // ViewModel

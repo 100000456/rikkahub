@@ -274,7 +274,7 @@ fun PluginWebViewPage(
                         )
                     }
                 } catch (e: Exception) {
-                    val errMsg = e.message?.replace("\\", "\\\\").replace("'", "\\'") ?: "Unknown error"
+                    val errMsg = e.message?.replace("\\", "\\\\")?.replace("'", "\\'") ?: "Unknown error"
                     webView?.post {
                         webView?.evaluateJavascript(
                             "window.__bridgeResult('$callbackId', {success:false,error:'$errMsg'});", null
@@ -398,7 +398,7 @@ fun PluginWebViewPage(
                         )
                     }
                 } catch (e: Exception) {
-                    val errMsg = e.message?.replace("\\", "\\\\").replace("'", "\\'") ?: "Unknown error"
+                    val errMsg = e.message?.replace("\\", "\\\\")?.replace("'", "\\'") ?: "Unknown error"
                     webView?.post {
                         webView?.evaluateJavascript(
                             "window.__bridgeResult('$callbackId', {success:false,error:'$errMsg'});", null
@@ -663,7 +663,7 @@ fun PluginWebViewPage(
                                                                         )
                                                                         val textGenParams = TextGenerationParams(model = model, tools = emptyList(), temperature = 0.7f)
                                                                         val response = providerImpl.generateText(providerSetting, messages, textGenParams)
-                                                                        val responseText = response.choices.firstOrNull()?.message?.parts
+                                                                        val responseText = response.message.parts
                                                                             ?.filterIsInstance<UIMessagePart.Text>()
                                                                             ?.firstOrNull()?.text ?: ""
                                                                         val escaped = responseText.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
@@ -1050,7 +1050,7 @@ private class PluginWebViewClient(
                         )
                     }
                 } catch (e: Exception) {
-                    val errMsg = e.message?.replace("\\", "\\\\").replace("'", "\\'") ?: "Unknown error"
+                    val errMsg = e.message?.replace("\\", "\\\\")?.replace("'", "\\'") ?: "Unknown error"
                     webView.post {
                         webView.evaluateJavascript(
                             "window.__bridgeResult('${params["callbackId"]}', {success:false,error:'$errMsg'});", null
@@ -1343,7 +1343,7 @@ private class PluginWebViewClient(
 
         return try {
             val response = providerImpl.generateText(providerSetting, messages, textGenParams)
-            val responseText = response.choices.firstOrNull()?.message?.parts
+            val responseText = response.message.parts
                 ?.filterIsInstance<UIMessagePart.Text>()
                 ?.firstOrNull()?.text ?: ""
 

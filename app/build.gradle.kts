@@ -150,6 +150,9 @@ dependencies {
     implementation(libs.termux.terminal.view)
     implementation(libs.guava.listenablefuture)
 
+    // 插件页面里的本地广播（音乐播放状态回调）
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+
     // Compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -279,6 +282,9 @@ dependencies {
 
     // sqlite-android (requery SQLite for Android)
     implementation(libs.sqlite.android)
+
+    // media3 (ExoPlayer) — 插件沙箱里播放本地音乐
+    implementation(libs.androidx.media3.exoplayer)
 
     // modules
     implementation(project(":ai"))

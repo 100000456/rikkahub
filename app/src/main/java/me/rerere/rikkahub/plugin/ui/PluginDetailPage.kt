@@ -1,6 +1,7 @@
 /*
- * 插件详情页
- * 移植自橘瓣 OrangeChat（兔子自带 ModelSelector，签名一致）
+ * Tuzi
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
 package me.rerere.rikkahub.plugin.ui
@@ -326,11 +327,7 @@ private fun PluginInfoSection(plugin: PluginInfo) {
 private fun ToolItem(tool: PluginToolDefinition) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text(text = tool.name, style = MaterialTheme.typography.bodyLarge)
-        Text(
-            text = tool.description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Text(text = tool.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (tool.parameters.isNotEmpty()) {
             Text(
                 text = "参数: ${tool.parameters.joinToString { it.name }}",
@@ -422,11 +419,7 @@ private fun BooleanConfigField(
         Column(modifier = Modifier.weight(1f)) {
             Text(text = field.label, style = MaterialTheme.typography.bodyLarge)
             if (field.description != null) {
-                Text(
-                    text = field.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = field.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Switch(checked = checked, onCheckedChange = { checked = it; onValueChange(JsonPrimitive(it)) })
@@ -447,11 +440,7 @@ private fun SelectConfigField(
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text(text = field.label, style = MaterialTheme.typography.bodyLarge)
         if (field.description != null) {
-            Text(
-                text = field.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(text = field.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(modifier = Modifier.height(4.dp))
         val optionsText = field.options?.joinToString(", ") { it.label } ?: ""
@@ -489,11 +478,7 @@ private fun ModelConfigField(
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text(text = field.label, style = MaterialTheme.typography.bodyLarge)
         if (field.description != null) {
-            Text(
-                text = field.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(text = field.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(modifier = Modifier.height(4.dp))
         ModelSelector(

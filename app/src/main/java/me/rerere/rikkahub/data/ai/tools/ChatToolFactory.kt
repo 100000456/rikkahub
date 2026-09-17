@@ -14,6 +14,7 @@ import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.repository.ConversationRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.plugin.provider.PluginToolProvider
 import me.rerere.workspace.WorkspaceShellStatus
 
 private const val TAG = "ChatToolFactory"
@@ -33,6 +34,7 @@ class ChatToolFactory(
     private val localTools: LocalTools,
     private val mcpManager: McpManager,
     private val skillManager: SkillManager,
+    private val pluginToolProvider: PluginToolProvider,
     private val workspaceRepository: WorkspaceRepository,
 ) {
     suspend fun createTools(
@@ -72,6 +74,9 @@ class ChatToolFactory(
                 )
             )
         }
+
+        // 插件沙箱：插件自己声明的工具，装了插件就能被模型调用
+        pluginToolProvider.getTools().forEach { add(it) }
 
         val mcpTools = mcpManager.getAllAvailableTools()
         val invalidNames = mcpTools

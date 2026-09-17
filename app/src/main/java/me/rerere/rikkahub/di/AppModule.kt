@@ -89,6 +89,7 @@ val appModule = module {
             localTools = get(),
             mcpManager = get(),
             skillManager = get(),
+            pluginToolProvider = get(),
             workspaceRepository = get(),
         )
     }

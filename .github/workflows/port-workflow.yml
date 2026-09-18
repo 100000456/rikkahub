@@ -1,0 +1,281 @@
+name: Port Workflow Module
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-workflow.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          test -d /tmp/oc/app/src/main/java/me/rerere/rikkahub/workflow
+          echo "orangechat workflow files:"
+          find /tmp/oc/app/src/main/java/me/rerere/rikkahub/workflow -type f | wc -l
+
+      - name: Copy workflow module into rikkahub
+        run: |
+          set -e
+          SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          DST=app/src/main/java/me/rerere/rikkahub
+          rm -rf "$DST/workflow"
+          mkdir -p "$DST/workflow"
+          cp -r "$SRC/workflow/." "$DST/workflow/"
+          if [ -d "$SRC/data/agentrun" ]; then
+            mkdir -p "$DST/data/agentrun"
+            cp -r "$SRC/data/agentrun/." "$DST/data/agentrun/"
+          fi
+          find "$DST/workflow" -type f -name '*.kt' | sort
+
+      - name: Patch app wiring (database / manifest / app / koin)
+        run: |
+          set -e
+          python3 - <<'PY'
+          import pathlib, sys
+
+          def patch(path, pairs):
+              p = pathlib.Path(path)
+              s = p.read_text(encoding='utf-8')
+              for old, new, tag in pairs:
+                  if tag in s:
+                      print(f'skip {path} [{tag}] already applied')
+                      continue
+                  if old not in s:
+                      print(f'!! ANCHOR NOT FOUND in {path} for [{tag}]')
+                      print(repr(old[:120]))
+                      sys.exit(1)
+                  s = s.replace(old, new, 1)
+                  print(f'patched {path} [{tag}]')
+              p.write_text(s, encoding='utf-8')
+
+          # 1) Room database: register the two workflow tables + bump version
+          patch('app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt', [
+            (
+              '        SecurityAuditEntity::class,\n',
+              '        SecurityAuditEntity::class,\n'
+              '        me.rerere.rikkahub.workflow.db.WorkflowEntity::class,\n'
+              '        me.rerere.rikkahub.workflow.db.WorkflowRunEntity::class,\n',
+              'WorkflowEntity::class',
+            ),
+            ('    version = 26,\n', '    version = 27,\n', 'version = 27'),
+            (
+              '        AutoMigration(from = 25, to = 26),\n',
+              '        AutoMigration(from = 25, to = 26),\n'
+              '        AutoMigration(from = 26, to = 27),\n',
+              'AutoMigration(from = 26, to = 27)',
+            ),
+            (
+              '    abstract fun securityAuditDao(): SecurityAuditDao\n',
+              '    abstract fun securityAuditDao(): SecurityAuditDao\n'
+              '\n    abstract fun workflowDao(): me.rerere.rikkahub.workflow.db.WorkflowDao\n'
+              '\n    abstract fun workflowRunDao(): me.rerere.rikkahub.workflow.db.WorkflowRunDao\n',
+              'fun workflowDao()',
+            ),
+          ])
+
+          # 2) Manifest: boot + geofence receivers
+          patch('app/src/main/AndroidManifest.xml', [
+            (
+              '</application>',
+              '    <!-- 工作流：开机恢复触发器 -->\n'
+              '    <receiver\n'
+              '      android:name=".workflow.trigger.WorkflowBootReceiver"\n'
+              '      android:exported="true">\n'
+              '      <intent-filter>\n'
+              '        <action android:name="android.intent.action.BOOT_COMPLETED" />\n'
+              '      </intent-filter>\n'
+              '    </receiver>\n'
+              '\n'
+              '    <!-- 工作流：围栏进出 -->\n'
+              '    <receiver\n'
+              '      android:name=".workflow.trigger.GeofenceTriggerReceiver"\n'
+              '      android:exported="false" />\n'
+              '\n'
+              '</application>',
+              'WorkflowBootReceiver',
+            ),
+          ])
+
+          # 3) Application: start trigger registry on boot
+          patch('app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt', [
+            (
+              '        // 激进模式：盯着设备动静\n        startAggressiveModeIfEnabled()',
+              '        // 工作流：事件驱动的自动化\n'
+              '        startWorkflowTriggers()\n'
+              '\n'
+              '        // 激进模式：盯着设备动静\n'
+              '        startAggressiveModeIfEnabled()',
+              'startWorkflowTriggers()',
+            ),
+            (
+              '    private fun startAggressiveModeIfEnabled() {',
+              '    private fun startWorkflowTriggers() {\n'
+              '        runCatching {\n'
+              '            val registry = get<me.rerere.rikkahub.workflow.trigger.TriggerRegistry>()\n'
+              '            val engine = get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>()\n'
+              '            registry.setEngineCallback(engine.triggerCallback)\n'
+              '            registry.start()\n'
+              '        }.onFailure {\n'
+              '            Log.e(TAG, "startWorkflowTriggers failed", it)\n'
+              '        }\n'
+              '    }\n'
+              '\n'
+              '    private fun startAggressiveModeIfEnabled() {',
+              'private fun startWorkflowTriggers()',
+            ),
+          ])
+
+          # 4) Koin: workflow repository / engine / trigger registry
+          patch('app/src/main/java/me/rerere/rikkahub/di/AppModule.kt', [
+            (
+              '    single {\n        LocalTools(get(), get(), get(), get())\n    }\n',
+              '    single {\n        LocalTools(get(), get(), get(), get())\n    }\n'
+              '\n'
+              '    // 工作流：仓库 / 条件 / 执行器 / 引擎 / 触发器注册表\n'
+              '    single {\n'
+              '        me.rerere.rikkahub.workflow.repository.WorkflowRepository(\n'
+              '            workflowDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowDao(),\n'
+              '            workflowRunDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowRunDao(),\n'
+              '        )\n'
+              '    }\n'
+              '    single { me.rerere.rikkahub.workflow.condition.ContextProvider(get(), get(), get()) }\n'
+              '    single { me.rerere.rikkahub.workflow.execution.WorkflowActionRunner() }\n'
+              '    single {\n'
+              '        me.rerere.rikkahub.workflow.execution.WorkflowEngine(\n'
+              '            repository = get(),\n'
+              '            settingsStore = get(),\n'
+              '            contextProvider = get(),\n'
+              '            actionRunner = get(),\n'
+              '            auditRepo = get(),\n'
+              '        ).also { engine ->\n'
+              '            get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>().bindEngine(engine)\n'
+              '        }\n'
+              '    }\n'
+              '    single {\n'
+              '        me.rerere.rikkahub.workflow.trigger.TriggerRegistry(\n'
+              '            context = get(),\n'
+              '            appScope = get(),\n'
+              '            workflowRepository = get(),\n'
+              '        )\n'
+              '    }\n',
+              'workflow.repository.WorkflowRepository',
+            ),
+          ])
+
+          print('all wiring patches applied')
+          PY
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-workflow-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== failure at $(date -u) ==="
+            echo "--- compile errors (e: and error:) ---"
+            grep -E '^e: |^error: |Unresolved|error:' ci-logs/gradle.log | head -n 400 || true
+            echo "--- gradle tail ---"
+            tail -n 150 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure.txt
+          git commit -m "ci: dump workflow port failure log" || true
+          git push origin HEAD:master || true
+
+      - name: Commit ported module on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
+          git commit -m "工作流模块：移植橘瓣 workflow + 接线（编译通过）" || true
+          git push origin HEAD:master || true

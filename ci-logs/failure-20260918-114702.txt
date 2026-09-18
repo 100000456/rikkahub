@@ -1,0 +1,169 @@
+=== failure at Fri Sep 18 11:47:02 UTC 2026 ===
+--- patch log ---
+patched app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt workflow entities
+patched app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt version 27
+patched app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt auto migration
+patched app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt workflow dao accessors
+patched app/src/main/AndroidManifest.xml workflow receivers
+patched app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt call startWorkflowTriggers
+patched app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt startWorkflowTriggers body
+patched app/src/main/java/me/rerere/rikkahub/di/AppModule.kt workflow singletons
+patched app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt needsApproval lambda
+patched app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt Workflows option
+patched app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt workflow tools branch
+patched app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt tool surface source
+patched app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt tool surface build
+patched app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt LocalToolOption package
+ALL PATCHES APPLIED
+--- ksp errors ---
+[33mapp/components/ui/sonner.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/drawer.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/extended/conversation.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/sidebar.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/tooltip.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/sheet.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/checkbox.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/select.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[33mapp/components/ui/sonner.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+--- compile errors ---
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:20:41 Unresolved reference 'LocalTools'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:235:22 Unresolved reference 'workflowHeadlessBlockSensitive'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:235:66 Unresolved reference 'autoApproveAllTools'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:237:17 Operator '==' cannot be applied to '((JsonElement) -> Boolean)?' and 'Boolean'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/model/WorkflowJson.kt:375:47 Unresolved reference 'CronExpressionParser'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:266:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:316:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:349:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:390:21 Argument type mismatch: actual type is 'Boolean', but '(JsonElement) -> Boolean' was expected.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:17:31 Unresolved reference 'location'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:18:31 Unresolved reference 'location'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:19:31 Unresolved reference 'location'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:20:31 Unresolved reference 'location'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:75:22 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:75:36 Unresolved reference 'LocationServices'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:91:13 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:92:17 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:92:29 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:92:37 Cannot infer type for type parameter 'TResult'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:92:50 Unresolved reference 'removeGeofences'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:93:22 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:100:53 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:103:48 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:104:45 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:106:52 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:109:48 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:110:45 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:116:27 Unresolved reference 'GeofencingRequest'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:121:17 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:122:21 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:122:33 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:122:41 Cannot infer type for type parameter 'TResult'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:122:54 Unresolved reference 'addGeofences'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:123:26 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:138:22 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:138:36 Unresolved reference 'LocationServices'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:139:9 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:139:21 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:139:29 Cannot infer type for type parameter 'TResult'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:139:42 Unresolved reference 'removeGeofences'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:140:14 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:169:46 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:170:39 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:300:38 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:301:31 Unresolved reference 'Geofence'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTriggerReceiver.kt:13:31 Unresolved reference 'location'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTriggerReceiver.kt:24:21 Unresolved reference 'GeofencingEvent'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTriggerReceiver.kt:30:60 Unresolved reference 'it'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTriggerReceiver.kt:36:43 Argument type mismatch: actual type is 'String', but 'List<String>' was expected.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:229:60 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:230:44 Unresolved reference 'CronExpressionParser'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:230:90 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:230:90 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:230:90 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:230:96 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:231:48 Unresolved reference 'CronExpressionParser'.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:232:27 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:232:27 Cannot infer type for type parameter 'R'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:232:31 Cannot infer type for type parameter 'T'. Specify it explicitly.
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt:232:43 Unresolved reference 'toInstant'.
+--- gradle tail ---
+	at org.gradle.internal.execution.steps.ResolveMutableCachingStateStep.executeDelegate(ResolveMutableCachingStateStep.java:32)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:69)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:37)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.executeMutable(ResolveChangesStep.java:63)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.executeMutable(ResolveChangesStep.java:34)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.executeDelegate(ValidateStep.java:79)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.executeDelegate(ValidateStep.java:65)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:105)
+	at org.gradle.internal.execution.steps.ValidateStep$Mutable.execute(ValidateStep.java:65)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.executeMutable(CaptureMutableStateBeforeExecutionStep.java:86)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.execute(CaptureMutableStateBeforeExecutionStep.java:65)
+	at org.gradle.internal.execution.steps.CaptureMutableStateBeforeExecutionStep.execute(CaptureMutableStateBeforeExecutionStep.java:45)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeWithNonEmptySources(SkipEmptyMutableWorkStep.java:210)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeMutable(SkipEmptyMutableWorkStep.java:90)
+	at org.gradle.internal.execution.steps.SkipEmptyMutableWorkStep.executeMutable(SkipEmptyMutableWorkStep.java:53)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.executeMutable(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.executeMutable(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.executeMutable(HandleStaleOutputsStep.java:77)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.executeMutable(HandleStaleOutputsStep.java:43)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$executeMutable$0(AssignMutableWorkspaceStep.java:34)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:305)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.executeMutable(AssignMutableWorkspaceStep.java:30)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.executeMutable(AssignMutableWorkspaceStep.java:21)
+	at org.gradle.internal.execution.steps.MutableStep.execute(MutableStep.java:26)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:56)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:38)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:68)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:132)
+	... 61 more
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:320)
+	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:64)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:61)
+	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:102)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:61)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:58)
+	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:191)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$500(DefaultConditionalExecutionQueue.java:112)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:168)
+	at org.gradle.internal.Factories$1.create(Factories.java:30)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:300)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:298)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:294)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:286)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:130)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:135)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:163)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:125)
+	... 2 more
+
+
+BUILD FAILED in 40s
+119 actionable tasks: 2 executed, 117 up-to-date
+Configuration cache entry stored.

@@ -1,0 +1,259 @@
+name: Port Workflow Tool Ui
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-workflow-toolui.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Write workflow tool ui
+        run: |
+          mkdir -p app/src/main/java/me/rerere/rikkahub/ui/components/message/tools
+          cat > app/src/main/java/me/rerere/rikkahub/ui/components/message/tools/WorkflowToolUIs.kt <<'KT_EOF'
+          package me.rerere.rikkahub.ui.components.message.tools
+
+          import androidx.compose.material3.MaterialTheme
+          import androidx.compose.material3.Text
+          import androidx.compose.runtime.Composable
+          import me.rerere.rikkahub.workflow.tools.WorkflowApprovalRenderer
+
+          /**
+           * 工作流的工具调用在聊天里怎么说人话。
+           *
+           * 橘瓣那边把「翻译」写好了（WorkflowApprovalRenderer），但界面上没人接，
+           * 弹出来还是一串参数。搬过来我手动挂上：审批卡上看到的是
+           * 「Create workflow xxx / When: 每天 9:00 / Do: 1. 发通知 ...」这种。
+           */
+          internal abstract class WorkflowToolUIBase : ToolUIRenderer {
+
+              private fun plain(context: ToolUIContext): String =
+                  WorkflowApprovalRenderer.renderPlain(
+                      context.tool.toolName,
+                      context.arguments.toString(),
+                  )
+
+              private fun prettyName(name: String): String = when (name) {
+                  "workflow_create" -> "建一个工作流"
+                  "workflow_update" -> "改工作流"
+                  "workflow_delete" -> "删工作流"
+                  "workflow_set_enabled" -> "开关工作流"
+                  "workflow_run" -> "跑一次工作流"
+                  "workflow_list" -> "看看有哪些工作流"
+                  "workflow_get" -> "看工作流的内容"
+                  else -> name
+              }
+
+              @Composable
+              override fun title(context: ToolUIContext): String {
+                  val text = plain(context).trim()
+                  if (text.startsWith("{")) return prettyName(context.tool.toolName)
+                  val first = text.lineSequence().firstOrNull()?.trim().orEmpty()
+                  if (first.isBlank()) return prettyName(context.tool.toolName)
+                  return first
+              }
+
+              override fun hasSummary(context: ToolUIContext): Boolean =
+                  !plain(context).trim().startsWith("{")
+
+              @Composable
+              override fun Summary(context: ToolUIContext) {
+                  Text(
+                      text = plain(context),
+                      style = MaterialTheme.typography.bodySmall,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+              }
+          }
+
+          internal object WorkflowCreateToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_create"
+          }
+
+          internal object WorkflowUpdateToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_update"
+          }
+
+          internal object WorkflowDeleteToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_delete"
+          }
+
+          internal object WorkflowSetEnabledToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_set_enabled"
+          }
+
+          internal object WorkflowRunToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_run"
+          }
+
+          internal object WorkflowListToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_list"
+          }
+
+          internal object WorkflowGetToolUI : WorkflowToolUIBase() {
+              override val toolName: String = "workflow_get"
+          }
+          KT_EOF
+          echo "workflow tool ui written"
+
+      - name: Patch wiring
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
+                      sys.exit(1)
+                  s = s.replace(old, new)
+                  print("patched", path, tag)
+              write(path, s)
+
+          TOOLUI = 'app/src/main/java/me/rerere/rikkahub/ui/components/message/tools/ToolUI.kt'
+
+          patch(TOOLUI, [
+              (
+                  "        ShellToolUI,\n    ).associateBy { it.toolName }\n",
+                  "        ShellToolUI,\n"
+                  "        WorkflowCreateToolUI,\n"
+                  "        WorkflowUpdateToolUI,\n"
+                  "        WorkflowDeleteToolUI,\n"
+                  "        WorkflowSetEnabledToolUI,\n"
+                  "        WorkflowRunToolUI,\n"
+                  "        WorkflowListToolUI,\n"
+                  "        WorkflowGetToolUI,\n"
+                  "    ).associateBy { it.toolName }\n",
+                  "workflow tool ui registry",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wfui-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== workflow tool ui failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback|SyntaxError|Could not (find|resolve)' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
+            echo "--- gradle tail ---"
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure-wfui.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-wfui.txt
+          git commit -m "ci: dump workflow tool ui failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/ui/components/message/tools || true
+          git commit -m "工作流审批弹窗说人话：把翻译接到界面上（编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

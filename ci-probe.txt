@@ -1,0 +1,590 @@
+=========== files with accessib in name ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AccessibilityServiceHandle.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/activity/AppLockAccessibilityPromptActivity.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt
+/tmp/oc/app/src/main/res/xml/accessibility_service_config.xml
+=========== root package ===========
+RikkaHubApp.kt
+RouteActivity.kt
+data
+di
+plugin
+service
+ui
+utils
+web
+workflow
+=========== service dir ===========
+ChatService.kt
+ConversationSession.kt
+CronExpressionParser.kt
+KeepAliveRestartReceiver.kt
+KeepAliveService.kt
+QqBotService.kt
+RikkaAccessibilityService.kt
+VoiceCallService.kt
+WebServerService.kt
+WeixinBotService.kt
+=========== data dir ===========
+agentrun
+ai
+api
+datastore
+db
+event
+export
+favorite
+files
+gadgetbridge
+model
+provider
+qq
+repository
+security
+service
+sync
+weixin
+=========== manifest accessibility ===========
+91:      android:name=".ui.activity.AppLockAccessibilityPromptActivity"
+304:    <!-- Screen automation: accessibility service for tap/swipe/read window tree/screenshot -->
+306:      android:name=".service.RikkaAccessibilityService"
+307:      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+311:        <action android:name="android.accessibilityservice.AccessibilityService" />
+314:        android:name="android.accessibilityservice"
+315:        android:resource="@xml/accessibility_service_config" />
+=========== manifest services ===========
+178:    <service
+179-      android:name=".service.WebServerService"
+180-      android:exported="false"
+181-      android:foregroundServiceType="specialUse">
+182-      <property
+--
+188:    <service
+189-      android:name=".data.service.RikkaNotificationListenerService"
+190-      android:exported="true"
+191-      android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+192-      <intent-filter>
+--
+209:    <service
+210-      android:name=".data.service.ProactiveMessageTriggerService"
+211-      android:exported="false"
+212-      android:foregroundServiceType="specialUse">
+213-      <property
+--
+219:    <service
+220-      android:name=".data.service.FloatingBubbleService"
+221-      android:exported="false"
+222-      android:foregroundServiceType="specialUse">
+223-      <property
+--
+229:    <service
+230-      android:name=".data.service.SupabaseSyncService"
+231-      android:exported="false"
+232-      android:foregroundServiceType="specialUse">
+233-      <property
+--
+239:    <service
+240-      android:name=".data.service.DeviceEventTrackingService"
+241-      android:exported="false"
+242-      android:foregroundServiceType="specialUse">
+243-      <property
+--
+249:    <service
+250-      android:name=".data.service.DeviceEventAiTriggerService"
+251-      android:exported="false"
+252-      android:foregroundServiceType="specialUse">
+253-      <property
+--
+279:    <service
+280-      android:name=".data.service.DailySummaryTriggerService"
+281-      android:exported="false"
+282-      android:foregroundServiceType="specialUse">
+283-      <property
+--
+305:    <service
+306-      android:name=".service.RikkaAccessibilityService"
+307-      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+308-      android:exported="true"
+309-      android:label="@string/app_name">
+--
+319:    <service
+320-      android:name=".plugin.webview.PomodoroTimerService"
+321-      android:exported="false"
+322-      android:foregroundServiceType="specialUse">
+323-      <property
+--
+329:    <service
+330-      android:name=".plugin.webview.MusicPlayerService"
+331-      android:exported="false"
+332-      android:foregroundServiceType="specialUse">
+333-      <property
+--
+339:    <service
+340-      android:name=".service.KeepAliveService"
+341-      android:enabled="true"
+342-      android:exported="false"
+343-      android:foregroundServiceType="dataSync"
+--
+347:    <service
+348-      android:name=".service.WeixinBotService"
+349-      android:exported="false"
+350-      android:foregroundServiceType="specialUse">
+351-      <property
+--
+357:    <service
+358-      android:name=".service.QqBotService"
+=========== res xml ===========
+/tmp/oc/app/src/main/res/values/strings.xml
+/tmp/oc/app/src/main/res/values/colors.xml
+/tmp/oc/app/src/main/res/values/themes.xml
+/tmp/oc/app/src/main/res/values-zh-rTW/strings.xml
+/tmp/oc/app/src/main/res/drawable/afdian.xml
+/tmp/oc/app/src/main/res/drawable/small_icon.xml
+/tmp/oc/app/src/main/res/drawable/ic_lucide_camera.xml
+/tmp/oc/app/src/main/res/drawable/pdf.xml
+/tmp/oc/app/src/main/res/drawable/patreon.xml
+/tmp/oc/app/src/main/res/drawable/deepthink.xml
+/tmp/oc/app/src/main/res/drawable/rabbit.xml
+/tmp/oc/app/src/main/res/drawable/docx.xml
+/tmp/oc/app/src/main/res/xml
+/tmp/oc/app/src/main/res/xml/accessibility_service_config.xml
+/tmp/oc/app/src/main/res/xml/file_paths.xml
+/tmp/oc/app/src/main/res/xml/shortcuts.xml
+/tmp/oc/app/src/main/res/xml/remote_config_defaults.xml
+/tmp/oc/app/src/main/res/xml/data_extraction_rules.xml
+/tmp/oc/app/src/main/res/xml/backup_rules.xml
+/tmp/oc/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+/tmp/oc/app/src/main/res/values-ja/strings.xml
+/tmp/oc/app/src/main/res/values-ko-rKR/strings.xml
+/tmp/oc/app/src/main/res/values-zh/strings.xml
+/tmp/oc/app/src/main/res/values-ru/strings.xml
+=========== SCREEN TOUCH TOOLS ===========
+----- TapTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.accessibilityservice.GestureDescription
+10:import kotlinx.serialization.json.buildJsonObject
+11:import kotlinx.serialization.json.doubleOrNull
+12:import kotlinx.serialization.json.jsonObject
+13:import kotlinx.serialization.json.jsonPrimitive
+14:import kotlinx.serialization.json.longOrNull
+15:import kotlinx.serialization.json.put
+16:import me.rerere.ai.core.InputSchema
+17:import me.rerere.ai.core.Tool
+18:import me.rerere.ai.ui.UIMessagePart
+19:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+20:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+21:import me.rerere.rikkahub.service.ActionLogEntry
+----- SwipeTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.accessibilityservice.GestureDescription
+10:import kotlinx.serialization.json.buildJsonObject
+11:import kotlinx.serialization.json.doubleOrNull
+12:import kotlinx.serialization.json.jsonObject
+13:import kotlinx.serialization.json.jsonPrimitive
+14:import kotlinx.serialization.json.longOrNull
+15:import kotlinx.serialization.json.put
+16:import me.rerere.ai.core.InputSchema
+17:import me.rerere.ai.core.Tool
+18:import me.rerere.ai.ui.UIMessagePart
+19:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+20:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+21:import me.rerere.rikkahub.service.ActionLogEntry
+----- ScrollTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.accessibilityservice.GestureDescription
+10:import android.graphics.Path
+11:import android.graphics.Rect
+12:import android.view.accessibility.AccessibilityNodeInfo
+13:import kotlinx.serialization.json.add
+14:import kotlinx.serialization.json.buildJsonArray
+15:import kotlinx.serialization.json.buildJsonObject
+16:import kotlinx.serialization.json.contentOrNull
+17:import kotlinx.serialization.json.doubleOrNull
+18:import kotlinx.serialization.json.jsonObject
+19:import kotlinx.serialization.json.jsonPrimitive
+20:import kotlinx.serialization.json.put
+21:import me.rerere.ai.core.InputSchema
+22:import me.rerere.ai.core.Tool
+23:import me.rerere.ai.ui.UIMessagePart
+24:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+25:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+26:import me.rerere.rikkahub.service.ActionLogEntry
+27:import me.rerere.rikkahub.service.RikkaAccessibilityService
+----- ScreenshotTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.ContentValues
+10:import android.content.Context
+11:import android.graphics.Bitmap
+12:import android.net.Uri
+13:import android.os.Build
+14:import android.os.Environment
+15:import android.provider.MediaStore
+16:import kotlinx.serialization.json.buildJsonObject
+17:import kotlinx.serialization.json.contentOrNull
+18:import kotlinx.serialization.json.intOrNull
+19:import kotlinx.serialization.json.jsonObject
+20:import kotlinx.serialization.json.jsonPrimitive
+21:import kotlinx.serialization.json.put
+22:import me.rerere.ai.core.InputSchema
+23:import me.rerere.ai.core.Tool
+24:import me.rerere.ai.ui.UIMessagePart
+25:import me.rerere.rikkahub.service.ActionLogEntry
+26:import me.rerere.rikkahub.service.RikkaAccessibilityService
+27:import java.io.File
+28:import java.io.FileOutputStream
+29:import java.text.SimpleDateFormat
+30:import java.util.Date
+31:import java.util.Locale
+----- WindowTreeTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.graphics.Rect
+10:import android.view.accessibility.AccessibilityNodeInfo
+11:import kotlinx.serialization.json.JsonObject
+12:import kotlinx.serialization.json.add
+13:import kotlinx.serialization.json.booleanOrNull
+14:import kotlinx.serialization.json.buildJsonArray
+15:import kotlinx.serialization.json.buildJsonObject
+16:import kotlinx.serialization.json.contentOrNull
+17:import kotlinx.serialization.json.intOrNull
+18:import kotlinx.serialization.json.jsonObject
+19:import kotlinx.serialization.json.jsonPrimitive
+20:import kotlinx.serialization.json.put
+21:import me.rerere.ai.core.InputSchema
+22:import me.rerere.ai.core.Tool
+23:import me.rerere.ai.ui.UIMessagePart
+24:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+25:import me.rerere.rikkahub.service.ActionLogEntry
+----- FindNodeTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.view.accessibility.AccessibilityNodeInfo
+10:import kotlinx.serialization.json.JsonObject
+11:import kotlinx.serialization.json.add
+12:import kotlinx.serialization.json.buildJsonArray
+13:import kotlinx.serialization.json.buildJsonObject
+14:import kotlinx.serialization.json.contentOrNull
+15:import kotlinx.serialization.json.intOrNull
+16:import kotlinx.serialization.json.jsonObject
+17:import kotlinx.serialization.json.jsonPrimitive
+18:import kotlinx.serialization.json.put
+19:import me.rerere.ai.core.InputSchema
+20:import me.rerere.ai.core.Tool
+21:import me.rerere.ai.ui.UIMessagePart
+22:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+23:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+24:import me.rerere.rikkahub.service.ActionLogEntry
+----- GlobalActionTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.accessibilityservice.AccessibilityService
+10:import kotlinx.serialization.json.add
+11:import kotlinx.serialization.json.buildJsonArray
+12:import kotlinx.serialization.json.buildJsonObject
+13:import kotlinx.serialization.json.contentOrNull
+14:import kotlinx.serialization.json.jsonObject
+15:import kotlinx.serialization.json.jsonPrimitive
+16:import kotlinx.serialization.json.put
+17:import me.rerere.ai.core.InputSchema
+18:import me.rerere.ai.core.Tool
+19:import me.rerere.ai.ui.UIMessagePart
+20:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+21:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+22:import me.rerere.rikkahub.service.ActionLogEntry
+----- AccessibilityServiceHandle -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.ComponentName
+10:import android.content.Context
+11:import android.provider.Settings
+12:import kotlinx.serialization.json.JsonObject
+13:import kotlinx.serialization.json.buildJsonObject
+14:import kotlinx.serialization.json.put
+15:import me.rerere.rikkahub.service.RikkaAccessibilityService
+----- WakeHelper -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.Context
+----- ScreenWaker -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.app.KeyguardManager
+10:import android.content.Context
+11:import android.os.PowerManager
+----- InteractiveToolStreamer -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+=========== LATER BATCH TOOLS (imports + build fns) ===========
+----- local/FingerprintTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.Context
+10:import android.content.Intent
+11:import androidx.biometric.BiometricManager
+12:import kotlinx.coroutines.withTimeoutOrNull
+13:import kotlinx.serialization.json.booleanOrNull
+14:import kotlinx.serialization.json.buildJsonObject
+15:import kotlinx.serialization.json.contentOrNull
+16:import kotlinx.serialization.json.jsonObject
+17:import kotlinx.serialization.json.jsonPrimitive
+18:import kotlinx.serialization.json.put
+19:import me.rerere.ai.core.InputSchema
+20:import me.rerere.ai.core.Tool
+21:import me.rerere.ai.ui.UIMessagePart
+22:import me.rerere.rikkahub.ui.activity.BiometricPromptActivity
+23:import java.util.UUID
+----- local/SshTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.Context
+10:import android.net.ConnectivityManager
+11:import android.net.Network
+12:import android.net.NetworkCapabilities
+13:import android.util.Log
+14:import com.jcraft.jsch.ChannelExec
+15:import com.jcraft.jsch.JSch
+16:import com.jcraft.jsch.Session
+17:import kotlinx.coroutines.Dispatchers
+18:import kotlinx.coroutines.async
+19:import kotlinx.coroutines.awaitAll
+20:import kotlinx.coroutines.coroutineScope
+21:import kotlinx.coroutines.runInterruptible
+22:import kotlinx.coroutines.withContext
+23:import kotlinx.coroutines.withTimeoutOrNull
+24:import kotlinx.serialization.json.JsonObject
+25:import kotlinx.serialization.json.buildJsonObject
+26:import kotlinx.serialization.json.contentOrNull
+27:import kotlinx.serialization.json.intOrNull
+28:import kotlinx.serialization.json.jsonObject
+29:import kotlinx.serialization.json.jsonPrimitive
+30:import kotlinx.serialization.json.put
+31:import me.rerere.ai.core.InputSchema
+32:import me.rerere.ai.core.Tool
+33:import me.rerere.ai.ui.UIMessagePart
+34:import java.io.ByteArrayInputStream
+35:import java.io.ByteArrayOutputStream
+36:import java.io.File
+37:import java.net.Inet4Address
+38:import java.net.InetAddress
+39:import java.util.Properties
+40:import java.util.concurrent.atomic.AtomicReference
+----- local/SshHostsTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.Context
+10:import kotlinx.serialization.json.add
+11:import kotlinx.serialization.json.addJsonObject
+12:import kotlinx.serialization.json.buildJsonArray
+13:import kotlinx.serialization.json.buildJsonObject
+14:import kotlinx.serialization.json.contentOrNull
+15:import kotlinx.serialization.json.intOrNull
+16:import kotlinx.serialization.json.jsonObject
+17:import kotlinx.serialization.json.jsonPrimitive
+18:import kotlinx.serialization.json.put
+19:import me.rerere.ai.core.InputSchema
+20:import me.rerere.ai.core.Tool
+21:import me.rerere.ai.ui.UIMessagePart
+22:import me.rerere.rikkahub.data.db.entity.SshHostEntity
+23:import me.rerere.rikkahub.data.repository.SshHostRepository
+----- local/SshSftpTool -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import android.content.Context
+10:import android.util.Log
+11:import com.jcraft.jsch.ChannelSftp
+12:import com.jcraft.jsch.Session
+13:import kotlinx.coroutines.Dispatchers
+14:import kotlinx.coroutines.runInterruptible
+15:import kotlinx.serialization.json.JsonObject
+16:import kotlinx.serialization.json.buildJsonObject
+17:import kotlinx.serialization.json.contentOrNull
+18:import kotlinx.serialization.json.intOrNull
+19:import kotlinx.serialization.json.jsonObject
+20:import kotlinx.serialization.json.jsonPrimitive
+21:import kotlinx.serialization.json.put
+22:import me.rerere.ai.core.InputSchema
+23:import me.rerere.ai.core.Tool
+24:import me.rerere.ai.ui.UIMessagePart
+25:import me.rerere.rikkahub.data.repository.SshHostRepository
+26:import java.io.File
+27:import java.util.concurrent.atomic.AtomicReference
+----- local/BiometricResultBuffer -----
+7:package me.rerere.rikkahub.data.ai.tools.local
+9:import kotlinx.coroutines.CompletableDeferred
+10:import java.util.concurrent.ConcurrentHashMap
+----- tools/AppLockTool -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import android.content.Context
+10:import android.content.Intent
+11:import android.content.pm.ApplicationInfo
+12:import android.content.pm.PackageManager
+13:import android.util.Log
+14:import kotlinx.coroutines.delay
+15:import kotlinx.serialization.json.add
+16:import kotlinx.serialization.json.booleanOrNull
+17:import kotlinx.serialization.json.buildJsonArray
+18:import kotlinx.serialization.json.buildJsonObject
+19:import kotlinx.serialization.json.contentOrNull
+20:import kotlinx.serialization.json.jsonObject
+21:import kotlinx.serialization.json.jsonPrimitive
+22:import kotlinx.serialization.json.put
+23:import kotlinx.serialization.json.putJsonArray
+24:import kotlinx.serialization.json.putJsonObject
+25:import me.rerere.ai.core.InputSchema
+26:import me.rerere.ai.core.Tool
+27:import me.rerere.ai.ui.UIMessagePart
+28:import me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle
+29:import me.rerere.rikkahub.data.service.AppLockGuard
+30:import me.rerere.rikkahub.data.service.AppLockStore
+31:import me.rerere.rikkahub.ui.activity.AppLockAccessibilityPromptActivity
+75:fun createAppLockTool(context: Context): Tool = Tool(
+----- tools/MemoryTools -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import kotlinx.serialization.json.Json
+10:import kotlinx.serialization.json.JsonPrimitive
+11:import kotlinx.serialization.json.add
+12:import kotlinx.serialization.json.buildJsonArray
+13:import kotlinx.serialization.json.buildJsonObject
+14:import kotlinx.serialization.json.contentOrNull
+15:import kotlinx.serialization.json.intOrNull
+16:import kotlinx.serialization.json.jsonObject
+17:import kotlinx.serialization.json.jsonPrimitive
+18:import kotlinx.serialization.json.put
+19:import me.rerere.ai.core.InputSchema
+20:import me.rerere.ai.core.Tool
+21:import me.rerere.ai.ui.UIMessagePart
+22:import me.rerere.rikkahub.data.model.AssistantMemory
+23:import me.rerere.rikkahub.utils.toLocalString
+24:import java.time.LocalDate
+26:fun buildMemoryTools(
+----- tools/SearchTools -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import kotlinx.serialization.json.JsonArray
+10:import kotlinx.serialization.json.JsonObject
+11:import kotlinx.serialization.json.JsonPrimitive
+12:import kotlinx.serialization.json.encodeToJsonElement
+13:import kotlinx.serialization.json.jsonArray
+14:import kotlinx.serialization.json.jsonObject
+15:import me.rerere.ai.core.Tool
+16:import me.rerere.ai.ui.UIMessagePart
+17:import me.rerere.rikkahub.data.datastore.Settings
+18:import me.rerere.rikkahub.utils.JsonInstantPretty
+19:import me.rerere.rikkahub.utils.toLocalString
+20:import me.rerere.search.SearchService
+21:import me.rerere.search.SearchServiceOptions
+22:import java.time.LocalDate
+23:import kotlin.uuid.Uuid
+25:fun createSearchTools(settings: Settings): Set<Tool> {
+----- tools/SetWallpaperTool -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import android.app.WallpaperManager
+10:import android.content.Context
+11:import android.graphics.BitmapFactory
+12:import java.io.File
+13:import java.net.HttpURLConnection
+14:import java.net.URL
+15:import kotlinx.coroutines.Dispatchers
+16:import kotlinx.coroutines.withContext
+17:import kotlinx.serialization.json.add
+18:import kotlinx.serialization.json.buildJsonObject
+19:import kotlinx.serialization.json.contentOrNull
+20:import kotlinx.serialization.json.jsonObject
+21:import kotlinx.serialization.json.jsonPrimitive
+22:import kotlinx.serialization.json.put
+23:import kotlinx.serialization.json.putJsonArray
+24:import kotlinx.serialization.json.putJsonObject
+25:import kotlin.io.encoding.Base64
+26:import kotlin.io.encoding.ExperimentalEncodingApi
+27:import me.rerere.ai.core.InputSchema
+28:import me.rerere.ai.core.MessageRole
+29:import me.rerere.ai.core.Tool
+30:import me.rerere.ai.ui.UIMessage
+31:import me.rerere.ai.ui.UIMessagePart
+32:import me.rerere.common.android.Logging
+33:import me.rerere.rikkahub.data.files.FilesManager
+36:fun createSetWallpaperTool(
+----- tools/ZipFilesTool -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import kotlinx.serialization.json.JsonPrimitive
+10:import kotlinx.serialization.json.buildJsonArray
+11:import kotlinx.serialization.json.buildJsonObject
+12:import kotlinx.serialization.json.contentOrNull
+13:import kotlinx.serialization.json.jsonArray
+14:import kotlinx.serialization.json.jsonObject
+15:import kotlinx.serialization.json.jsonPrimitive
+16:import kotlinx.serialization.json.put
+17:import me.rerere.ai.core.InputSchema
+18:import me.rerere.ai.core.Tool
+19:import me.rerere.ai.ui.UIMessagePart
+20:import java.util.concurrent.ConcurrentHashMap
+64:fun buildWriteFilesTool(conversationId: String? = null): Tool = Tool(
+265:fun buildWriteFilesTool(): Tool = buildWriteFilesTool(null)
+----- tools/HtmlToText -----
+7:package me.rerere.rikkahub.data.ai.tools
+----- tools/TextReplacers -----
+7:package me.rerere.rikkahub.data.ai.tools
+----- tools/ToolSurfaceBuilder -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import android.content.Context
+10:import kotlinx.serialization.json.Json
+11:import me.rerere.ai.core.Tool
+12:import me.rerere.ai.ui.UIMessage
+13:import kotlinx.serialization.json.jsonObject
+14:import me.rerere.rikkahub.data.ai.mcp.McpManager
+15:import me.rerere.rikkahub.data.datastore.Settings
+16:import me.rerere.rikkahub.data.files.FilesManager
+17:import me.rerere.rikkahub.data.files.SkillManager
+18:import me.rerere.rikkahub.data.repository.MemoryRepository
+19:import me.rerere.rikkahub.data.repository.WorkspaceRepository
+20:import me.rerere.rikkahub.plugin.provider.PluginToolProvider
+----- tools/ToolNaming -----
+7:package me.rerere.rikkahub.data.ai.tools
+9:import kotlin.uuid.Uuid
+----- tools/ToolInvocationContext -----
+7:package me.rerere.rikkahub.data.ai.tools
+=========== LocalToolOption (orangechat) ===========
+cat: /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt: No such file or directory
+=========== LocalTools registrations (orangechat) ===========
+136:    val javascriptTool by lazy {
+199:    val timeTool by lazy {
+235:    val clipboardTool by lazy {
+292:    val ttsTool by lazy {
+324:    val askUserTool by lazy {
+440:    val webFetchTool by lazy {
+485:    val listZipContentsTool by lazy {
+549:        if (options.contains(LocalToolOption.Workflows)) {
+553:            tools.add(me.rerere.rikkahub.workflow.tools.workflowCreateTool(
+558:            tools.add(me.rerere.rikkahub.workflow.tools.workflowListTool(workflowRepository))
+559:            tools.add(me.rerere.rikkahub.workflow.tools.workflowGetTool(workflowRepository))
+560:            tools.add(me.rerere.rikkahub.workflow.tools.workflowUpdateTool(
+565:            tools.add(me.rerere.rikkahub.workflow.tools.workflowDeleteTool(workflowRepository))
+566:            tools.add(me.rerere.rikkahub.workflow.tools.workflowSetEnabledTool(workflowRepository))
+567:            tools.add(me.rerere.rikkahub.workflow.tools.workflowRunTool(workflowEngine, workflowRepository))
+578:        if (options.contains(LocalToolOption.JavascriptEngine)) {
+579:            tools.add(javascriptTool)
+581:        if (options.contains(LocalToolOption.TimeInfo)) {
+582:            tools.add(timeTool)
+584:        if (options.contains(LocalToolOption.Clipboard)) {
+585:            tools.add(clipboardTool)
+587:        if (options.contains(LocalToolOption.Tts)) {
+588:            tools.add(ttsTool)
+590:        if (options.contains(LocalToolOption.RequestVoiceCall) && conversationId != null) {
+591:            tools.add(createRequestVoiceCallTool(conversationId))
+593:        if (options.contains(LocalToolOption.AskUser)) {
+594:            tools.add(askUserTool)
+597:        if (options.contains(LocalToolOption.Calendar)) {
+598:            tools.add(createCalendarTool(context))
+600:        if (options.contains(LocalToolOption.WebFetch)) {
+601:            tools.add(webFetchTool)
+603:        if (options.contains(LocalToolOption.ListZipContents)) {
+604:            tools.add(listZipContentsTool)
+606:        if (options.contains(LocalToolOption.ScreenAutomation)) {
+608:            tools.add(me.rerere.rikkahub.data.ai.tools.local.tapTool(invocationContext))
+609:            tools.add(me.rerere.rikkahub.data.ai.tools.local.longPressTool(invocationContext))
+610:            tools.add(me.rerere.rikkahub.data.ai.tools.local.swipeTool(invocationContext))
+611:            tools.add(me.rerere.rikkahub.data.ai.tools.local.readWindowTreeTool(invocationContext))
+612:            tools.add(me.rerere.rikkahub.data.ai.tools.local.findNodeTool(invocationContext))
+613:            tools.add(me.rerere.rikkahub.data.ai.tools.local.clickNodeTool(invocationContext))
+614:            tools.add(me.rerere.rikkahub.data.ai.tools.local.setTextTool(invocationContext))
+615:            tools.add(me.rerere.rikkahub.data.ai.tools.local.scrollTool(invocationContext))
+616:            tools.add(me.rerere.rikkahub.data.ai.tools.local.globalActionTool(invocationContext))
+617:            tools.add(me.rerere.rikkahub.data.ai.tools.local.takeScreenshotTool(context))
+619:        if (options.contains(LocalToolOption.Ssh)) {
+620:            tools.add(me.rerere.rikkahub.data.ai.tools.local.sshExecTool(context))
+621:            tools.add(me.rerere.rikkahub.data.ai.tools.local.saveSshHostTool(sshHostRepository))
+622:            tools.add(me.rerere.rikkahub.data.ai.tools.local.listSshHostsTool(sshHostRepository))
+623:            tools.add(me.rerere.rikkahub.data.ai.tools.local.deleteSshHostTool(sshHostRepository))
+624:            tools.add(me.rerere.rikkahub.data.ai.tools.local.sshExecSavedTool(context, sshHostRepository))
+625:            tools.add(me.rerere.rikkahub.data.ai.tools.local.sshUploadTool(context, sshHostRepository))
+626:            tools.add(me.rerere.rikkahub.data.ai.tools.local.sshDownloadTool(context, sshHostRepository))
+627:            tools.add(me.rerere.rikkahub.data.ai.tools.local.forgetSshHostKeyTool(context))

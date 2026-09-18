@@ -138,6 +138,8 @@ import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
 import me.rerere.rikkahub.utils.CrashHandler
+import me.rerere.rikkahub.workflow.ui.WorkflowDetailScreen
+import me.rerere.rikkahub.workflow.ui.WorkflowsScreen
 import me.rerere.rikkahub.utils.openUsageAccessSettings
 import okhttp3.OkHttpClient
 import org.koin.android.ext.android.inject
@@ -606,6 +608,14 @@ class RouteActivity : ComponentActivity() {
                                 SearchPage()
                             }
 
+                            entry<Screen.Workflows> {
+                                WorkflowsScreen()
+                            }
+
+                            entry<Screen.WorkflowDetail> { key ->
+                                WorkflowDetailScreen(key.id)
+                            }
+
                             entry<Screen.Stats> {
                                 StatsPage()
                             }
@@ -835,6 +845,12 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object MessageSearch : Screen
+
+    @Serializable
+    data object Workflows : Screen
+
+    @Serializable
+    data class WorkflowDetail(val id: String) : Screen
 
     @Serializable
     data object Stats : Screen

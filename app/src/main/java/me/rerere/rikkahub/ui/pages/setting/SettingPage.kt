@@ -278,6 +278,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         supportingContent = { Text("装插件给我加新本事，装了就能在这管") },
                         headlineContent = { Text("插件") },
                     )
+                    item(
+                        onClick = { navController.navigate(Screen.Workflows) },
+                        leadingContent = { Icon(HugeIcons.Book03, null) },
+                        supportingContent = { Text("到点或者连上某个网络，自己干活") },
+                        headlineContent = { Text("工作流") },
+                    )
                 }
             }
 

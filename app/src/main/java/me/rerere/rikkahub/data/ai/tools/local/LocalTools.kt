@@ -172,6 +172,19 @@ class LocalTools(
                 )
             )
         }
+        if (options.contains(LocalToolOption.ScreenAutomation)) {
+            tools.add(tapTool())
+            tools.add(longPressTool())
+            tools.add(swipeTool())
+            tools.add(readWindowTreeTool())
+            tools.add(findNodeTool())
+            tools.add(clickNodeTool())
+            tools.add(setTextTool())
+            tools.add(scrollTool())
+            tools.add(globalActionTool())
+            tools.add(takeScreenshotTool(context))
+        }
+
         // 换头像：常驻，不用开关
         tools.add(avatarTool)
         return tools

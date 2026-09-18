@@ -45,6 +45,7 @@ private val SYSTEM_TOOL_ROWS = listOf(
     SystemToolRow(LocalToolOption.Gadgetbridge, "手表健康", "读取 Gadgetbridge 导出的数据库，获取步数、心率、睡眠，需要所有文件访问权限"),
     SystemToolRow(LocalToolOption.Location, "位置", "允许获取你的当前位置，并用高德 API 转换为地址"),
     SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "允许用高德 API 搜索周边地点，如餐厅、商店、景点"),
+    SystemToolRow(LocalToolOption.ScreenAutomation, "屏幕自动化", "允许点按、滑动、长按、读界面、截图。要在系统里开无障碍（跟 App 锁同一个开关）"),
 )
 
 @Composable

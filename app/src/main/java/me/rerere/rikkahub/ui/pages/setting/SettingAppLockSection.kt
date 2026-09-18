@@ -41,14 +41,14 @@ fun AppLockSection(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CardGroup(
-            title = { Text("App 锁") },
+            title = { Text("无障碍") },
         ) {
             item(
                 headlineContent = { Text("开无障碍") },
                 supportingContent = {
                     Text(
-                        if (serviceOn) "给了，现在拦得住"
-                        else "没给，点这里去系统里给兔子开一下"
+                        if (serviceOn) "开了，App 锁和屏幕自动化都能用"
+                        else "没开，点这里去系统里给兔子开一下（两件事共用这一个开关）"
                     )
                 },
                 onClick = if (serviceOn) null else {

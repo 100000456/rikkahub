@@ -90,6 +90,10 @@ sealed class LocalToolOption {
     data object ExploreNearby : LocalToolOption()
 
     @Serializable
+    @SerialName("screen_automation")
+    data object ScreenAutomation : LocalToolOption()
+
+    @Serializable
     @SerialName("workflows")
     data object Workflows : LocalToolOption()
 }

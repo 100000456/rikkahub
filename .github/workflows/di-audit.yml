@@ -19,23 +19,30 @@ jobs:
       - name: Dump wiring surface
         run: |
           set -u
-          OUT=.di-audit.txt
+          OUT=.di-wiring.txt
+          RA=app/src/main/java/me/rerere/rikkahub/RouteActivity.kt
+          SP=app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingPage.kt
+          WE=app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt
           {
-            echo "===== A. GenerationLoop 170-215 ====="
-            sed -n '160,215p' app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt
-            echo "----- GenerationLoop imports -----"
-            sed -n '1,40p' app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt
+            echo "===== A. RouteActivity: 所有 Screen 成员 ====="
+            grep -nE 'object : Screen|data object [A-Za-z]+ *: *Screen|data object [A-Za-z]+ *$' "$RA" | head -80
             echo
-            echo "===== B. RouteActivity: Screen 定义 ====="
-            grep -nE 'data object|sealed (class|interface) Screen|object Screen' app/src/main/java/me/rerere/rikkahub/RouteActivity.kt | head -80
-            echo "----- RouteActivity: 设置页相关的 entry -----"
-            grep -nE 'Setting|entry<|entry\(' app/src/main/java/me/rerere/rikkahub/RouteActivity.kt | head -120
+            echo "===== B. RouteActivity: SettingProactiveMessage 相关行（前后 8 行）====="
+            grep -n 'SettingProactiveMessage' "$RA" || true
+            for n in $(grep -n 'SettingProactiveMessage' "$RA" | cut -d: -f1); do
+              s=$((n-10)); [ $s -lt 1 ] && s=1
+              e=$((n+14))
+              echo "--- around $n ---"
+              sed -n "${s},${e}p" "$RA"
+            done
             echo
-            echo "===== C. SettingPage.kt 全文 ====="
-            cat app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingPage.kt
+            echo "===== C. SettingPage: 行结构与导入 ====="
+            sed -n '1,45p' "$SP"
+            echo "--- 关键行 ---"
+            grep -nE 'onClick|Screen\.|SettingItem|CardGroup|item\(|navigate' "$SP" | head -80
             echo
-            echo "===== D. WorkflowEngine: 动作执行段 ====="
-            grep -nE 'execute|headless|Headless|HARDLINE|hardline|needsApproval|actionRunner' app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt -B4 -A22 | head -220
+            echo "===== D. WorkflowEngine 80-215 ====="
+            sed -n '80,215p' "$WE"
           } > "$OUT"
           wc -l "$OUT"
 
@@ -43,6 +50,6 @@ jobs:
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git add -f .di-audit.txt
-          git commit -m "ci: wiring surface dump" || true
+          git add -f .di-wiring.txt
+          git commit -m "ci: wiring dump" || true
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)

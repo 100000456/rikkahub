@@ -1,399 +1,182 @@
-===== A. RouteActivity: 所有 Screen 成员 =====
-685:    data object History : Screen
-688:    data object Favorite : Screen
-691:    data object Assistant : Screen
-718:    data object Translator : Screen
-721:    data object Setting : Screen
-724:    data object Backup : Screen
-727:    data object ImageGen : Screen
-733:    data object SettingTheme : Screen
-736:    data object SettingPreferences : Screen
-739:    data object SettingPreferencesTheme : Screen
-742:    data object SettingPreferencesNotification : Screen
-745:    data object SettingPreferencesGeneral : Screen
-748:    data object SettingPreferencesUI : Screen
-751:    data object SettingPreferencesNetwork : Screen
-754:    data object SettingProvider : Screen
-760:    data object SettingModels : Screen
-763:    data object SettingAbout : Screen
-766:    data object SettingSearch : Screen
-772:    data object SettingSpeech : Screen
-775:    data object SettingMcp : Screen
-778:    data object SettingDonate : Screen
-781:    data object SettingFiles : Screen
-784:    data object SettingWeb : Screen
-787:    data object SettingSystemTools : Screen
-790:    data object SettingProactiveMessage : Screen
-793:    data object SettingQqBot : Screen
-796:    data object SettingWeixinBot : Screen
-799:    data object SettingPlugins : Screen
-814:    data object Debug : Screen
-817:    data object Log : Screen
-820:    data object Extensions : Screen
-823:    data object QuickMessages : Screen
-826:    data object Prompts : Screen
-829:    data object Skills : Screen
-832:    data object Workspaces : Screen
-847:    data object MessageSearch : Screen
-850:    data object Workflows : Screen
-856:    data object Stats : Screen
-
-===== B. RouteActivity: SettingProactiveMessage 相关行（前后 8 行）=====
-118:import me.rerere.rikkahub.ui.pages.setting.SettingProactiveMessagePage
-493:                            entry<Screen.SettingProactiveMessage> {
-494:                                SettingProactiveMessagePage()
-790:    data object SettingProactiveMessage : Screen
---- around 118 ---
-import me.rerere.rikkahub.ui.pages.imggen.ImageGenPage
-import me.rerere.rikkahub.ui.pages.log.LogPage
-import me.rerere.rikkahub.ui.pages.search.SearchPage
-import me.rerere.rikkahub.ui.pages.setting.SettingAboutPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesThemePage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNotificationPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNetworkPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
-import me.rerere.rikkahub.ui.pages.setting.SettingProactiveMessagePage
-import me.rerere.rikkahub.ui.pages.setting.SettingQqBotPage
-import me.rerere.rikkahub.ui.pages.setting.SettingSystemToolsPage
-import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
-import me.rerere.rikkahub.ui.pages.setting.SettingWeixinBotPage
-import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
-import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
-import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
-import me.rerere.rikkahub.ui.pages.setting.SettingModelPage
-import me.rerere.rikkahub.ui.pages.setting.SettingPage
-import me.rerere.rikkahub.ui.pages.setting.SettingProviderDetailPage
-import me.rerere.rikkahub.ui.pages.setting.SettingProviderPage
-import me.rerere.rikkahub.ui.pages.setting.SettingSearchDetailPage
-import me.rerere.rikkahub.ui.pages.setting.SettingSearchPage
-import me.rerere.rikkahub.ui.pages.setting.SettingSpeechPage
---- around 493 ---
-                            }
-
-                            entry<Screen.SettingWeb> {
-                                SettingWebPage()
-                            }
-
-                            entry<Screen.SettingSystemTools> {
-                                SettingSystemToolsPage()
-                            }
-
-                            entry<Screen.SettingProactiveMessage> {
-                                SettingProactiveMessagePage()
-                            }
-
-                            entry<Screen.SettingQqBot> {
-                                SettingQqBotPage()
-                            }
-
-                            entry<Screen.SettingWeixinBot> {
-                                SettingWeixinBotPage()
-                            }
-
-                            entry<Screen.SettingPlugins> {
-                                val nav = LocalNavController.current
-                                PluginManagePage(
---- around 494 ---
-
-                            entry<Screen.SettingWeb> {
-                                SettingWebPage()
-                            }
-
-                            entry<Screen.SettingSystemTools> {
-                                SettingSystemToolsPage()
-                            }
-
-                            entry<Screen.SettingProactiveMessage> {
-                                SettingProactiveMessagePage()
-                            }
-
-                            entry<Screen.SettingQqBot> {
-                                SettingQqBotPage()
-                            }
-
-                            entry<Screen.SettingWeixinBot> {
-                                SettingWeixinBotPage()
-                            }
-
-                            entry<Screen.SettingPlugins> {
-                                val nav = LocalNavController.current
-                                PluginManagePage(
-                                    onNavigateToFolder = { folderId ->
---- around 790 ---
-    @Serializable
-    data object SettingFiles : Screen
-
-    @Serializable
-    data object SettingWeb : Screen
-
-    @Serializable
-    data object SettingSystemTools : Screen
-
-    @Serializable
-    data object SettingProactiveMessage : Screen
-
-    @Serializable
-    data object SettingQqBot : Screen
-
-    @Serializable
-    data object SettingWeixinBot : Screen
-
-    @Serializable
-    data object SettingPlugins : Screen
-
-    @Serializable
-    data class PluginFolder(val folderId: String) : Screen
-
-    @Serializable
-
-===== C. SettingPage: 行结构与导入 =====
-package me.rerere.rikkahub.ui.pages.setting
-
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import me.rerere.hugeicons.HugeIcons
---- 关键行 ---
-75:import me.rerere.rikkahub.ui.components.ui.CardGroup
-107:                Button(onClick = {
-109:                    navController.navigate(Screen.SettingDonate)
-115:                TextButton(onClick = {
-151:            item("generalSettings") {
-158:                CardGroup(
-162:                    item(
-170:                                    navController.navigate(Screen.Setting) {
-171:                                        popUpTo(Screen.Setting) {
-189:                    item(
-190:                        onClick = { navController.navigate(Screen.SettingPreferences) },
-195:                    item(
-196:                        onClick = { navController.navigate(Screen.Assistant) },
-201:                    item(
-202:                        onClick = { navController.navigate(Screen.Extensions) },
-210:            item("modelServices") {
-211:                CardGroup(
-215:                    item(
-216:                        onClick = { navController.navigate(Screen.SettingModels) },
-221:                    item(
-222:                        onClick = { navController.navigate(Screen.SettingProvider) },
-227:                    item(
-228:                        onClick = { navController.navigate(Screen.SettingSearch) },
-233:                    item(
-234:                        onClick = { navController.navigate(Screen.SettingSpeech) },
-239:                    item(
-240:                        onClick = { navController.navigate(Screen.SettingMcp) },
-245:                    item(
-246:                        onClick = { navController.navigate(Screen.SettingWeb) },
-251:                    item(
-252:                        onClick = { navController.navigate(Screen.SettingSystemTools) },
-257:                    item(
-258:                        onClick = { navController.navigate(Screen.SettingProactiveMessage) },
-263:                    item(
-264:                        onClick = { navController.navigate(Screen.SettingQqBot) },
-269:                    item(
-270:                        onClick = { navController.navigate(Screen.SettingWeixinBot) },
-275:                    item(
-276:                        onClick = { navController.navigate(Screen.SettingPlugins) },
-281:                    item(
-282:                        onClick = { navController.navigate(Screen.Workflows) },
-290:            item("dataSettings") {
-294:                CardGroup(
-298:                    item(
-299:                        onClick = { navController.navigate(Screen.Backup) },
-304:                    item(
-305:                        onClick = { navController.navigate(Screen.SettingFiles) },
-325:            item("aboutSettings") {
-330:                CardGroup(
-334:                    item(
-335:                        onClick = { navController.navigate(Screen.SettingAbout) },
-345:                                    onClick = { showQQGroupSheet = true }
-359:                                    onClick = {
-373:                    item(
-374:                        onClick = {
-386:                    item(
-387:                        onClick = { navController.navigate(Screen.Log) },
-392:                    item(
-393:                        onClick = { navController.navigate(Screen.SettingDonate) },
-398:                    item(
-399:                        onClick = {
-448:                onClick = {
-449:                    navController.navigate(Screen.SettingProvider)
-484:                    onClick = {
-
-===== D. WorkflowEngine 80-215 =====
-        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.ai.tools.local.LocalTools>()
-    }
-
-    private val pluginToolProvider: me.rerere.rikkahub.plugin.provider.PluginToolProvider by lazy {
-        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.plugin.provider.PluginToolProvider>()
-    }
-
-    /**
-     * Phase 24 — unified AgentRun ledger writer. Resolved lazily via Koin (same pattern as
-     * [localTools] above) to keep the engine's constructor DI surface minimal — the engine
-     * is shared across cron / sub-agent surfaces and a tiny lookup on the rare-fire path is
-     * cheaper than threading another constructor arg through the factory. No cycle risk:
-     * AgentRunRepository depends only on its DAO.
-     */
-    private val agentRunRepo: me.rerere.rikkahub.data.agentrun.AgentRunRepository by lazy {
-        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.agentrun.AgentRunRepository>()
-    }
-
-    private val perWorkflowLocks = mutableMapOf<String, Mutex>()
-    private val locksMutex = Mutex()
-
-    private suspend fun lockFor(id: String): Mutex = locksMutex.withLock {
-        perWorkflowLocks.getOrPut(id) { Mutex() }
-    }
-
-    /**
-     * Drop the lock entry for a deleted workflow. Wired from
-     * [me.rerere.rikkahub.workflow.repository.WorkflowRepository.deleteCascading] so the
-     * lock map can't grow unbounded across heavy LLM-driven create/delete churn.
-     */
-    suspend fun forgetWorkflow(id: String) {
-        locksMutex.withLock { perWorkflowLocks.remove(id) }
-    }
-
-    /**
-     * Trigger callback target. The registry hands every fire here. [matchSpec] is the
-     * variant that fired — used for diagnostics; the workflow's own [WorkflowDefinition.trigger]
-     * is the source of truth for its semantics.
-     */
-    val triggerCallback = TriggerFireCallback { workflowId, _ -> fire(workflowId) }
-
-    /**
-     * Fire a workflow. Resolves cooldown / daily cap / conditions, then runs the action
-     * sequence. Returns the resulting status — useful for `workflow_run` synchronous tool
-     * call, ignored by the trigger callback path.
-     */
-    suspend fun fire(workflowId: String): FireOutcome = withContext(Dispatchers.IO) {
-        val lock = lockFor(workflowId)
-        lock.withLock { fireLocked(workflowId) }
-    }
-
-    private suspend fun fireLocked(workflowId: String): FireOutcome {
-        val firedAtMs = System.currentTimeMillis()
-        val started = System.nanoTime()
-        val loaded = repository.getById(workflowId)
-            ?: return FireOutcome(WorkflowRunStatus.FAILED, "workflow_not_found", "")
-        val def = loaded.definition
-        val entity = loaded.entity
-
-        // Phase 24 — open the cross-pillar ledger row for this fire. Opened after the
-        // workflow loads so a `workflow_not_found` non-fire isn't recorded, but before the
-        // gate checks so a SKIPPED_* outcome is still visible in the ledger. domain_id is
-        // the workflow id; the ledger row is per-fire (a fresh row each time fire() runs).
-        val ledgerId = agentRunRepo.open(
-            kind = me.rerere.rikkahub.data.agentrun.AgentRunKind.Workflow,
-            domainId = workflowId,
-            metadata = buildJsonObject {
-                put("name", entity.name)
-                put("trigger", def.trigger::class.simpleName ?: "unknown")
-            },
-        )
-
-        if (!entity.enabled) {
-            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_DISABLED, null, "", ledgerId)
-        }
-
-        // Trigger runtime pre-flight — surface "this trigger needs setup" as an explicit
-        // FAILED row in history so the user sees WHY the workflow doesn't fire instead of
-        // just "Never run". The audit found these were silently dying:
-        //  - geofence triggers without ACCESS_FINE_LOCATION + ACCESS_BACKGROUND_LOCATION
-        //  - notification_received without notification listener bound
-        //  - app_launched / app_closed without accessibility service running
-        triggerRuntimeCheck(def.trigger)?.let { reason ->
-            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.FAILED, reason, "", ledgerId)
-        }
-
-        // Cooldown gate. NOTE: must use `lastActualFireAtMs` (most-recent SUCCESS/FAILED
-        // from history) — NOT `entity.lastRunAtMs`, which gets overwritten on every
-        // attempt INCLUDING skips. Using the projected column would let SKIPPED_COOLDOWN
-        // fires push the cooldown window forward indefinitely; the cooldown could never
-        // be satisfied by waiting.
-        val lastActualFireMs = if (def.cooldownSeconds > 0) repository.lastActualFireAtMs(workflowId) else null
-        if (CooldownGate.isWithinCooldown(def.cooldownSeconds, lastActualFireMs, firedAtMs)) {
-            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_COOLDOWN, null, "", ledgerId)
-        }
-
-        // Daily-cap gate
-        if (def.maxRunsPerDay != null) {
-            val today = LocalDate.now(ZoneId.systemDefault()).toString()
-            val countedToday = if (entity.runsTodayDate == today) entity.runsTodayCount else 0
-            if (countedToday >= def.maxRunsPerDay) {
-                return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_DAILY_CAP, null, "", ledgerId)
+===== A. SettingPage 245-292 =====
+                    item(
+                        onClick = { navController.navigate(Screen.SettingWeb) },
+                        leadingContent = { Icon(HugeIcons.ServerStack01, null) },
+                        supportingContent = { Text(stringResource(R.string.setting_page_web_server_desc)) },
+                        headlineContent = { Text(stringResource(R.string.setting_page_web_server)) },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingSystemTools) },
+                        leadingContent = { Icon(HugeIcons.Settings03, null) },
+                        supportingContent = { Text("通知、短信、相机、音乐这些，开一次全局生效") },
+                        headlineContent = { Text("系统工具") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingProactiveMessage) },
+                        leadingContent = { Icon(HugeIcons.WavingHand01, null) },
+                        supportingContent = { Text("到点自己冒出来找你，几个点你定") },
+                        headlineContent = { Text("主动消息") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingQqBot) },
+                        leadingContent = { Icon(HugeIcons.Message01, null) },
+                        supportingContent = { Text("填 AppID 和密钥，用 QQ 私聊跟 AI 说话") },
+                        headlineContent = { Text("QQ Bot") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingWeixinBot) },
+                        leadingContent = { Icon(HugeIcons.MessageMultiple01, null) },
+                        supportingContent = { Text("扫码登录，用微信收发消息") },
+                        headlineContent = { Text("微信 Bot") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingPlugins) },
+                        leadingContent = { Icon(HugeIcons.Puzzle, null) },
+                        supportingContent = { Text("装插件给我加新本事，装了就能在这管") },
+                        headlineContent = { Text("插件") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.Workflows) },
+                        leadingContent = { Icon(HugeIcons.Book03, null) },
+                        supportingContent = { Text("到点或者连上某个网络，自己干活") },
+                        headlineContent = { Text("工作流") },
+                    )
+                }
             }
-        }
 
-        // Conditions
-        if (def.conditions.isNotEmpty()) {
-            val ctx = contextProvider.snapshot(
-                needsLocation = ConditionEvaluator.needsLocation(def.conditions),
-                needsLastChat = ConditionEvaluator.needsLastChat(def.conditions),
-            )
-            val cr = ConditionEvaluator.evaluateAll(def.conditions, ctx)
-            if (cr is ConditionEvaluator.Result.FailedAt) {
-                return persistAndReturn(
-                    workflowId, firedAtMs, started, WorkflowRunStatus.SKIPPED_CONDITIONS,
-                    "condition[${cr.index}] failed: ${cr.reason}", "", ledgerId,
-                )
-            }
-        }
+            item("dataSettings") {
+                val storageState by produceState(-1 to 0L) {
+                    value = filesManager.countChatFiles()
 
-        // Resolve assistant + tools. Prefer the persisted authoring assistant id (added by
-        // the audit-pass fix to remove "first matching assistant" non-determinism). If the
-        // workflow predates that fix (legacy null) OR the authoring assistant was deleted,
-        // fall back to "any assistant with Workflows toggle on" but log loudly — the user's
-        // intent might not match what we run.
-        val settings = settingsStore.settingsFlow.first()
-        val authoringAssistant = run {
-            val storedId = def.authoringAssistantId
-            val byId = if (storedId != null) {
-                settings.assistants.firstOrNull { it.id.toString() == storedId }
-            } else null
-            if (byId != null) {
-                byId
-            } else {
-                if (storedId != null) {
+===== B. WorkflowEngine 215-345 =====
                     Log.w(TAG, "fire: authoring assistant $storedId for workflow $workflowId no longer exists; falling back to first-with-Workflows")
+                }
+                settings.assistants.firstOrNull { asst ->
+                    asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.local.LocalToolOption.Workflows }
+                }
+            }
+        }
+        if (authoringAssistant == null) {
+            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.FAILED,
+                "no_workflows_assistant", "", ledgerId)
+        }
+        // Headless context — sub-agent recursion guard fires from workflow-action
+        // dispatch so a workflow's actions can't spawn a sub-agent that re-fires another
+        // workflow_run that re-spawns ad infinitum.
+        val tools = buildList {
+            addAll(localTools.getTools(authoringAssistant.localTools))
+            addAll(pluginToolProvider.getTools())
+        }
+
+        // 敏感工具拦截交给动作层的硬线守卫兜底（兔子侧暂无全局开关）
+
+        // Execute the action sequence. ActionRunner enforces per-action timeout + HARDLINE.
+        val result = actionRunner.run(def.actions, tools)
+        val status = if (result.success) WorkflowRunStatus.SUCCESS else WorkflowRunStatus.FAILED
+        return persistAndReturn(workflowId, firedAtMs, started, status, result.error, result.summary, ledgerId)
+    }
+
+    /**
+     * Pre-flight check for trigger types that depend on runtime state (a permission, a
+     * service binding, Play Services availability). Returns null if the trigger can fire,
+     * or a stable error code otherwise — the engine then records the fire as FAILED with
+     * that reason and the user sees a clear "missing setup" message in workflow_get history.
+     */
+    private fun triggerRuntimeCheck(trigger: me.rerere.rikkahub.workflow.model.TriggerSpec): String? {
+        val ctx = (this as Any).let {
+            // Static context lookup via Koin so we don't need to take it as a constructor arg
+            // (engine is shared across cron / sub-agent surfaces; minimising its DI surface
+            // is worth a tiny lookup cost on the rare-fire path).
+            org.koin.java.KoinJavaComponent.getKoin().get<android.content.Context>()
+        }
+        return when (trigger) {
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceEnter,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceExit -> {
+                val fineGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+                    ctx, android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                val bgGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    androidx.core.content.ContextCompat.checkSelfPermission(
+                        ctx, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                } else true
+                when {
+                    !fineGranted -> "geofence_unavailable: ACCESS_FINE_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
+                    !bgGranted -> "geofence_unavailable: ACCESS_BACKGROUND_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
+                    else -> null
+                }
+            }
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.NotificationReceived -> {
+                if (!me.rerere.rikkahub.data.ai.tools.local.NotificationListenerHandle.isBound()) {
+                    "notification_listener_not_enabled: enable the RikkaHub notification listener in Settings → Apps → Special access → Notification access"
+                } else null
+            }
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppLaunched,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppForegroundDuration -> {
+                if (!me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle.isRunning()) {
+                    "accessibility_not_enabled: enable the RikkaHub accessibility service in Settings → Accessibility (required for app_launched / app_closed / app_foreground_duration triggers)"
+                } else null
+            }
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceConnected,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceDisconnected -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+                        ctx, android.Manifest.permission.BLUETOOTH_CONNECT
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!granted) "bluetooth_connect_not_granted: BLUETOOTH_CONNECT runtime permission not granted — required on Android 12+ to read paired-device addresses"
+                    else null
+                } else null
+            }
+            else -> null
+        }
+    }
+
+    private suspend fun persistAndReturn(
+        workflowId: String,
+        firedAtMs: Long,
+        startedNanos: Long,
+        status: WorkflowRunStatus,
+        error: String?,
+        summary: String,
+        ledgerId: String,
+    ): FireOutcome {
+        val durationMs = (System.nanoTime() - startedNanos) / 1_000_000L
+        runCatching {
+            repository.recordFire(
+                workflowId = workflowId,
+                firedAtMs = firedAtMs,
+                status = status,
+                durationMs = durationMs,
+                errorMessage = error,
+            )
+        }.onFailure { Log.w(TAG, "recordFire failed for $workflowId", it) }
+        // Phase 24 — mirror the terminal outcome into the cross-pillar ledger. Every
+        // WorkflowRunStatus is terminal from the ledger's point of view: SUCCESS →
+        // succeeded; FAILED → failed; every SKIPPED_* variant → cancelled (the fire was
+        // accepted but a gate stopped it — not a failure, not a success).
+        val ledgerStatus = when (status) {
+            WorkflowRunStatus.SUCCESS -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.succeeded
+            WorkflowRunStatus.FAILED -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.failed
+            else -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
+        }
+        agentRunRepo.markTerminal(
+            id = ledgerId,
+            status = ledgerStatus,
+            lastError = error ?: if (ledgerStatus == me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled) status.name else null,
+        )
+        return FireOutcome(status, error, summary)
+    }
+
+    companion object { private const val TAG = "WorkflowEngine" }
+
+    data class FireOutcome(
+        val status: WorkflowRunStatus,
+        val error: String?,
+        val summary: String,
+    )
+}
+
+/**
+ * Cooldown decision in isolation so the (load-bearing) gate logic can be unit-tested
+ * without spinning up Room + the engine. The rule: use the most-recent SUCCESS/FAILED

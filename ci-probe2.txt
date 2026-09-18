@@ -1,0 +1,428 @@
+=========== sizes ===========
+10330 /tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt
+2549 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/ToolInvocationContext.kt
+  2181 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AccessibilityServiceHandle.kt
+  1334 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BiometricResultBuffer.kt
+  2183 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/DnsCache.kt
+ 16076 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FindNodeTool.kt
+  5257 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt
+  3644 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt
+  1053 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/InteractiveToolStreamer.kt
+   860 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/NotificationListenerHandle.kt
+  2034 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenWaker.kt
+  8755 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt
+  6778 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt
+ 10311 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SshHostsTool.kt
+  9087 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SshSftpTool.kt
+ 35759 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SshTool.kt
+  4594 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SwipeTool.kt
+  6989 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TapTool.kt
+  1564 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeHelper.kt
+  6719 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WindowTreeTool.kt
+125178 total
+=========== RikkaAccessibilityService structure ===========
+33:data class ActionLogEntry(
+34:    val type: String,
+35:    val paramsSummary: String,
+36:    val success: Boolean,
+37:    val timestampMs: Long,
+40:class RikkaAccessibilityService : AccessibilityService() {
+49:    val running = _running.asStateFlow()
+52:    val lastActions = _lastActions.asStateFlow()
+62:    override fun onServiceConnected() {
+69:    override fun onUnbind(intent: android.content.Intent?): Boolean {
+77:    override fun onDestroy() {
+85:    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+98:    override fun onInterrupt() {
+102:    fun appendLog(entry: ActionLogEntry) {
+113:    suspend fun dispatchGestureAsync(gesture: GestureDescription): Boolean {
+144:    fun buildTapPath(x: Float, y: Float): Path = Path().apply { moveTo(x, y) }
+146:    fun buildSwipePath(sx: Float, sy: Float, ex: Float, ey: Float): Path = Path().apply {
+155:    fun traverseTree(
+189:    fun resolveClickable(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+204:    suspend fun captureScreenshot(displayId: Int): ScreenshotOutcome {
+251:    companion object {
+=========== accessibility_service_config.xml ===========
+<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityFlags="flagDefault"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
+    android:notificationTimeout="100"
+    android:summary="允许橘瓣执行屏幕自动化（点击、滑动、读取界面元素、截图）。仅在助手开启「屏幕自动化」工具时生效。" />
+=========== ToolInvocationContext full ===========
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.data.ai.tools
+
+/**
+ * Phase 17 stability — context every tool factory in [LocalTools.getTools] sees about WHO
+ * is invoking it. Until this layer existed, tools that needed to know the calling
+ * conversation / assistant id (sub-agent recursion guard, workflow_create authoring-id
+ * persistence) had no way to read it — both shipped with placeholder defaults and silent
+ * gaps the audit caught.
+ *
+ * Convention: every getTools() caller MUST construct a ToolInvocationContext with the most
+ * specific data it has. The default ([EMPTY]) is a no-op safe fallback used when the
+ * caller doesn't track the data (legacy / one-off paths) — but factories should treat the
+ * empty context as "I don't know" not "no constraints", and apply conservative defaults.
+ *
+ * Fields:
+ *  - [callerAssistantId]: the assistant whose toggles are being dispatched. ChatService
+ *    knows this from `settings.getCurrentAssistant().id`. Cron / workflow / sub-agent
+ *    paths know it from their respective entity's assistant id.
+ *  - [callerConversationId]: the conversation-uuid of the user-facing chat (interactive)
+ *    or the headless conversation (cron / workflow / sub-agent / external-automation).
+ *  - [isHeadless]: true when the dispatch is happening from a system flow rather than the
+ *    user typing in a chat. Sub-agents, cron jobs, workflows, and external-automation
+ *    runs all set this to true so the recursion guard fires.
+ *  - [modelCanSeeImages]: true iff the model handling this turn has image input in its
+ *    modalities. `show_image` reads this so a text-only model is told plainly it cannot
+ *    see the picture (and must OCR / file-process it) instead of being handed dimensions
+ *    that read like "I looked at it" — the root cause of confabulated image descriptions.
+ *    Defaults to `true`: the no-knowledge fallback preserves the pre-fix behaviour, and
+ *    ChatService (the only LLM-driven dispatch path) always sets it explicitly.
+ */
+data class ToolInvocationContext(
+    val callerAssistantId: String? = null,
+    val callerConversationId: String? = null,
+    val isHeadless: Boolean = false,
+    val modelCanSeeImages: Boolean = true,
+) {
+    companion object {
+        /** No-knowledge fallback. Factories that depend on context MUST handle this. */
+        val EMPTY = ToolInvocationContext()
+    }
+}
+=========== InteractiveToolStreamer full ===========
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.data.ai.tools.local
+
+import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+
+/**
+ * No-op stub of the agent fork's interactive tool streamer.
+ *
+ * In the upstream agent, this streams progress text back to the user during headless runs
+ * (Telegram / cron / sub-agent) so long-running tool chains show live status. orangechat does
+ * not port that streaming surface, so [NoOp] discards every [streamIfHeadless] call. The screen
+ * automation tools call it unconditionally - this stub keeps their source identical to upstream
+ * while making the calls cheap no-ops.
+ */
+interface InteractiveToolStreamer {
+    fun streamIfHeadless(invocationContext: ToolInvocationContext, text: String)
+
+    object NoOp : InteractiveToolStreamer {
+        override fun streamIfHeadless(invocationContext: ToolInvocationContext, text: String) = Unit
+    }
+}
+=========== WakeHelper + ScreenWaker full ===========
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.data.ai.tools.local
+
+import android.content.Context
+
+/**
+ * Shared entry point for the "wake the screen before doing something the user can see"
+ * pattern. Every interactive tool calls this before its body so headless runs (Telegram
+ * bot, cron, sub-agent) don't launch activities or fire gestures against a dark screen.
+ *
+ * Delegates to [ScreenWaker.wakeIfOff], which already lives in WakeScreenTool.kt and is
+ * idempotent (no-op when the screen is already on). Safe to call from any coroutine
+ * context; never throws — the catch swallows silently. Intentionally NO `android.util.Log`
+ * call here: JVM unit tests with NULL_CONTEXT reach this helper through validation paths
+ * and Log.w would throw "method not mocked", masking the assertion the test is actually
+ * checking. Logging during failure here would be noise anyway.
+ */
+fun wakeScreenIfNeeded(context: Context) {
+    try {
+        if (!ScreenWaker.isInteractive(context)) {
+            ScreenWaker.wakeIfOff(context)
+        }
+    } catch (_: Throwable) {
+        // Silent. The screen-wake is best-effort; any failure (no PowerManager, NPE on
+        // unsafe-allocated test context, security exception) is recoverable — the
+        // calling tool will still attempt its action against a dark screen, which is
+        // strictly no worse than skipping the helper entirely.
+    }
+}
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.data.ai.tools.local
+
+import android.app.KeyguardManager
+import android.content.Context
+import android.os.PowerManager
+
+/**
+ * Reusable helpers so launch_app and any screen-automation tool that needs the screen on can
+ * opt in without duplicating the wake-lock dance. Ported from the upstream agent fork's
+ * WakeScreenTool.kt (only the [ScreenWaker] object; the `wake_screen` Tool itself is already
+ * provided by orangechat's SystemTools, so it is intentionally NOT duplicated here).
+ */
+internal object ScreenWaker {
+    fun isInteractive(ctx: Context): Boolean =
+        ctx.getSystemService(PowerManager::class.java)?.isInteractive == true
+
+    fun isKeyguardLocked(ctx: Context): Boolean =
+        ctx.getSystemService(KeyguardManager::class.java)?.isKeyguardLocked == true
+
+    fun isKeyguardSecure(ctx: Context): Boolean =
+        ctx.getSystemService(KeyguardManager::class.java)?.isKeyguardSecure == true
+
+    /**
+     * Wake the screen if currently off. Uses an ACQUIRE_CAUSES_WAKEUP wake lock held briefly
+     * (`holdMs`) - long enough for the OS to render a frame, then released so we are not
+     * pinning the CPU. FULL_WAKE_LOCK is deprecated since API 17 but still functional for
+     * the "turn the display on" use case.
+     */
+    @Suppress("DEPRECATION")
+    fun wakeIfOff(ctx: Context, holdMs: Long = 3_000L): Boolean {
+        val pm = ctx.getSystemService(PowerManager::class.java) ?: return false
+        if (pm.isInteractive) return false
+        val wl = pm.newWakeLock(
+            PowerManager.FULL_WAKE_LOCK or
+                PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                PowerManager.ON_AFTER_RELEASE,
+            "rikkahub:wake_screen"
+        )
+        return try {
+            wl.acquire(holdMs)
+            true
+        } catch (_: Throwable) {
+            false
+        }
+    }
+}
+=========== AccessibilityServiceHandle full ===========
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.data.ai.tools.local
+
+import android.content.ComponentName
+import android.content.Context
+import android.provider.Settings
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import me.rerere.rikkahub.service.RikkaAccessibilityService
+
+/**
+ * Bridge between the LLM tool factories and the live AccessibilityService.
+ * The service publishes itself via [RikkaAccessibilityService.instance]; this object
+ * wraps the access pattern in a uniform "service-not-active" envelope so every tool
+ * gets the same recovery hint.
+ */
+object AccessibilityServiceHandle {
+
+    /** True iff our component is listed in Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES. */
+    fun isEnabledInSettings(ctx: Context): Boolean {
+        val expected = ComponentName(ctx, RikkaAccessibilityService::class.java).flattenToString()
+        val enabled = Settings.Secure.getString(
+            ctx.contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        return enabled.split(":").any { it.equals(expected, ignoreCase = true) }
+    }
+
+    /** True iff the service has connected and the singleton is live. */
+    fun isRunning(): Boolean = RikkaAccessibilityService.instance != null
+
+    /**
+     * Runs [block] with the live service if it's connected; otherwise returns the standard
+     * service-not-active envelope as a JsonObject. Tools should wrap their entire execute()
+     * body in this call.
+     */
+    suspend fun withService(
+        block: suspend (RikkaAccessibilityService) -> JsonObject
+    ): JsonObject {
+        val svc = RikkaAccessibilityService.instance
+            ?: return notActiveEnvelope()
+        return block(svc)
+    }
+
+    fun notActiveEnvelope(): JsonObject = buildJsonObject {
+        put("error", "AccessibilityService not active")
+        put("recovery", "Enable RikkaHub in Settings → Accessibility → Installed Apps")
+    }
+}
+=========== who mentions AgentTurnTracker ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FindNodeTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SwipeTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TapTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/AgentTurnTracker.kt
+=========== AgentTurnTracker definition ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt:20:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-21-import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-22-import me.rerere.rikkahub.service.ActionLogEntry
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-23-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-24-private val ACTION_MAP: Map<String, Int> = mapOf(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-25-    "back" to AccessibilityService.GLOBAL_ACTION_BACK,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-26-    "home" to AccessibilityService.GLOBAL_ACTION_HOME,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-27-    "recents" to AccessibilityService.GLOBAL_ACTION_RECENTS,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-28-    "notifications" to AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-29-    "quick_settings" to AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-30-    "lock_screen" to AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-31-    "power_dialog" to AccessibilityService.GLOBAL_ACTION_POWER_DIALOG,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-32-)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-33-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-34-fun globalActionTool(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-35-    invocationContext: ToolInvocationContext = ToolInvocationContext.EMPTY,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-36-    streamer: InteractiveToolStreamer = InteractiveToolStreamer.NoOp,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-37-): Tool = Tool(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-38-    name = "global_action",
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-39-    needsApproval = true,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-40-    description = """
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-41-        Perform an Android system-level action: back / home / recents / notifications /
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-42-        quick_settings / lock_screen / power_dialog. Routed through
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-43-        AccessibilityService.performGlobalAction. Returns {success: bool}.
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-44-    """.trimIndent().replace("\n", " "),
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-45-    parameters = {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-46-        InputSchema.Obj(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-47-            properties = buildJsonObject {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-48-                put("action", buildJsonObject {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-49-                    put("type", "string")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-50-                    put("enum", buildJsonArray { ACTION_MAP.keys.forEach { add(it) } })
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-51-                    put("description", "Which system action to perform")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-52-                })
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-53-            },
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-54-            required = listOf("action")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-55-        )
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-56-    },
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-57-    execute = { input ->
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt:58:        AgentTurnTracker.recordAutomationAction()
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-59-        me.rerere.rikkahub.service.RikkaAccessibilityService.instance?.let { wakeScreenIfNeeded(it) }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-60-        val action = input.jsonObject["action"]?.jsonPrimitive?.contentOrNull
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-61-        val code = action?.let { ACTION_MAP[it] }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-62-        if (action == null || code == null) {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-63-            return@Tool listOf(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-64-                UIMessagePart.Text(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-65-                    buildJsonObject {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-66-                        put("error", "action must be one of ${ACTION_MAP.keys.toList()}")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-67-                    }.toString()
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-68-                )
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-69-            )
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-70-        }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-71-        val payload = AccessibilityServiceHandle.withService { svc ->
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-72-            val ok = svc.performGlobalAction(code)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-73-            svc.appendLog(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-74-                ActionLogEntry(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-75-                    type = "global_action",
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-76-                    paramsSummary = action,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-77-                    success = ok,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-78-                    timestampMs = System.currentTimeMillis(),
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-79-                )
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-80-            )
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-81-            buildJsonObject {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-82-                put("success", ok)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-83-                if (!ok) put("reason", "rejected_by_os")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-84-            }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-85-        }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-86-        streamer.streamIfHeadless(invocationContext, "GlobalAction $action")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-87-        listOf(UIMessagePart.Text(payload.toString()))
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-88-    }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-89-)
+--
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt:24:import me.rerere.rikkahub.data.ai.AgentTurnTracker
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-25-import me.rerere.rikkahub.data.ai.tools.ToolInvocationContext
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-26-import me.rerere.rikkahub.service.ActionLogEntry
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-27-import me.rerere.rikkahub.service.RikkaAccessibilityService
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-28-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-29-private val ALLOWED_DIRECTIONS = setOf("up", "down", "left", "right")
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-30-private const val SCROLL_GESTURE_MS = 300L
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-31-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-32-private fun findScrollableAt(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-33-    root: AccessibilityNodeInfo,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-34-    x: Int,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-35-    y: Int,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-36-): AccessibilityNodeInfo? {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-37-    val rect = Rect()
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-38-    fun matches(n: AccessibilityNodeInfo): Boolean {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-39-        n.getBoundsInScreen(rect)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-40-        return n.isScrollable && rect.contains(x, y)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-41-    }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-42-    fun walk(n: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-43-        for (i in 0 until n.childCount) {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-44-            val c = n.getChild(i) ?: continue
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-45-            walk(c)?.let { return it }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-46-        }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-47-        return if (matches(n)) n else null
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-48-    }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-49-    return walk(root)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-50-}
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-51-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt-52-private fun findFirstScrollable(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+grep: write error: Broken pipe
+=========== who mentions ActionLogEntry ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WindowTreeTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FindNodeTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SwipeTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TapTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt
+=========== ActionLogEntry definition ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-31-private const val LOG_RING_SIZE = 50
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-32-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt:33:data class ActionLogEntry(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-34-    val type: String,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-35-    val paramsSummary: String,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-36-    val success: Boolean,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-37-    val timestampMs: Long,
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-38-)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-39-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-40-class RikkaAccessibilityService : AccessibilityService() {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-41-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-42-    private val gestureExecutor = Executors.newSingleThreadExecutor { r ->
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-43-        Thread(r, "RikkaAcc-Gesture").apply { isDaemon = true }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-44-    }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-45-    private val gestureHandlerThread = HandlerThread("RikkaAcc-Callback").apply { start() }
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-46-    private val gestureHandler = Handler(gestureHandlerThread.looper)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-47-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-48-    private val _running = MutableStateFlow(false)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-49-    val running = _running.asStateFlow()
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-50-
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-51-    private val _lastActions = MutableStateFlow<List<ActionLogEntry>>(emptyList())
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-52-    val lastActions = _lastActions.asStateFlow()
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt-53-
+=========== ScreenAutomation option def ===========
+grep: /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/LocalToolOption.kt: No such file or directory
+=========== android/app build.gradle deps mentioning jsch biometric ===========
+/tmp/oc/app/build.gradle.kts:208:    // BiometricPrompt (fingerprint/face verify_fingerprint tool)
+/tmp/oc/app/build.gradle.kts:209:    implementation(libs.androidx.biometric)
+/tmp/oc/app/build.gradle.kts:217:    // SSH feature: JSch (mwiede fork) for remote shell + SFTP
+/tmp/oc/app/build.gradle.kts:218:    implementation("com.github.mwiede:jsch:0.2.21")
+/tmp/oc/gradle/libs.versions.toml:55:biometric = "1.1.0"
+/tmp/oc/gradle/libs.versions.toml:154:androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+=========== A11Y related strings ===========
+1211:  <string name="risk_accessibility_title">确认开启无障碍相关功能？</string>
+1212:  <string name="risk_accessibility_message">无障碍服务允许 AI 读取屏幕内容、模拟点击、锁定其他应用等。这是最高级别的系统权限之一，可能被恶意配置或插件利用。请仅在完全信任当前助手和插件时开启。</string>

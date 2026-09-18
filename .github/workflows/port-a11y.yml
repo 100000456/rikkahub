@@ -1,0 +1,457 @@
+name: Port Accessibility Screen Automation
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-a11y.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          test -f /tmp/oc/app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt
+          echo "orangechat fetched"
+
+      - name: Copy screen automation batch
+        run: |
+          set -e
+          SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          DST=app/src/main/java/me/rerere/rikkahub
+          mkdir -p "$DST/service" "$DST/data/ai/tools/local" app/src/main/res/xml
+
+          cp "$SRC/service/RikkaAccessibilityService.kt" "$DST/service/RikkaAccessibilityService.kt"
+          cp /tmp/oc/app/src/main/res/xml/accessibility_service_config.xml app/src/main/res/xml/accessibility_service_config.xml
+
+          for f in TapTool SwipeTool ScrollTool ScreenshotTool WindowTreeTool FindNodeTool GlobalActionTool WakeHelper ScreenWaker InteractiveToolStreamer; do
+            cp "$SRC/data/ai/tools/local/$f.kt" "$DST/data/ai/tools/local/$f.kt"
+          done
+
+          cp "$SRC/data/ai/AgentTurnTracker.kt" "$DST/data/ai/AgentTurnTracker.kt"
+
+          # 兔子的工具审批签名是 (JsonElement) -> Boolean，不是裸 true
+          for f in TapTool SwipeTool ScrollTool ScreenshotTool WindowTreeTool FindNodeTool GlobalActionTool; do
+            sed -i 's/needsApproval = true$/needsApproval = { true }/g' "$DST/data/ai/tools/local/$f.kt"
+          done
+          find "$DST/data/ai/tools/local" -name '*Tool.kt' -newermt '-10 minutes' | sort
+          echo "copy done"
+
+      - name: Write merged AccessibilityServiceHandle
+        run: |
+          cat > app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AccessibilityServiceHandle.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.ai.tools.local
+
+          import android.content.ComponentName
+          import android.content.Context
+          import android.provider.Settings
+          import kotlinx.serialization.json.JsonObject
+          import kotlinx.serialization.json.buildJsonObject
+          import kotlinx.serialization.json.put
+          import me.rerere.rikkahub.service.RikkaAccessibilityService
+
+          /**
+           * 工具工厂与活着的无障碍服务之间的桥。
+           * 服务自己通过 [RikkaAccessibilityService.instance] 挂出来，这里统一包一层
+           * 「服务没开」的信封，让每个工具给出同一句恢复提示。
+           * [running] 是给工作流那边的前台应用触发器用的旧标记，保留不动。
+           */
+          object AccessibilityServiceHandle {
+              @Volatile
+              var running: Boolean = false
+
+              /** 无障碍名单里有没有我们这一条。 */
+              fun isEnabledInSettings(ctx: Context): Boolean {
+                  val expected = ComponentName(ctx, RikkaAccessibilityService::class.java).flattenToString()
+                  val enabled = Settings.Secure.getString(
+                      ctx.contentResolver,
+                      Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                  ) ?: return false
+                  return enabled.split(":").any { it.equals(expected, ignoreCase = true) }
+              }
+
+              /** 服务连上了才算真在跑。 */
+              fun isRunning(): Boolean = RikkaAccessibilityService.instance != null || running
+
+              suspend fun withService(
+                  block: suspend (RikkaAccessibilityService) -> JsonObject
+              ): JsonObject {
+                  val svc = RikkaAccessibilityService.instance ?: return notActiveEnvelope()
+                  return block(svc)
+              }
+
+              fun notActiveEnvelope(): JsonObject = buildJsonObject {
+                  put("error", "AccessibilityService not active")
+                  put("recovery", "去系统设置里给兔子开一下无障碍")
+              }
+          }
+          KT_EOF
+          echo "handle written"
+
+      - name: Rewrite AppLockGuardService as a bridge object
+        run: |
+          cat > app/src/main/java/me/rerere/rikkahub/data/service/AppLockGuardService.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.service
+
+          import android.accessibilityservice.AccessibilityService
+          import android.content.ComponentName
+          import android.content.Context
+          import android.content.Intent
+          import android.provider.Settings
+          import android.util.Log
+          import me.rerere.rikkahub.service.RikkaAccessibilityService
+          import me.rerere.rikkahub.ui.activity.AppLockUnlockActivity
+
+          /**
+           * App 锁的判断helper。以前它自己是一个无障碍服务，现在跟摸屏幕那套共用
+           * [RikkaAccessibilityService] 一个开关，这里只留判断与推解锁页的动作。
+           */
+          object AppLockGuardService {
+
+              private const val TAG = "AppLockGuard"
+
+              /** 解锁后给多少宽限时间，这期间再进不再拦 */
+              private const val UNLOCK_GRACE_MS = 60_000L
+
+              @Volatile private var unlockedPackage: String? = null
+              @Volatile private var unlockedAt = 0L
+
+              /** 无障碍开没开（高版本不让直接查，只能看设置里那份名单） */
+              fun isServiceEnabled(context: Context): Boolean {
+                  val expected = ComponentName(context, RikkaAccessibilityService::class.java)
+                  val raw = runCatching {
+                      Settings.Secure.getString(
+                          context.contentResolver,
+                          Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                      )
+                  }.getOrNull() ?: return false
+                  return raw.split(':').any {
+                      ComponentName.unflattenFromString(it) == expected
+                  }
+              }
+
+              fun markUnlocked(packageName: String) {
+                  unlockedPackage = packageName
+                  unlockedAt = System.currentTimeMillis()
+              }
+
+              fun isUnlocked(packageName: String): Boolean =
+                  unlockedPackage == packageName &&
+                      System.currentTimeMillis() - unlockedAt < UNLOCK_GRACE_MS
+
+              fun openAccessibilitySettings(context: Context) {
+                  val candidates = listOf(
+                      Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS),
+                      Intent(Settings.ACTION_SETTINGS),
+                  )
+                  for (intent in candidates) {
+                      if (runCatching {
+                              context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                          }.isSuccess
+                      ) return
+                  }
+              }
+
+              /**
+               * 无障碍事件里调进来的。前台切到某个 App 时看要不要拦住：
+               * 回桌面，再把输 PIN 的那页推上来。
+               */
+              fun onForegroundChange(service: AccessibilityService, newPackage: String?) {
+                  val pkg = newPackage ?: return
+                  if (pkg.isBlank()) return
+                  if (pkg == service.packageName) return
+                  if (!AppLockStore.isLocked(service, pkg)) return
+                  if (isUnlocked(pkg)) return
+
+                  Log.d(TAG, "拦住 " + pkg)
+                  service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+                  val intent = Intent(service, AppLockUnlockActivity::class.java).apply {
+                      addFlags(
+                          Intent.FLAG_ACTIVITY_NEW_TASK or
+                              Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                              Intent.FLAG_ACTIVITY_SINGLE_TOP
+                      )
+                      putExtra(AppLockUnlockActivity.EXTRA_PACKAGE, pkg)
+                  }
+                  runCatching { service.startActivity(intent) }
+                      .onFailure { Log.e(TAG, "推不开解锁页", it) }
+              }
+          }
+          KT_EOF
+          echo "applock bridge written"
+
+      - name: Patch accessibility wiring
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
+                      sys.exit(1)
+                  s = s.replace(old, new)
+                  print("patched", path, tag)
+              write(path, s)
+
+          SVC = 'app/src/main/java/me/rerere/rikkahub/service/RikkaAccessibilityService.kt'
+          MANIFEST = 'app/src/main/AndroidManifest.xml'
+          LOPT = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt'
+          LTOOLS = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
+          LOCK_SECTION = 'app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingAppLockSection.kt'
+          SYS_TOOLS = 'app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingSystemToolsPage.kt'
+
+          # 1) 无障碍服务：接前台应用、接 App 锁、标记运行态
+          patch(SVC, [
+              (
+                  "AppForegroundDispatcher.onForegroundChange(pkg)",
+                  "AppForegroundDispatcher.onForegroundChange(pkg)\n"
+                  "                me.rerere.rikkahub.data.service.AppLockGuardService.onForegroundChange(this, pkg)",
+                  "app lock hook",
+              ),
+              (
+                  "        instance = this\n",
+                  "        instance = this\n"
+                  "        me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle.running = true\n",
+                  "running true",
+              ),
+              (
+                  "        instance = null\n",
+                  "        instance = null\n"
+                  "        me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle.running = false\n",
+                  "running false",
+              ),
+          ])
+
+          # 2) Manifest：App 锁那条独立服务换成统一的无障碍服务
+          old_service = (
+              '    <service\n'
+              '      android:name=".data.service.AppLockGuardService"\n'
+              '      android:exported="false"\n'
+              '      android:label="@string/app_name"\n'
+              '      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">\n'
+              '      <intent-filter>\n'
+              '        <action android:name="android.accessibilityservice.AccessibilityService" />\n'
+              '      </intent-filter>\n'
+              '      <meta-data\n'
+              '        android:name="android.accessibilityservice"\n'
+              '        android:resource="@xml/app_lock_accessibility" />\n'
+              '    </service>\n'
+          )
+          new_service = (
+              '    <!-- 无障碍：屏幕自动化（点按/滑动/读界面/截图）+ App 锁拦截，共用一个开关 -->\n'
+              '    <service\n'
+              '      android:name=".service.RikkaAccessibilityService"\n'
+              '      android:exported="true"\n'
+              '      android:label="屏幕自动化 · App 锁"\n'
+              '      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">\n'
+              '      <intent-filter>\n'
+              '        <action android:name="android.accessibilityservice.AccessibilityService" />\n'
+              '      </intent-filter>\n'
+              '      <meta-data\n'
+              '        android:name="android.accessibilityservice"\n'
+              '        android:resource="@xml/accessibility_service_config" />\n'
+              '    </service>\n'
+          )
+          patch(MANIFEST, [(old_service, new_service, "unified accessibility service")])
+
+          # 3) 开关
+          patch(LOPT, [
+              (
+                  '    @Serializable\n    @SerialName("workflows")',
+                  '    @Serializable\n'
+                  '    @SerialName("screen_automation")\n'
+                  '    data object ScreenAutomation : LocalToolOption()\n'
+                  '\n'
+                  '    @Serializable\n'
+                  '    @SerialName("workflows")',
+                  "ScreenAutomation option",
+              ),
+          ])
+
+          # 4) 注册工具
+          patch(LTOOLS, [
+              (
+                  "        // 换头像：常驻，不用开关\n",
+                  "        if (options.contains(LocalToolOption.ScreenAutomation)) {\n"
+                  "            tools.add(tapTool())\n"
+                  "            tools.add(longPressTool())\n"
+                  "            tools.add(swipeTool())\n"
+                  "            tools.add(readWindowTreeTool())\n"
+                  "            tools.add(findNodeTool())\n"
+                  "            tools.add(clickNodeTool())\n"
+                  "            tools.add(setTextTool())\n"
+                  "            tools.add(scrollTool())\n"
+                  "            tools.add(globalActionTool())\n"
+                  "            tools.add(takeScreenshotTool(context))\n"
+                  "        }\n"
+                  "\n"
+                  "        // 换头像：常驻，不用开关\n",
+                  "screen automation tools",
+              ),
+          ])
+
+          # 5) 开关页加一行
+          patch(SYS_TOOLS, [
+              (
+                  '    SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "允许用高德 API 搜索周边地点，如餐厅、商店、景点"),\n)',
+                  '    SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "允许用高德 API 搜索周边地点，如餐厅、商店、景点"),\n'
+                  '    SystemToolRow(LocalToolOption.ScreenAutomation, "屏幕自动化", "允许点按、滑动、长按、读界面、截图。要在系统里开无障碍（跟 App 锁同一个开关）"),\n'
+                  ')',
+                  "screen automation row",
+              ),
+          ])
+
+          # 6) App 锁那块的文案：说明现在一个开关管两件事
+          patch(LOCK_SECTION, [
+              (
+                  '            title = { Text("App 锁") },',
+                  '            title = { Text("无障碍") },',
+                  "card title",
+              ),
+              (
+                  '                        if (serviceOn) "给了，现在拦得住"\n'
+                  '                        else "没给，点这里去系统里给兔子开一下"',
+                  '                        if (serviceOn) "开了，App 锁和屏幕自动化都能用"\n'
+                  '                        else "没开，点这里去系统里给兔子开一下（两件事共用这一个开关）"',
+                  "section desc",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-a11y-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== a11y port failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback|SyntaxError' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
+            echo "--- gradle tail ---"
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure-a11y.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-a11y.txt
+          git commit -m "ci: dump a11y port failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/service \
+                     app/src/main/java/me/rerere/rikkahub/data/ai \
+                     app/src/main/java/me/rerere/rikkahub/data/service/AppLockGuardService.kt \
+                     app/src/main/java/me/rerere/rikkahub/ui/pages/setting \
+                     app/src/main/res/xml \
+                     app/src/main/AndroidManifest.xml || true
+          git commit -m "无障碍服务：摸屏幕那套搬进兔子（点按/滑动/长按/读界面/截图/系统按键），App 锁并进同一个开关（编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

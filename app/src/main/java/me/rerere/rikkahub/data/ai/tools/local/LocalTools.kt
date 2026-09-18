@@ -80,6 +80,8 @@ class LocalTools(
 
     val exploreNearbyTool by lazy { buildExploreNearbyTool(context) }
 
+    val avatarTool by lazy { buildAvatarTool(context, settingsStore) }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -170,6 +172,8 @@ class LocalTools(
                 )
             )
         }
+        // 换头像：常驻，不用开关
+        tools.add(avatarTool)
         return tools
     }
 }

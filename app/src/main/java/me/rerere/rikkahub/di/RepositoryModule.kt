@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.di
 
 import android.content.Context
+import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.files.FileFolders
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.SkillManager
@@ -11,6 +12,7 @@ import me.rerere.rikkahub.data.repository.FilesRepository
 import me.rerere.rikkahub.data.repository.GenMediaRepository
 import me.rerere.rikkahub.data.repository.MemoryRepository
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.rikkahub.data.security.SecurityAuditRepository
 import me.rerere.workspace.ProotShellRunner
 import me.rerere.workspace.RootfsInstaller
 import me.rerere.workspace.WorkspaceBindMount
@@ -82,5 +84,13 @@ val repositoryModule = module {
 
     single {
         SkillManager(get(), get())
+    }
+
+    // 安全审计台账。插件那边的扫描器（装插件时记账）和管理器（插件被改过时报警）
+    // 都会伸手要它，之前漏登记，跟记忆库那件一样会让聊天页整个打不开。
+    single {
+        SecurityAuditRepository(
+            get<AppDatabase>().securityAuditDao()
+        )
     }
 }

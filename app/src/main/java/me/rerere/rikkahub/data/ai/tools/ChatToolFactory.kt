@@ -62,6 +62,8 @@ class ChatToolFactory(
             addAll(createSearchTools(settings))
         }
         addAll(localTools.getTools(assistant.localTools))
+        // 打包：把文件塞进一个 zip 交给她（write_files）
+        add(buildWriteFilesTool())
         if (assistant.enableRecentChatsReference) {
             addAll(createConversationTools(conversationRepository, assistant.id))
         }

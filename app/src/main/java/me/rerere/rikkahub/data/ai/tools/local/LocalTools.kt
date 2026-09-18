@@ -125,6 +125,7 @@ class LocalTools(
             tools.add(storageInfoTool)
             tools.add(toastTool)
             tools.add(wakeScreenTool)
+            tools.add(buildSetWallpaperTool(context))
         }
         if (options.contains(LocalToolOption.Sms)) {
             tools.add(smsTool)

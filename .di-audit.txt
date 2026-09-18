@@ -1,335 +1,315 @@
-===== 0. preflight: 已经打进仓库的补丁还在不在 =====
-message.parts count = 2
-safe-replace count = 9
-raw-replace count = 13
---- line 276-279 ---
-                } catch (e: Exception) {
-                    val errMsg = e.message?.replace("\\", "\\\\")?.replace("'", "\\'") ?: "Unknown error"
-                    webView?.post {
-                        webView?.evaluateJavascript(
---- line 400-402 ---
-                } catch (e: Exception) {
-                    val errMsg = e.message?.replace("\\", "\\\\")?.replace("'", "\\'") ?: "Unknown error"
-                    webView?.post {
---- line 1052-1054 ---
-                } catch (e: Exception) {
-                    val errMsg = e.message?.replace("\\", "\\\\")?.replace("'", "\\'") ?: "Unknown error"
-                    webView.post {
---- 崩溃日志截断长度 ---
-11:private const val MAX_STACKTRACE_LENGTH = 60000
-43:        }.take(MAX_STACKTRACE_LENGTH)
+===== 1. 三个开关的文字在哪儿 =====
+none
 
-===== 1. typed lookups get<T>() =====
-     11 AppScope
-     10 AppDatabase
-      5 SettingsStore
-      3 WorkflowRepository
-      3 FilesManager
-      2 me.rerere.rikkahub.workflow.repository.WorkflowRepository
-      2 me.rerere.rikkahub.workflow.execution.WorkflowEngine
-      2 me.rerere.rikkahub.data.db.AppDatabase
-      2 WorkflowEngine
-      1 me.rerere.rikkahub.workflow.trigger.TriggerRegistry
-      1 me.rerere.rikkahub.plugin.provider.PluginToolProvider
-      1 me.rerere.rikkahub.data.ai.tools.local.LocalTools
-      1 me.rerere.rikkahub.data.agentrun.AgentRunRepository
-      1 android.content.Context
-      1 WorkspaceRepository
-      1 WorkspaceManager
-      1 Retrofit
-      1 ProviderManager
-      1 PebbleEngine
-      1 OkHttpClient
-      1 MemoryBankService
-      1 Json
-      1 Context
-      1 AssistantTemplateLoader
+===== 2. 含审批字样的文件清单 =====
+app/src/main/java/me/rerere/rikkahub/data/agentrun/AgentRunRepository.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/HardlineCommandGuard.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt
+app/src/main/java/me/rerere/rikkahub/service/ChatService.kt
+app/src/main/java/me/rerere/rikkahub/service/ConversationSession.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/message/tools/WorkflowToolUIs.kt
+app/src/main/java/me/rerere/rikkahub/ui/components/message/tools/WorkspaceToolUIs.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatList.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatPage.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatVM.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailPage.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt
+app/src/main/java/me/rerere/rikkahub/web/dto/WebDto.kt
+app/src/main/java/me/rerere/rikkahub/web/routes/ConversationRoutes.kt
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt
 
-===== 2. 定义清单（文件 + 类型） =====
------ app/src/main/java/me/rerere/rikkahub/plugin/di/PluginModule.kt
-19:import org.koin.core.module.dsl.viewModel
-27:    single { PluginScanner(androidContext(), get()) }
-30:    single { PluginRepository(androidContext()) }
-33:    single { PluginLoader(androidContext(), get<OkHttpClient>(), get<MemoryBankService>(), get<SettingsStore>()) }
-36:    single { PluginManager(androidContext(), get(), get(), get(), get()) }
-39:    single { PluginToolProvider(get(), get()) }
-42:    viewModel { PluginViewModel(get()) }
------ app/src/main/java/me/rerere/rikkahub/di/AppModule.kt
-29:    includes(pluginModule)
-31:    single<Json> { JsonInstant }
-33:    single {
-37:    single {
-38:        LocalTools(get(), get(), get(), get())
-44:    single {
-45:        get<AppDatabase>().memoryBankDao()
-47:    single {
-49:            memoryBankDAO = get(),
-50:            okHttpClient = get(),
-51:            context = get(),
-56:    single { me.rerere.rikkahub.data.agentrun.AgentRunRepository() }
-57:    single {
-59:            workflowDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowDao(),
-60:            workflowRunDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowRunDao(),
-63:    single { me.rerere.rikkahub.workflow.condition.ContextProvider(get(), get(), get()) }
-64:    single { me.rerere.rikkahub.workflow.execution.WorkflowActionRunner() }
-65:    single {
-67:            repository = get(),
-68:            settingsStore = get(),
-69:            contextProvider = get(),
-70:            actionRunner = get(),
-72:            get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>().bindEngine(engine)
-75:    single {
-77:            context = get(),
-78:            appScope = get(),
-79:            workflowRepository = get(),
-83:    single {
-85:            client = get(),
-86:            appScope = get(),
-90:    single {
-94:    single<EmojiData> {
-95:        EmojiUtils.loadEmoji(get())
-98:    single {
-99:        TTSManager(get())
-102:    single {
-108:    single {
-112:    single {
-113:        SoundEffectPlayer(get())
-116:    single {
-117:        WorkspaceTerminalSessionManager(get(), get())
-122:    single(createdAtStart = true) {
-124:            context = get(),
-125:            appScope = get(),
-126:            eventBus = get(),
-127:            settingsStore = get(),
-131:    single {
-133:            json = get(),
-134:            memoryRepository = get(),
-135:            conversationRepository = get(),
-136:            localTools = get(),
-137:            mcpManager = get(),
-138:            skillManager = get(),
-139:            pluginToolProvider = get(),
-140:            workspaceRepository = get(),
-144:    single {
-146:            context = get(),
-147:            appScope = get(),
-148:            appEventBus = get(),
-149:            settingsStore = get(),
-150:            conversationRepo = get(),
-151:            memoryRepository = get(),
-152:            generationLoop = get(),
-153:            translationHandler = get(),
-154:            templateTransformer = get(),
-155:            providerManager = get(),
-156:            chatToolFactory = get(),
-157:            mcpManager = get(),
-158:            filesManager = get(),
-159:            workspaceRepository = get(),
-160:            folderRepository = get()
-164:    single {
-166:            context = get(),
-167:            appScope = get(),
-168:            chatService = get(),
-169:            conversationRepo = get(),
-170:            folderRepo = get(),
-171:            settingsStore = get(),
-172:            filesManager = get()
------ app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt
-24:import org.koin.core.module.dsl.viewModel
-25:import org.koin.core.module.dsl.viewModelOf
-28:val viewModelModule = module {
-29:    viewModel<ChatVM> { params ->
-31:            id = params.get(),
-32:            context = get(),
-33:            settingsStore = get(),
-34:            conversationRepo = get(),
-35:            chatService = get(),
-36:            updateChecker = get(),
-37:            analytics = get(),
-38:            filesManager = get(),
-39:            favoriteRepository = get(),
-42:    viewModelOf(::ChatDrawerVM)
-43:    viewModelOf(::SettingVM)
-44:    viewModelOf(::DebugVM)
-45:    viewModelOf(::HistoryVM)
-46:    viewModelOf(::AssistantVM)
-47:    viewModel<AssistantDetailVM> {
-49:            id = it.get(),
-50:            settingsStore = get(),
-51:            memoryRepository = get(),
-52:            filesManager = get(),
-53:            skillManager = get(),
-54:            workspaceRepository = get(),
-57:    viewModelOf(::TranslatorVM)
-58:    viewModel<ShareHandlerVM> {
-60:            text = it.get(),
-61:            settingsStore = get(),
-64:    viewModelOf(::BackupVM)
-65:    viewModelOf(::ImgGenVM)
-66:    viewModelOf(::PromptVM)
-67:    viewModelOf(::QuickMessagesVM)
-68:    viewModelOf(::SkillsVM)
-69:    viewModelOf(::SkillDetailVM)
-70:    viewModelOf(::WorkspaceVM)
-71:    viewModel<WorkspaceDetailVM> {
-73:            id = it.get(),
-74:            repository = get(),
-75:            terminalSessionManager = get(),
-78:    viewModelOf(::FavoriteVM)
-79:    viewModelOf(::SearchVM)
-80:    viewModelOf(::StatsVM)
-81:    viewModelOf(::WorkflowsViewModel)
------ app/src/main/java/me/rerere/rikkahub/di/DataSourceModule.kt
-43:    single {
-44:        SettingsStore(context = get(), scope = get())
-47:    single {
-48:        val context: Context = get()
-52:    single {
-53:        AssistantTemplateLoader(settingsStore = get())
-56:    single {
-58:            .loader(get<AssistantTemplateLoader>())
-64:    single { TemplateTransformer(engine = get(), settingsStore = get()) }
-66:    single {
-67:        get<AppDatabase>().conversationDao()
-70:    single {
-71:        get<AppDatabase>().memoryDao()
-74:    single {
-75:        get<AppDatabase>().genMediaDao()
-78:    single {
-79:        get<AppDatabase>().messageNodeDao()
-82:    single {
-83:        get<AppDatabase>().managedFileDao()
-86:    single {
-87:        get<AppDatabase>().favoriteDao()
-90:    single {
-91:        get<AppDatabase>().workspaceDao()
-94:    single {
-95:        get<AppDatabase>().folderDao()
-98:    single {
-99:        MessageFtsManager(get())
-102:    single { McpManager(settingsStore = get(), appScope = get(), filesManager = get()) }
-104:    single {
-106:            context = get(),
-107:            providerManager = get(),
-108:            json = get(),
-112:    single {
-113:        TranslationHandler(providerManager = get())
-116:    single<OkHttpClient> {
-117:        val settingsStore: SettingsStore = get()
-118:        val acceptLang = AcceptLanguageBuilder.fromAndroid(get())
-187:        client.also { SearchService.init(it, get()) }
-190:    single {
-191:        SponsorAPI.create(get())
-194:    single {
-195:        ProviderManager(client = get(), context = get())
-198:    single { BackupManager(context = get(), database = get(), settingsStore = get(), json = get()) }
-200:    single {
-202:            backupManager = get(),
-203:            context = get(),
-204:            httpClient = get()
-208:    single<HttpClient> {
-223:    single {
-225:            backupManager = get(),
-226:            context = get(),
-227:            httpClient = get()
-231:    single<Retrofit> {
-234:            .addConverterFactory(get<Json>().asConverterFactory("application/json; charset=UTF8".toMediaType()))
-238:    single<RikkaHubAPI> {
-239:        get<Retrofit>().create(RikkaHubAPI::class.java)
------ app/src/main/java/me/rerere/rikkahub/di/RepositoryModule.kt
-24:    single {
-25:        ConversationRepository(get(), get(), get(), get(), get(), get())
-28:    single {
-29:        FolderRepository(get(), get())
-32:    single {
-33:        MemoryRepository(get())
-36:    single {
-37:        GenMediaRepository(get())
-40:    single {
-41:        FilesRepository(get())
-44:    single {
-45:        FavoriteRepository(get())
-48:    single {
-49:        val context: Context = get()
-73:    single {
-74:        RootfsInstaller(get())
-77:    single {
-78:        WorkspaceRepository(get(), get(), get(), get())
-81:    single {
-82:        FilesManager(get(), get(), get())
-85:    single {
-86:        SkillManager(get(), get())
-91:    single {
-93:            get<AppDatabase>().securityAuditDao()
+===== 3. 那三个开关所在文件的全文 =====
 
-===== 3. 谁在往容器里伸手（inject / GlobalContext / KoinJavaComponent） =====
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/BootTrigger.kt:17:import org.koin.java.KoinJavaComponent
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/BootTrigger.kt:105:        val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/BootTrigger.kt:106:        val engine = KoinJavaComponent.getKoin().get<WorkflowEngine>()
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:33:import org.koin.java.KoinJavaComponent
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:244:        val scope = runCatching { KoinJavaComponent.getKoin().get<AppScope>() }.getOrNull()
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:284:        val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:286:        val engine = KoinJavaComponent.getKoin().get<WorkflowEngine>()
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:13:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:15:import org.koin.java.KoinJavaComponent
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:27:) : CoroutineWorker(appContext, params), KoinComponent {
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:29:    private val registry: TriggerRegistry by inject()
-app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:45:        val repo = KoinJavaComponent.getKoin().get<WorkflowRepository>()
-app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:80:        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.ai.tools.local.LocalTools>()
-app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:84:        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.plugin.provider.PluginToolProvider>()
-app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:95:        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.agentrun.AgentRunRepository>()
-app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:253:            org.koin.java.KoinJavaComponent.getKoin().get<android.content.Context>()
-app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt:172:                    repository = org.koin.java.KoinJavaComponent.getKoin()
-app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt:174:                    engine = org.koin.java.KoinJavaComponent.getKoin()
-app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:20:import org.koin.java.KoinJavaComponent.getKoin
-app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:301:    val filesManager = getKoin().get<FilesManager>()
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/RegexOutputTransformer.kt:8:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/RegexOutputTransformer.kt:10:object RegexOutputTransformer : OutputMessageTransformer, KoinComponent {
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/PlaceholderTransformer.kt:16:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/PlaceholderTransformer.kt:117:object PlaceholderTransformer : InputMessageTransformer, KoinComponent {
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/OcrTransformer.kt:21:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/OcrTransformer.kt:28:object OcrTransformer : InputMessageTransformer, KoinComponent {
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/Base64ImageToLocalFileTransformer.kt:5:import org.koin.java.KoinJavaComponent.getKoin
-app/src/main/java/me/rerere/rikkahub/data/ai/transformers/Base64ImageToLocalFileTransformer.kt:12:        val filesManager = getKoin().get<FilesManager>()
-app/src/main/java/me/rerere/rikkahub/data/datastore/PreferencesStore.kt:55:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/data/datastore/PreferencesStore.kt:75:) : KoinComponent {
-app/src/main/java/me/rerere/rikkahub/data/provider/WorkspaceDocumentsProvider.kt:17:import org.koin.core.context.GlobalContext
-app/src/main/java/me/rerere/rikkahub/data/provider/WorkspaceDocumentsProvider.kt:37:    private fun manager(): WorkspaceManager = GlobalContext.get().get()
-app/src/main/java/me/rerere/rikkahub/data/provider/WorkspaceDocumentsProvider.kt:39:    private fun dao(): WorkspaceDAO = GlobalContext.get().get()
-app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:26:import org.koin.core.context.GlobalContext
-app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:180:                    val pluginLoader = GlobalContext.get().getOrNull<PluginLoader>()
-app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:258:                val pluginLoader = GlobalContext.get().getOrNull<PluginLoader>()
-app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:41:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:199:class ProactiveMessageTriggerService : Service(), KoinComponent {
-app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:200:    private val settingsStore: SettingsStore by inject()
-app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:201:    private val conversationRepository: ConversationRepository by inject()
-app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:202:    private val providerManager: ProviderManager by inject()
-app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:205:    private val chatServiceInjected: ChatService by inject()
-app/src/main/java/me/rerere/rikkahub/ui/activity/SafeModeActivity.kt:64:    private val settingsStore by inject<SettingsStore>()
-app/src/main/java/me/rerere/rikkahub/ui/hooks/TTS.kt:26:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/ui/hooks/TTS.kt:126:) : CustomTtsState, KoinComponent {
-app/src/main/java/me/rerere/rikkahub/ui/hooks/TTS.kt:128:    private val ttsManager by inject<TTSManager>()
-app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:647:                                                                val settingsStore: SettingsStore = org.koin.java.KoinJavaComponent.get(SettingsStore::class.java)
-app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:648:                                                                val providerManager: ProviderManager = org.koin.java.KoinJavaComponent.get(ProviderManager::class.java)
-app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:1298:        val settingsStore: SettingsStore = org.koin.java.KoinJavaComponent.get(SettingsStore::class.java)
-app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt:1299:        val providerManager: ProviderManager = org.koin.java.KoinJavaComponent.get(ProviderManager::class.java)
-app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:153:    private val okHttpClient by inject<OkHttpClient>()
-app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:154:    private val settingsStore by inject<SettingsStore>()
-app/src/main/java/me/rerere/rikkahub/service/WebServerService.kt:37:    private val webServerManager: WebServerManager by inject()
-app/src/main/java/me/rerere/rikkahub/service/WebServerService.kt:38:    private val settingsStore: SettingsStore by inject()
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:31:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:41:class WeixinBotService : Service(), KoinComponent {
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:42:    private val settingsStore: SettingsStore by inject()
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:43:    private val conversationRepository: ConversationRepository by inject()
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:44:    private val providerManager: ProviderManager by inject()
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:45:    private val okHttpClient: OkHttpClient by inject()
-app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:47:    private val chatServiceInjected: ChatService by inject()
-app/src/main/java/me/rerere/rikkahub/service/ChatGenerationForegroundService.kt:68:    private val appScope: AppScope by inject()
-app/src/main/java/me/rerere/rikkahub/service/ChatGenerationForegroundService.kt:69:    private val chatService: ChatService by inject()
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:49:import org.koin.core.component.KoinComponent
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:59:class QqBotService : Service(), KoinComponent {
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:60:    private val settingsStore: SettingsStore by inject()
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:61:    private val conversationRepository: ConversationRepository by inject()
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:62:    private val providerManager: ProviderManager by inject()
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:63:    private val okHttpClient: OkHttpClient by inject()
-app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:65:    private val chatServiceInjected: ChatService by inject()
+
+===== 4. 工作流审批相关的界面文件全文 =====
+----- app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.workflow.tools
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.rikkahub.workflow.model.ConditionSpec
+import me.rerere.rikkahub.workflow.model.TriggerSpec
+import me.rerere.rikkahub.workflow.model.WorkflowAction
+import me.rerere.rikkahub.workflow.model.WorkflowDefinition
+import me.rerere.rikkahub.workflow.model.WorkflowJson
+
+/**
+ * Phase 12 — human-readable approval prompt renderer for `workflow_create` /
+ * `workflow_update` (in-app dialog + Telegram approval keyboard message).
+ *
+ * Output template (matches spec §"Approval prompt rendering"):
+ * ```
+ * Create workflow "<name>"
+ *
+ * When: <trigger summary>
+ * Only if: <comma-separated condition summaries, or "always">
+ * Do:
+ *   1. <action 1 summary>
+ *   2. <action 2 summary>
+ *   ...
+ *
+ * Cooldown: <X seconds, or "none">
+ * Daily cap: <N runs, or "unlimited">
+ * ```
+ *
+ * Telegram variant uses HTML — `<b>` for the title, `<code>` for tool names. Same content,
+ * just lightly marked up.
+ */
+object WorkflowApprovalRenderer {
+
+    /** True if the tool is one of ours and should use this renderer (not the JSON dump). */
+    fun isWorkflowTool(toolName: String): Boolean = toolName in WORKFLOW_TOOL_NAMES
+
+    /** Plain-text rendering for the in-app approval card. */
+    fun renderPlain(toolName: String, argsJson: String): String {
+        val verb = when (toolName) {
+            "workflow_create" -> "Create"
+            "workflow_update" -> "Update"
+            "workflow_delete" -> return renderDelete(argsJson, html = false)
+            "workflow_set_enabled" -> return renderSetEnabled(argsJson, html = false)
+            "workflow_run" -> return renderRunNow(argsJson, html = false)
+            else -> return argsJson  // unknown — fall through to default
+        }
+        val def = parseDefinition(argsJson) ?: return argsJson
+        val sb = StringBuilder()
+        sb.appendLine("$verb workflow \"${def.name}\"")
+        sb.appendLine()
+        sb.appendLine("When: ${triggerSummary(def.trigger)}")
+        sb.appendLine("Only if: ${
+            if (def.conditions.isEmpty()) "always"
+            else def.conditions.joinToString(", ") { conditionSummary(it) }
+        }")
+        sb.appendLine("Do:")
+        for ((idx, action) in def.actions.withIndex()) {
+            sb.appendLine("  ${idx + 1}. ${actionSummary(action)}")
+        }
+        sb.appendLine()
+        sb.appendLine("Cooldown: ${
+            if (def.cooldownSeconds == 0) "none"
+            else "${def.cooldownSeconds}s"
+        }")
+        sb.appendLine("Daily cap: ${def.maxRunsPerDay?.let { "$it runs" } ?: "unlimited"}")
+        return sb.toString().trimEnd()
+    }
+
+    /** Telegram HTML rendering — same content, with `<b>` and `<code>` markup. */
+    fun renderTelegramHtml(toolName: String, argsJson: String): String {
+        val verb = when (toolName) {
+            "workflow_create" -> "Create"
+            "workflow_update" -> "Update"
+            "workflow_delete" -> return renderDelete(argsJson, html = true)
+            "workflow_set_enabled" -> return renderSetEnabled(argsJson, html = true)
+            "workflow_run" -> return renderRunNow(argsJson, html = true)
+            else -> return escapeHtml(argsJson)
+        }
+        val def = parseDefinition(argsJson) ?: return escapeHtml(argsJson)
+        val sb = StringBuilder()
+        sb.appendLine("<b>$verb workflow \"${escapeHtml(def.name)}\"</b>")
+        sb.appendLine()
+        sb.appendLine("<b>When:</b> ${escapeHtml(triggerSummary(def.trigger))}")
+        sb.appendLine("<b>Only if:</b> ${
+            if (def.conditions.isEmpty()) "always"
+            else def.conditions.joinToString(", ") { escapeHtml(conditionSummary(it)) }
+        }")
+        sb.appendLine("<b>Do:</b>")
+        for ((idx, action) in def.actions.withIndex()) {
+            sb.appendLine("  ${idx + 1}. <code>${escapeHtml(action.tool)}</code>(${escapeHtml(actionArgsHint(action))})")
+        }
+        sb.appendLine()
+        sb.appendLine("<b>Cooldown:</b> ${
+            if (def.cooldownSeconds == 0) "none"
+            else "${def.cooldownSeconds}s"
+        }")
+        sb.appendLine("<b>Daily cap:</b> ${def.maxRunsPerDay?.let { "$it runs" } ?: "unlimited"}")
+        return sb.toString().trimEnd()
+    }
+
+    private fun parseDefinition(argsJson: String): WorkflowDefinition? {
+        val obj = runCatching { Json.parseToJsonElement(argsJson) as? JsonObject }.getOrNull() ?: return null
+        val defStr = (obj["definition"] as? JsonObject)?.toString() ?: argsJson
+        return WorkflowJson.parseStored(defStr)
+    }
+
+    private fun triggerSummary(t: TriggerSpec): String = when (t) {
+        is TriggerSpec.TimeCron -> when {
+            !t.timeOfDay.isNullOrBlank() -> {
+                val days = if (t.daysOfWeek.isEmpty()) "every day" else "on day(s) ${t.daysOfWeek.joinToString(",")}"
+                "every ${t.timeOfDay} $days"
+            }
+            !t.cron.isNullOrBlank() -> "schedule (${t.cron})"
+            else -> "schedule"
+        }
+        is TriggerSpec.WifiConnected -> "WiFi connects" + (t.ssid?.let { " to $it" }.orEmpty())
+        is TriggerSpec.WifiDisconnected -> "WiFi disconnects" + (t.ssid?.let { " from $it" }.orEmpty())
+        is TriggerSpec.BluetoothDeviceConnected -> "Bluetooth device connects" + (t.deviceAddress?.let { " ($it)" }.orEmpty())
+        is TriggerSpec.BluetoothDeviceDisconnected -> "Bluetooth device disconnects" + (t.deviceAddress?.let { " ($it)" }.orEmpty())
+        is TriggerSpec.HeadphonesPlugged -> "headphones plugged in"
+        is TriggerSpec.HeadphonesUnplugged -> "headphones unplugged"
+        is TriggerSpec.PowerConnected -> "power connected"
+        is TriggerSpec.PowerDisconnected -> "power disconnected"
+        is TriggerSpec.BatteryBelow -> "battery drops below ${t.thresholdPercent}%"
+        is TriggerSpec.BatteryAbove -> "battery rises above ${t.thresholdPercent}%"
+        is TriggerSpec.GeofenceEnter -> "you enter ${t.label ?: "a place (${t.lat},${t.lng}, ${t.radiusM}m)"}"
+        is TriggerSpec.GeofenceExit -> "you leave ${t.label ?: "a place (${t.lat},${t.lng}, ${t.radiusM}m)"}"
+        is TriggerSpec.AppLaunched -> "${t.packageName} is launched"
+        is TriggerSpec.AppClosed -> "${t.packageName} is closed"
+        is TriggerSpec.AppForegroundDuration -> "${t.packageName} stays foreground for ${t.minutes}m"
+        is TriggerSpec.NotificationReceived -> {
+            val parts = mutableListOf<String>()
+            t.packageName?.let { parts += "from $it" }
+            t.titleContains?.let { parts += "title contains '$it'" }
+            t.textContains?.let { parts += "text contains '$it'" }
+            t.titleMatches?.let { parts += "title matches /$it/" }
+            t.textMatches?.let { parts += "text matches /$it/" }
+            "a notification arrives" + if (parts.isEmpty()) "" else " (${parts.joinToString("; ")})"
+        }
+        is TriggerSpec.BootCompleted -> "device boots"
+        is TriggerSpec.ScreenOn -> "screen turns on"
+        is TriggerSpec.ScreenOff -> "screen turns off"
+        is TriggerSpec.Manual -> "you fire it manually (Run now)"
+    }
+
+    private fun conditionSummary(c: ConditionSpec): String {
+        val base = when (c) {
+            is ConditionSpec.TimeBetween -> "between ${c.start} and ${c.end}"
+            is ConditionSpec.TimeAfterSunset -> "after sunset" + if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
+            is ConditionSpec.TimeBeforeSunrise -> "before sunrise" + if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
+            is ConditionSpec.DayOfWeekIn -> "on day(s) ${c.days.joinToString(",")}"
+            is ConditionSpec.WifiSsidIs -> "WiFi is ${c.ssid}"
+            is ConditionSpec.WifiSsidIn -> "WiFi in ${c.ssids.joinToString(",")}"
+            is ConditionSpec.BatteryAbove -> "battery > ${c.percent}%"
+            is ConditionSpec.BatteryBelow -> "battery < ${c.percent}%"
+            is ConditionSpec.IsCharging -> "charging"
+            is ConditionSpec.IsNotCharging -> "not charging"
+            is ConditionSpec.ForegroundAppIs -> "${c.packageName} is foreground"
+            is ConditionSpec.ForegroundAppIn -> "${c.packageNames.size}-app foreground match"
+            is ConditionSpec.ScreenIsOn -> "screen on"
+            is ConditionSpec.ScreenIsOff -> "screen off"
+            is ConditionSpec.LastChatAgo -> "last chat ≥ ${c.minutes}m ago"
+        }
+        return if (c.invert) "NOT ($base)" else base
+    }
+
+    private fun actionSummary(action: WorkflowAction): String {
+        val hint = actionArgsHint(action)
+        return "${action.tool}($hint)"
+    }
+
+    /**
+     * Truncate args at ~80 chars per spec. Best-effort `key=value` rendering. Values whose
+     * key matches the secret-redaction list (token, password, private_key, etc.) are masked
+     * with `***` regardless of length — otherwise an LLM-authored workflow whose action is
+     * `telegram_set_token({token: "..."})` or `save_ssh_host({password: "..."})` would echo
+     * the secret into the user's chat history (in-app card AND Telegram approval message).
+     */
+    private fun actionArgsHint(action: WorkflowAction): String {
+        if (action.args.isEmpty()) return ""
+        val pairs = action.args.entries.joinToString(", ") { (k, v) ->
+            val str = if (isSensitiveKey(k)) {
+                "***"
+            } else when (v) {
+                is JsonPrimitive -> v.contentOrNull?.take(40).orEmpty()
+                else -> v.toString().take(40)
+            }
+            "$k=\"$str\""
+        }
+        return pairs.take(80) + if (pairs.length > 80) "…" else ""
+    }
+
+    /**
+     * Match a key name against the redaction list (case-insensitive, snake_case AND
+     * camelCase aware). Mirrors the redaction model already used by McpApprovalRenderer
+     * for header values.
+     */
+    private fun isSensitiveKey(key: String): Boolean {
+        val lower = key.lowercase().replace("-", "_").replace(" ", "_")
+        return SENSITIVE_KEY_PARTS.any { part -> lower == part || lower.contains(part) }
+    }
+
+    private val SENSITIVE_KEY_PARTS = setOf(
+        "token", "password", "passphrase", "private_key", "privatekey",
+        "secret", "api_key", "apikey", "authorization", "auth_token", "access_token",
+        "client_secret", "credential", "credentials",
+    )
+
+    private fun renderDelete(argsJson: String, html: Boolean): String {
+        val id = runCatching {
+            (Json.parseToJsonElement(argsJson) as? JsonObject)
+                ?.get("id")?.jsonPrimitive?.contentOrNull
+        }.getOrNull() ?: "?"
+        val msg = "Delete workflow id=$id"
+        return if (html) "<b>${escapeHtml(msg)}</b>" else msg
+    }
+
+    private fun renderSetEnabled(argsJson: String, html: Boolean): String {
+        val obj = runCatching { Json.parseToJsonElement(argsJson) as? JsonObject }.getOrNull()
+        val id = obj?.get("id")?.jsonPrimitive?.contentOrNull ?: "?"
+        val enabled = obj?.get("enabled")?.jsonPrimitive?.contentOrNull
+        val verb = if (enabled == "true") "Enable" else "Disable"
+        val msg = "$verb workflow id=$id"
+        return if (html) "<b>${escapeHtml(msg)}</b>" else msg
+    }
+
+    private fun renderRunNow(argsJson: String, html: Boolean): String {
+        val id = runCatching {
+            (Json.parseToJsonElement(argsJson) as? JsonObject)
+                ?.get("id")?.jsonPrimitive?.contentOrNull
+        }.getOrNull() ?: "?"
+        val msg = "Run workflow now id=$id"
+        return if (html) "<b>${escapeHtml(msg)}</b>" else msg
+    }
+
+    private fun escapeHtml(s: String): String =
+        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    val WORKFLOW_TOOL_NAMES = setOf(
+        "workflow_create",
+        "workflow_list",
+        "workflow_get",
+        "workflow_update",
+        "workflow_delete",
+        "workflow_set_enabled",
+        "workflow_run",
+    )
+}

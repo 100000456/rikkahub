@@ -17,6 +17,48 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Patch proactive message pending-intent nullability
+        run: |
+          set -e
+          F=app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt
+          # 关定时的时候是去"找"那个待发射的闹钟，找不到本来就会返回空。
+          # 那个函数原来写着一定返回东西，空值一钻出来就当场崩。
+          if grep -q '): PendingIntent =' "$F"; then
+            sed -i 's/): PendingIntent =/): PendingIntent? =/' "$F"
+          fi
+          if ! grep -q 'FLAG_UPDATE_CURRENT) ?: return' "$F"; then
+            sed -i 's/pendingIntent(context, PendingIntent.FLAG_UPDATE_CURRENT)/pendingIntent(context, PendingIntent.FLAG_UPDATE_CURRENT) ?: return/' "$F"
+          fi
+          test "$(grep -c '): PendingIntent? =' "$F")" = "1"
+          test "$(grep -c 'FLAG_UPDATE_CURRENT) ?: return' "$F")" = "1"
+          echo "--- patched ---"
+          grep -n 'PendingIntent? =\|FLAG_NO_CREATE\|FLAG_UPDATE_CURRENT) ?: return' "$F"
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f "$F"
+          git commit -m "主动消息：关掉定时的时候不再当场炸（待发射的闹钟可能本来就不存在）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)
+
+      - name: Record same-family risks
+        run: |
+          set -u
+          {
+            echo "=== 还宣称一定返回值、但可能拿到空的 PendingIntent 的地方 ==="
+            grep -rn '): PendingIntent =' app/src/main/java --include='*.kt' || echo "none"
+            echo
+            echo "=== 用到 FLAG_NO_CREATE（找不到就返回空）的地方 ==="
+            grep -rn 'FLAG_NO_CREATE' app/src/main/java --include='*.kt' || echo "none"
+            echo
+            echo "=== PendingIntent.get* 调用点 ==="
+            grep -rn 'PendingIntent.get' app/src/main/java --include='*.kt' || echo "none"
+          } > .ci-diag.txt
+          cat .ci-diag.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-diag.txt
+          git commit -m "ci: 记一下同类隐患的分布" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -85,13 +127,6 @@ jobs:
           }
           JSON_EOF
 
-      - name: Preflight (informational)
-        run: |
-          F=app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt
-          echo "message.parts count = $(grep -c 'response.message.parts' "$F" || true)"
-          echo "safe-replace count = $(grep -c ')?\.replace(' "$F" || true)"
-          grep -n 'MAX_STACKTRACE_LENGTH' app/src/main/java/me/rerere/rikkahub/utils/CrashHandler.kt || true
-
       - name: Build debug APK
         run: |
           chmod +x gradlew
@@ -124,4 +159,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-18T23:30+08:00 补登记记忆库与安全审计 + 打点件兜底
+# rebuild marker: 2026-09-18T23:45+08:00 主动消息关定时不再崩

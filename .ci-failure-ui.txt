@@ -1,0 +1,20 @@
+=== run 35342677308 ===
+--- jobs ---
+0_port.txt
+port
+--- errors ---
+2026-09-18T12:03:38.7089378Z [36;1m            print("!! ANCHOR NOT FOUND in", path, "tag:", tag)[0m
+2026-09-18T12:03:38.7138197Z [36;1m        print("!! ANCHOR NOT FOUND in", path, "tag:", tag, "anchor:", anchor)[0m
+2026-09-18T12:03:38.7141728Z [36;1m        print("!! ANCHOR NOT FOUND", SETTING, "plugins entry")[0m
+2026-09-18T12:08:44.4969998Z e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:20:41 Unresolved reference 'LocalTools'.
+2026-09-18T12:08:44.4978995Z FAILURE: Build failed with an exception.
+2026-09-18T12:08:44.5262048Z BUILD FAILED in 4m 55s
+2026-09-18T12:08:44.9722623Z [36;1m  grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 500 || true[0m
+2026-09-18T12:03:38.7089376Z [36;1m            print("!! ANCHOR NOT FOUND in", path, "tag:", tag)[0m
+2026-09-18T12:03:38.7138195Z [36;1m        print("!! ANCHOR NOT FOUND in", path, "tag:", tag, "anchor:", anchor)[0m
+2026-09-18T12:03:38.7141727Z [36;1m        print("!! ANCHOR NOT FOUND", SETTING, "plugins entry")[0m
+2026-09-18T12:08:44.9722619Z [36;1m  grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 500 || true[0m
+2026-09-18T12:08:44.4969989Z e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:20:41 Unresolved reference 'LocalTools'.
+2026-09-18T12:08:44.4978992Z FAILURE: Build failed with an exception.
+2026-09-18T12:08:44.5262045Z BUILD FAILED in 4m 55s
+--- patch log ---

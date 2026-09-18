@@ -1,0 +1,341 @@
+name: Port Ssh Sftp Tools
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-ssh.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          test -f /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SshTool.kt
+          echo "orangechat fetched"
+
+      - name: Copy ssh batch
+        run: |
+          set -e
+          SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          DST=app/src/main/java/me/rerere/rikkahub
+          mkdir -p "$DST/data/ai/tools/local" "$DST/data/db/entity" "$DST/data/repository"
+
+          for f in SshTool SshHostsTool SshSftpTool DnsCache; do
+            cp "$SRC/data/ai/tools/local/$f.kt" "$DST/data/ai/tools/local/$f.kt"
+          done
+
+          # 审批签名：兔子的 needsApproval 是 lambda，注意有的写法后面带逗号
+          for f in SshTool SshHostsTool SshSftpTool DnsCache; do
+            sed -i 's/needsApproval = true/needsApproval = { true }/g' "$DST/data/ai/tools/local/$f.kt"
+          done
+          if grep -rn 'needsApproval = true' "$DST/data/ai/tools/local/" ; then
+            echo "!! still bare needsApproval left"
+            exit 1
+          fi
+          echo "copied ssh tools"
+
+      - name: Write own host storage (no room migration)
+        run: |
+          cat > app/src/main/java/me/rerere/rikkahub/data/db/entity/SshHostEntity.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.db.entity
+
+          import kotlinx.serialization.Serializable
+
+          /**
+           * 存过的一台 SSH 主机，可以按名字叫出来用。
+           *
+           * 密码、私钥、口令都是明文存在手机里自己的小仓库文件里，跟别的密钥一个待遇。
+           */
+          @Serializable
+          data class SshHostEntity(
+              /** 名字，也是叫它的时候用的键 */
+              val name: String,
+              val host: String,
+              val port: Int = 22,
+              val user: String,
+              val password: String? = null,
+              val privateKey: String? = null,
+              val passphrase: String? = null,
+              val createdAtMs: Long,
+          )
+          KT_EOF
+
+          cat > app/src/main/java/me/rerere/rikkahub/data/repository/SshHostRepository.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.repository
+
+          import android.content.Context
+          import kotlinx.serialization.builtins.ListSerializer
+          import kotlinx.serialization.json.Json
+          import me.rerere.rikkahub.data.db.entity.SshHostEntity
+
+          /**
+           * 存过的主机。橘瓣那边是塞进数据库的，搬过来为了不动数据库版本，
+           * 改成存一份自己的小仓库文件，接口保持一模一样。
+           */
+          class SshHostRepository(private val context: Context) {
+
+              private val json = Json { ignoreUnknownKeys = true }
+              private val serializer = ListSerializer(SshHostEntity.serializer())
+
+              private val prefs by lazy {
+                  context.getSharedPreferences("ssh_hosts", Context.MODE_PRIVATE)
+              }
+
+              private fun readAll(): MutableList<SshHostEntity> {
+                  val raw = prefs.getString(KEY, null) ?: return mutableListOf()
+                  return runCatching {
+                      json.decodeFromString(serializer, raw).toMutableList()
+                  }.getOrElse { mutableListOf() }
+              }
+
+              private fun writeAll(list: List<SshHostEntity>) {
+                  prefs.edit().putString(KEY, json.encodeToString(serializer, list)).apply()
+              }
+
+              suspend fun getAll(): List<SshHostEntity> = readAll().sortedBy { it.name }
+
+              suspend fun getByName(name: String): SshHostEntity? =
+                  readAll().firstOrNull { it.name == name }
+
+              suspend fun upsert(host: SshHostEntity) {
+                  val list = readAll()
+                  list.removeAll { it.name == host.name }
+                  list.add(host)
+                  writeAll(list)
+              }
+
+              suspend fun deleteByName(name: String) {
+                  val list = readAll()
+                  list.removeAll { it.name == name }
+                  writeAll(list)
+              }
+
+              companion object {
+                  private const val KEY = "hosts_json"
+              }
+          }
+          KT_EOF
+          echo "host store written"
+
+      - name: Patch wiring
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
+                      sys.exit(1)
+                  s = s.replace(old, new)
+                  print("patched", path, tag)
+              write(path, s)
+
+          GRADLE = 'app/build.gradle.kts'
+          LOPT = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt'
+          LTOOLS = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
+          SYS_TOOLS = 'app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingSystemToolsPage.kt'
+
+          # 1) jsch
+          patch(GRADLE, [
+              (
+                  "    // 工作流：cron 解析 + 围栏触发\n",
+                  "    // SSH/SFTP：连电脑和服务器\n"
+                  "    implementation(\"com.github.mwiede:jsch:0.2.21\")\n"
+                  "\n"
+                  "    // 工作流：cron 解析 + 围栏触发\n",
+                  "jsch dependency",
+              ),
+          ])
+
+          # 2) 开关
+          patch(LOPT, [
+              (
+                  '    @Serializable\n    @SerialName("workflows")',
+                  '    @Serializable\n'
+                  '    @SerialName("ssh")\n'
+                  '    data object Ssh : LocalToolOption()\n'
+                  '\n'
+                  '    @Serializable\n'
+                  '    @SerialName("workflows")',
+                  "Ssh option",
+              ),
+          ])
+
+          # 3) 注册工具 + 主机仓库
+          patch(LTOOLS, [
+              (
+                  "    val avatarTool by lazy { buildAvatarTool(context, settingsStore) }\n",
+                  "    val avatarTool by lazy { buildAvatarTool(context, settingsStore) }\n"
+                  "\n"
+                  "    private val sshHostRepository by lazy {\n"
+                  "        me.rerere.rikkahub.data.repository.SshHostRepository(context)\n"
+                  "    }\n",
+                  "ssh repository",
+              ),
+              (
+                  "        // 换头像：常驻，不用开关\n",
+                  "        if (options.contains(LocalToolOption.Ssh)) {\n"
+                  "            tools.add(sshExecTool(context))\n"
+                  "            tools.add(saveSshHostTool(sshHostRepository))\n"
+                  "            tools.add(listSshHostsTool(sshHostRepository))\n"
+                  "            tools.add(deleteSshHostTool(sshHostRepository))\n"
+                  "            tools.add(sshExecSavedTool(context, sshHostRepository))\n"
+                  "            tools.add(sshUploadTool(context, sshHostRepository))\n"
+                  "            tools.add(sshDownloadTool(context, sshHostRepository))\n"
+                  "            tools.add(forgetSshHostKeyTool(context))\n"
+                  "        }\n"
+                  "\n"
+                  "        // 换头像：常驻，不用开关\n",
+                  "ssh tools",
+              ),
+          ])
+
+          # 4) 开关页加一行
+          patch(SYS_TOOLS, [
+              (
+                  '    SystemToolRow(LocalToolOption.ScreenAutomation, "屏幕自动化", "允许点按、滑动、长按、读界面、截图。要在系统里开无障碍（跟 App 锁同一个开关）"),\n)',
+                  '    SystemToolRow(LocalToolOption.ScreenAutomation, "屏幕自动化", "允许点按、滑动、长按、读界面、截图。要在系统里开无障碍（跟 App 锁同一个开关）"),\n'
+                  '    SystemToolRow(LocalToolOption.Ssh, "远程连接", "允许连你的电脑和服务器，跑命令、传文件。主机名和密码只存在你手机里"),\n'
+                  ')',
+                  "ssh row",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-ssh-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== ssh port failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback|SyntaxError|Could not (find|resolve)' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
+            echo "--- gradle tail ---"
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure-ssh.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-ssh.txt
+          git commit -m "ci: dump ssh port failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/data/ai/tools/local \
+                     app/src/main/java/me/rerere/rikkahub/data/db/entity \
+                     app/src/main/java/me/rerere/rikkahub/data/repository \
+                     app/src/main/java/me/rerere/rikkahub/ui/pages/setting \
+                     app/build.gradle.kts || true
+          git commit -m "远程连接：SSH/SFTP 那套搬进兔子（连电脑、跑命令、传文件），主机名和密码存在本机（编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

@@ -1,0 +1,787 @@
+===== 1. typed lookups get<T>() =====
+     11 AppScope
+      9 AppDatabase
+      5 SettingsStore
+      3 WorkflowRepository
+      3 FilesManager
+      2 me.rerere.rikkahub.workflow.repository.WorkflowRepository
+      2 me.rerere.rikkahub.workflow.execution.WorkflowEngine
+      2 me.rerere.rikkahub.data.db.AppDatabase
+      2 WorkflowEngine
+      1 me.rerere.rikkahub.workflow.trigger.TriggerRegistry
+      1 me.rerere.rikkahub.plugin.provider.PluginToolProvider
+      1 me.rerere.rikkahub.data.ai.tools.local.LocalTools
+      1 me.rerere.rikkahub.data.agentrun.AgentRunRepository
+      1 android.content.Context
+      1 WorkspaceRepository
+      1 WorkspaceManager
+      1 Retrofit
+      1 ProviderManager
+      1 PebbleEngine
+      1 OkHttpClient
+      1 MemoryBankService
+      1 Json
+      1 Context
+      1 AssistantTemplateLoader
+
+===== 2. inject / KoinComponent / GlobalContext / startKoin =====
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:13:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:27:) : CoroutineWorker(appContext, params), KoinComponent {
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt:29:    private val registry: TriggerRegistry by inject()
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/RegexOutputTransformer.kt:8:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/RegexOutputTransformer.kt:10:object RegexOutputTransformer : OutputMessageTransformer, KoinComponent {
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/PlaceholderTransformer.kt:16:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/PlaceholderTransformer.kt:117:object PlaceholderTransformer : InputMessageTransformer, KoinComponent {
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/OcrTransformer.kt:21:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/data/ai/transformers/OcrTransformer.kt:28:object OcrTransformer : InputMessageTransformer, KoinComponent {
+app/src/main/java/me/rerere/rikkahub/data/datastore/PreferencesStore.kt:55:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/data/datastore/PreferencesStore.kt:75:) : KoinComponent {
+app/src/main/java/me/rerere/rikkahub/data/provider/WorkspaceDocumentsProvider.kt:17:import org.koin.core.context.GlobalContext
+app/src/main/java/me/rerere/rikkahub/data/provider/WorkspaceDocumentsProvider.kt:37:    private fun manager(): WorkspaceManager = GlobalContext.get().get()
+app/src/main/java/me/rerere/rikkahub/data/provider/WorkspaceDocumentsProvider.kt:39:    private fun dao(): WorkspaceDAO = GlobalContext.get().get()
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:26:import org.koin.core.context.GlobalContext
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:180:                    val pluginLoader = GlobalContext.get().getOrNull<PluginLoader>()
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:258:                val pluginLoader = GlobalContext.get().getOrNull<PluginLoader>()
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:41:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:199:class ProactiveMessageTriggerService : Service(), KoinComponent {
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:200:    private val settingsStore: SettingsStore by inject()
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:201:    private val conversationRepository: ConversationRepository by inject()
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:202:    private val providerManager: ProviderManager by inject()
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:205:    private val chatServiceInjected: ChatService by inject()
+app/src/main/java/me/rerere/rikkahub/ui/activity/SafeModeActivity.kt:64:    private val settingsStore by inject<SettingsStore>()
+app/src/main/java/me/rerere/rikkahub/ui/hooks/TTS.kt:26:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/ui/hooks/TTS.kt:126:) : CustomTtsState, KoinComponent {
+app/src/main/java/me/rerere/rikkahub/ui/hooks/TTS.kt:128:    private val ttsManager by inject<TTSManager>()
+app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt:54:import org.koin.core.context.startKoin
+app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt:78:        startKoin {
+app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt:82:            modules(appModule, viewModelModule, dataSourceModule, repositoryModule, pluginModule)
+app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:153:    private val okHttpClient by inject<OkHttpClient>()
+app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:154:    private val settingsStore by inject<SettingsStore>()
+app/src/main/java/me/rerere/rikkahub/service/WebServerService.kt:37:    private val webServerManager: WebServerManager by inject()
+app/src/main/java/me/rerere/rikkahub/service/WebServerService.kt:38:    private val settingsStore: SettingsStore by inject()
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:31:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:41:class WeixinBotService : Service(), KoinComponent {
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:42:    private val settingsStore: SettingsStore by inject()
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:43:    private val conversationRepository: ConversationRepository by inject()
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:44:    private val providerManager: ProviderManager by inject()
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:45:    private val okHttpClient: OkHttpClient by inject()
+app/src/main/java/me/rerere/rikkahub/service/WeixinBotService.kt:47:    private val chatServiceInjected: ChatService by inject()
+app/src/main/java/me/rerere/rikkahub/service/ChatGenerationForegroundService.kt:68:    private val appScope: AppScope by inject()
+app/src/main/java/me/rerere/rikkahub/service/ChatGenerationForegroundService.kt:69:    private val chatService: ChatService by inject()
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:49:import org.koin.core.component.KoinComponent
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:59:class QqBotService : Service(), KoinComponent {
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:60:    private val settingsStore: SettingsStore by inject()
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:61:    private val conversationRepository: ConversationRepository by inject()
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:62:    private val providerManager: ProviderManager by inject()
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:63:    private val okHttpClient: OkHttpClient by inject()
+app/src/main/java/me/rerere/rikkahub/service/QqBotService.kt:65:    private val chatServiceInjected: ChatService by inject()
+
+===== 3. module files =====
+app/src/main/java/me/rerere/rikkahub/plugin/di/PluginModule.kt
+app/src/main/java/me/rerere/rikkahub/di/AppModule.kt
+app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt
+app/src/main/java/me/rerere/rikkahub/di/DataSourceModule.kt
+app/src/main/java/me/rerere/rikkahub/di/RepositoryModule.kt
+----- app/src/main/java/me/rerere/rikkahub/plugin/di/PluginModule.kt
+/*
+ * Tuzi
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.plugin.di
+
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.service.MemoryBankService
+import me.rerere.rikkahub.plugin.loader.PluginLoader
+import me.rerere.rikkahub.plugin.manager.PluginManager
+import me.rerere.rikkahub.plugin.provider.PluginToolProvider
+import me.rerere.rikkahub.plugin.repository.PluginRepository
+import me.rerere.rikkahub.plugin.scanner.PluginScanner
+import me.rerere.rikkahub.plugin.ui.PluginViewModel
+import okhttp3.OkHttpClient
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
+
+/**
+ * 插件模块依赖注入
+ */
+val pluginModule = module {
+    // Scanner
+    single { PluginScanner(androidContext(), get()) }
+
+    // Repository
+    single { PluginRepository(androidContext()) }
+
+    // Loader - 需要OkHttpClient、MemoryBankService和SettingsStore
+    single { PluginLoader(androidContext(), get<OkHttpClient>(), get<MemoryBankService>(), get<SettingsStore>()) }
+
+    // Manager
+    single { PluginManager(androidContext(), get(), get(), get(), get()) }
+
+    // Provider - 需要PluginManager来确保插件已初始化
+    single { PluginToolProvider(get(), get()) }
+
+    // ViewModel
+    viewModel { PluginViewModel(get()) }
+}
+----- app/src/main/java/me/rerere/rikkahub/di/AppModule.kt
+package me.rerere.rikkahub.di
+
+import com.google.firebase.Firebase
+import com.google.firebase.analytics.analytics
+import com.google.firebase.crashlytics.crashlytics
+import kotlinx.serialization.json.Json
+import me.rerere.rikkahub.AppScope
+import me.rerere.rikkahub.data.ai.tools.local.LocalTools
+import me.rerere.rikkahub.data.ai.tools.ChatToolFactory
+import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.service.MemoryBankService
+import me.rerere.rikkahub.plugin.di.pluginModule
+import me.rerere.rikkahub.service.ChatNotificationManager
+import me.rerere.rikkahub.service.ChatService
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceTerminalSessionManager
+import me.rerere.rikkahub.utils.EmojiData
+import me.rerere.rikkahub.utils.EmojiUtils
+import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.rikkahub.utils.SoundEffectPlayer
+import me.rerere.rikkahub.utils.UpdateChecker
+import me.rerere.rikkahub.web.WebServerManager
+import me.rerere.tts.provider.TTSManager
+import org.koin.dsl.module
+
+val appModule = module {
+    // 插件沙箱：扫描器、加载器、沙箱、管理器、工具出口、管理页 ViewModel
+    includes(pluginModule)
+
+    single<Json> { JsonInstant }
+
+    single {
+        AppEventBus()
+    }
+
+    single {
+        LocalTools(get(), get(), get(), get())
+    }
+
+    // 记忆库那两件：DAO 和记忆库服务。
+    // 插件沙箱的 Loader 会伸手要 MemoryBankService，没登记的话整条链断掉，
+    // 表现就是聊天页一开就崩。
+    single {
+        get<AppDatabase>().memoryBankDao()
+    }
+    single {
+        MemoryBankService(
+            memoryBankDAO = get(),
+            okHttpClient = get(),
+            context = get(),
+        )
+    }
+
+    // 工作流：台账 / 仓库 / 条件 / 执行器 / 引擎 / 触发器注册表
+    single { me.rerere.rikkahub.data.agentrun.AgentRunRepository() }
+    single {
+        me.rerere.rikkahub.workflow.repository.WorkflowRepository(
+            workflowDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowDao(),
+            workflowRunDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowRunDao(),
+        )
+    }
+    single { me.rerere.rikkahub.workflow.condition.ContextProvider(get(), get(), get()) }
+    single { me.rerere.rikkahub.workflow.execution.WorkflowActionRunner() }
+    single {
+        me.rerere.rikkahub.workflow.execution.WorkflowEngine(
+            repository = get(),
+            settingsStore = get(),
+            contextProvider = get(),
+            actionRunner = get(),
+        ).also { engine ->
+            get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>().bindEngine(engine)
+        }
+    }
+    single {
+        me.rerere.rikkahub.workflow.trigger.TriggerRegistry(
+            context = get(),
+            appScope = get(),
+            workflowRepository = get(),
+        )
+    }
+
+    single {
+        UpdateChecker(
+            client = get(),
+            appScope = get(),
+        )
+    }
+
+    single {
+        AppScope()
+    }
+
+    single<EmojiData> {
+        EmojiUtils.loadEmoji(get())
+    }
+
+    single {
+        TTSManager(get())
+    }
+
+    single {
+        Firebase.crashlytics
+    }
+
+    single {
+        Firebase.analytics
+    }
+
+    single {
+        SoundEffectPlayer(get())
+    }
+
+    single {
+        WorkspaceTerminalSessionManager(get(), get())
+    }
+
+    // 生成通知与业务解耦：ChatService 只发事件，通知由这里消费；
+    // createdAtStart 保证进程启动即订阅，否则后台生成的事件会因无订阅者而丢失
+    single(createdAtStart = true) {
+        ChatNotificationManager(
+            context = get(),
+            appScope = get(),
+            eventBus = get(),
+            settingsStore = get(),
+        )
+    }
+
+    single {
+        ChatToolFactory(
+            json = get(),
+            memoryRepository = get(),
+            conversationRepository = get(),
+            localTools = get(),
+            mcpManager = get(),
+            skillManager = get(),
+            pluginToolProvider = get(),
+            workspaceRepository = get(),
+        )
+    }
+
+    single {
+        ChatService(
+            context = get(),
+            appScope = get(),
+            appEventBus = get(),
+            settingsStore = get(),
+            conversationRepo = get(),
+            memoryRepository = get(),
+            generationLoop = get(),
+            translationHandler = get(),
+            templateTransformer = get(),
+            providerManager = get(),
+            chatToolFactory = get(),
+            mcpManager = get(),
+            filesManager = get(),
+            workspaceRepository = get(),
+            folderRepository = get()
+        )
+    }
+
+    single {
+        WebServerManager(
+            context = get(),
+            appScope = get(),
+            chatService = get(),
+            conversationRepo = get(),
+            folderRepo = get(),
+            settingsStore = get(),
+            filesManager = get()
+        )
+    }
+}
+----- app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt
+package me.rerere.rikkahub.di
+
+import me.rerere.rikkahub.ui.pages.assistant.AssistantVM
+import me.rerere.rikkahub.ui.pages.assistant.detail.AssistantDetailVM
+import me.rerere.rikkahub.ui.pages.backup.BackupVM
+import me.rerere.rikkahub.ui.pages.chat.ChatDrawerVM
+import me.rerere.rikkahub.ui.pages.chat.ChatVM
+import me.rerere.rikkahub.ui.pages.debug.DebugVM
+import me.rerere.rikkahub.ui.pages.favorite.FavoriteVM
+import me.rerere.rikkahub.ui.pages.search.SearchVM
+import me.rerere.rikkahub.ui.pages.history.HistoryVM
+import me.rerere.rikkahub.ui.pages.stats.StatsVM
+import me.rerere.rikkahub.ui.pages.imggen.ImgGenVM
+import me.rerere.rikkahub.ui.pages.extensions.PromptVM
+import me.rerere.rikkahub.ui.pages.extensions.QuickMessagesVM
+import me.rerere.rikkahub.ui.pages.extensions.skills.SkillDetailVM
+import me.rerere.rikkahub.ui.pages.extensions.skills.SkillsVM
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceDetailVM
+import me.rerere.rikkahub.ui.pages.extensions.workspace.WorkspaceVM
+import me.rerere.rikkahub.ui.pages.setting.SettingVM
+import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerVM
+import me.rerere.rikkahub.ui.pages.translator.TranslatorVM
+import me.rerere.rikkahub.workflow.ui.WorkflowsViewModel
+import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.module
+
+val viewModelModule = module {
+    viewModel<ChatVM> { params ->
+        ChatVM(
+            id = params.get(),
+            context = get(),
+            settingsStore = get(),
+            conversationRepo = get(),
+            chatService = get(),
+            updateChecker = get(),
+            analytics = get(),
+            filesManager = get(),
+            favoriteRepository = get(),
+        )
+    }
+    viewModelOf(::ChatDrawerVM)
+    viewModelOf(::SettingVM)
+    viewModelOf(::DebugVM)
+    viewModelOf(::HistoryVM)
+    viewModelOf(::AssistantVM)
+    viewModel<AssistantDetailVM> {
+        AssistantDetailVM(
+            id = it.get(),
+            settingsStore = get(),
+            memoryRepository = get(),
+            filesManager = get(),
+            skillManager = get(),
+            workspaceRepository = get(),
+        )
+    }
+    viewModelOf(::TranslatorVM)
+    viewModel<ShareHandlerVM> {
+        ShareHandlerVM(
+            text = it.get(),
+            settingsStore = get(),
+        )
+    }
+    viewModelOf(::BackupVM)
+    viewModelOf(::ImgGenVM)
+    viewModelOf(::PromptVM)
+    viewModelOf(::QuickMessagesVM)
+    viewModelOf(::SkillsVM)
+    viewModelOf(::SkillDetailVM)
+    viewModelOf(::WorkspaceVM)
+    viewModel<WorkspaceDetailVM> {
+        WorkspaceDetailVM(
+            id = it.get(),
+            repository = get(),
+            terminalSessionManager = get(),
+        )
+    }
+    viewModelOf(::FavoriteVM)
+    viewModelOf(::SearchVM)
+    viewModelOf(::StatsVM)
+    viewModelOf(::WorkflowsViewModel)
+}
+----- app/src/main/java/me/rerere/rikkahub/di/DataSourceModule.kt
+package me.rerere.rikkahub.di
+
+import android.content.Context
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.http.HttpHeaders
+import io.pebbletemplates.pebble.PebbleEngine
+import kotlinx.serialization.json.Json
+import me.rerere.ai.provider.ProviderManager
+import me.rerere.common.http.AcceptLanguageBuilder
+import me.rerere.rikkahub.BuildConfig
+import me.rerere.rikkahub.data.ai.AIRequestInterceptor
+import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
+import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
+import me.rerere.rikkahub.data.ai.GenerationLoop
+import me.rerere.rikkahub.data.ai.TranslationHandler
+import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
+import me.rerere.rikkahub.data.api.RikkaHubAPI
+import me.rerere.rikkahub.data.api.SponsorAPI
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.sync.BackupManager
+import me.rerere.rikkahub.data.db.AppDatabaseFactory
+import me.rerere.rikkahub.data.db.AppDatabase
+import me.rerere.rikkahub.data.db.fts.MessageFtsManager
+import me.rerere.rikkahub.data.ai.mcp.McpManager
+import me.rerere.rikkahub.data.network.SettingsProxySelector
+import me.rerere.rikkahub.data.network.SettingsProxyAuthenticator
+import me.rerere.rikkahub.data.network.SettingsSocks5Authenticator
+import me.rerere.rikkahub.data.sync.webdav.WebDavSync
+import me.rerere.search.SearchService
+import me.rerere.rikkahub.data.sync.S3Sync
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import org.koin.dsl.module
+import retrofit2.Retrofit
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+
+val dataSourceModule = module {
+    single {
+        SettingsStore(context = get(), scope = get())
+    }
+
+    single {
+        val context: Context = get()
+        AppDatabaseFactory.create(context)
+    }
+
+    single {
+        AssistantTemplateLoader(settingsStore = get())
+    }
+
+    single {
+        PebbleEngine.Builder()
+            .loader(get<AssistantTemplateLoader>())
+            .defaultLocale(Locale.getDefault())
+            .autoEscaping(false)
+            .build()
+    }
+
+    single { TemplateTransformer(engine = get(), settingsStore = get()) }
+
+    single {
+        get<AppDatabase>().conversationDao()
+    }
+
+    single {
+        get<AppDatabase>().memoryDao()
+    }
+
+    single {
+        get<AppDatabase>().genMediaDao()
+    }
+
+    single {
+        get<AppDatabase>().messageNodeDao()
+    }
+
+    single {
+        get<AppDatabase>().managedFileDao()
+    }
+
+    single {
+        get<AppDatabase>().favoriteDao()
+    }
+
+    single {
+        get<AppDatabase>().workspaceDao()
+    }
+
+    single {
+        get<AppDatabase>().folderDao()
+    }
+
+    single {
+        MessageFtsManager(get())
+    }
+
+    single { McpManager(settingsStore = get(), appScope = get(), filesManager = get()) }
+
+    single {
+        GenerationLoop(
+            context = get(),
+            providerManager = get(),
+            json = get(),
+        )
+    }
+
+    single {
+        TranslationHandler(providerManager = get())
+    }
+
+    single<OkHttpClient> {
+        val settingsStore: SettingsStore = get()
+        val acceptLang = AcceptLanguageBuilder.fromAndroid(get())
+            .build()
+        java.net.Authenticator.setDefault(SettingsSocks5Authenticator(settingsStore))
+        val initialNetworkSetting = settingsStore.settingsFlow.value.networkSetting
+        val appliedProxySetting = AtomicReference(
+            Triple(
+                initialNetworkSetting.proxyUrl,
+                initialNetworkSetting.proxyUsername,
+                initialNetworkSetting.proxyPassword,
+            )
+        )
+        lateinit var client: OkHttpClient
+        client = OkHttpClient.Builder()
+            .proxySelector(SettingsProxySelector(settingsStore))
+            .proxyAuthenticator(SettingsProxyAuthenticator(settingsStore))
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(10, TimeUnit.MINUTES)
+            .writeTimeout(120, TimeUnit.SECONDS)
+            .followSslRedirects(true)
+            .followRedirects(true)
+            .retryOnConnectionFailure(true)
+            .addInterceptor { chain ->
+                val networkSetting = settingsStore.settingsFlow.value.networkSetting
+                val currentProxySetting = Triple(
+                    networkSetting.proxyUrl,
+                    networkSetting.proxyUsername,
+                    networkSetting.proxyPassword,
+                )
+                if (appliedProxySetting.getAndSet(currentProxySetting) != currentProxySetting) {
+                    client.connectionPool.evictAll()
+                }
+
+                val originalRequest = chain.request()
+                val requestBuilder = originalRequest.newBuilder()
+                    .addHeader(HttpHeaders.AcceptLanguage, acceptLang)
+
+                if (originalRequest.header(HttpHeaders.UserAgent) == null) {
+                    val userAgent = settingsStore.settingsFlow.value.networkSetting.userAgent
+                        .trim()
+                        .ifEmpty { "RikkaHub-Android/${BuildConfig.VERSION_NAME}" }
+                    requestBuilder.addHeader(HttpHeaders.UserAgent, userAgent)
+                }
+
+                chain.proceed(requestBuilder.build())
+            }
+            .addNetworkInterceptor { chain ->
+                val request = chain.request()
+                val contentTypeHeader = request.header("Content-Type")
+                if (
+                    contentTypeHeader != null &&
+                    contentTypeHeader.contains(";") &&
+                    contentTypeHeader.substringBefore(";").trim().equals("application/json", ignoreCase = true)
+                ) {
+                    chain.proceed(
+                        request.newBuilder()
+                            .header("Content-Type", contentTypeHeader.substringBefore(";").trim())
+                            .build()
+                    )
+                } else {
+                    chain.proceed(request)
+                }
+            }
+            .addNetworkInterceptor(RequestLoggingInterceptor())
+            .addInterceptor(AIRequestInterceptor())
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                redactHeader("Proxy-Authorization")
+                level = HttpLoggingInterceptor.Level.HEADERS
+            })
+            .build()
+        client.also { SearchService.init(it, get()) }
+    }
+
+    single {
+        SponsorAPI.create(get())
+    }
+
+    single {
+        ProviderManager(client = get(), context = get())
+    }
+
+    single { BackupManager(context = get(), database = get(), settingsStore = get(), json = get()) }
+
+    single {
+        WebDavSync(
+            backupManager = get(),
+            context = get(),
+            httpClient = get()
+        )
+    }
+
+    single<HttpClient> {
+        HttpClient(OkHttp) {
+            engine {
+                config {
+                    connectTimeout(20, TimeUnit.SECONDS)
+                    readTimeout(10, TimeUnit.MINUTES)
+                    writeTimeout(120, TimeUnit.SECONDS)
+                    followSslRedirects(true)
+                    followRedirects(true)
+                    retryOnConnectionFailure(true)
+                }
+            }
+        }
+    }
+
+    single {
+        S3Sync(
+            backupManager = get(),
+            context = get(),
+            httpClient = get()
+        )
+    }
+
+    single<Retrofit> {
+        Retrofit.Builder()
+            .baseUrl("https://api.rikka-ai.com")
+            .addConverterFactory(get<Json>().asConverterFactory("application/json; charset=UTF8".toMediaType()))
+            .build()
+    }
+
+    single<RikkaHubAPI> {
+        get<Retrofit>().create(RikkaHubAPI::class.java)
+    }
+}
+----- app/src/main/java/me/rerere/rikkahub/di/RepositoryModule.kt
+package me.rerere.rikkahub.di
+
+import android.content.Context
+import me.rerere.rikkahub.data.files.FileFolders
+import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.files.SkillManager
+import me.rerere.rikkahub.data.repository.ConversationRepository
+import me.rerere.rikkahub.data.repository.FavoriteRepository
+import me.rerere.rikkahub.data.repository.FolderRepository
+import me.rerere.rikkahub.data.repository.FilesRepository
+import me.rerere.rikkahub.data.repository.GenMediaRepository
+import me.rerere.rikkahub.data.repository.MemoryRepository
+import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import me.rerere.workspace.ProotShellRunner
+import me.rerere.workspace.RootfsInstaller
+import me.rerere.workspace.WorkspaceBindMount
+import me.rerere.workspace.WorkspaceManager
+import org.koin.dsl.module
+import java.io.File
+
+val repositoryModule = module {
+    single {
+        ConversationRepository(get(), get(), get(), get(), get(), get())
+    }
+
+    single {
+        FolderRepository(get(), get())
+    }
+
+    single {
+        MemoryRepository(get())
+    }
+
+    single {
+        GenMediaRepository(get())
+    }
+
+    single {
+        FilesRepository(get())
+    }
+
+    single {
+        FavoriteRepository(get())
+    }
+
+    single {
+        val context: Context = get()
+        WorkspaceManager(
+            baseDir = File(context.filesDir, "workspaces"),
+            shellRunner = ProotShellRunner(
+                nativeLibraryDir = File(context.applicationInfo.nativeLibraryDir),
+            ),
+            // 同一份挂载表既用于 PRoot 的 -b 参数, 也用于文件工具的路径解析, 避免两处漂移
+            bindMounts = listOf(
+                WorkspaceBindMount(
+                    source = File(context.filesDir, FileFolders.SKILLS).apply { mkdirs() },
+                    target = "/skills",
+                ),
+                WorkspaceBindMount(
+                    source = File(context.filesDir, FileFolders.TOOL_OUTPUTS).apply { mkdirs() },
+                    target = "/tool_outputs",
+                ),
+                WorkspaceBindMount(
+                    source = File(context.filesDir, FileFolders.UPLOAD).apply { mkdirs() },
+                    target = "/upload",
+                ),
+            ),
+        )
+    }
+
+    single {
+        RootfsInstaller(get())
+    }
+
+    single {
+        WorkspaceRepository(get(), get(), get(), get())
+    }
+
+    single {
+        FilesManager(get(), get(), get())
+    }
+
+    single {
+        SkillManager(get(), get())
+    }
+}
+
+===== 4. ported trees =====
+app/src/main/java/me/rerere/rikkahub/data/agentrun/AgentRunRepository.kt
+app/src/main/java/me/rerere/rikkahub/data/security/SecurityAuditDao.kt
+app/src/main/java/me/rerere/rikkahub/data/security/SecurityAuditEntity.kt
+app/src/main/java/me/rerere/rikkahub/data/security/SecurityAuditRepository.kt
+app/src/main/java/me/rerere/rikkahub/data/service/AmapService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/AmbientSnapshot.kt
+app/src/main/java/me/rerere/rikkahub/data/service/AppLockGuardService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/AppLockStore.kt
+app/src/main/java/me/rerere/rikkahub/data/service/BotAiBridge.kt
+app/src/main/java/me/rerere/rikkahub/data/service/CameraService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/DeviceEventAiTriggerService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/DeviceEventTrackingService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/DeviceLocationFetcher.kt
+app/src/main/java/me/rerere/rikkahub/data/service/MemoryBankService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/RikkaNotificationListenerService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/SupabaseService.kt
+app/src/main/java/me/rerere/rikkahub/data/service/SupabaseSyncService.kt
+app/src/main/java/me/rerere/rikkahub/plugin/data/PluginDataStore.kt
+app/src/main/java/me/rerere/rikkahub/plugin/di/PluginModule.kt
+app/src/main/java/me/rerere/rikkahub/plugin/loader/LoadedPlugin.kt
+app/src/main/java/me/rerere/rikkahub/plugin/loader/PluginLoader.kt
+app/src/main/java/me/rerere/rikkahub/plugin/loader/PluginSandbox.kt
+app/src/main/java/me/rerere/rikkahub/plugin/manager/PluginManager.kt
+app/src/main/java/me/rerere/rikkahub/plugin/model/PluginFolder.kt
+app/src/main/java/me/rerere/rikkahub/plugin/model/PluginInfo.kt
+app/src/main/java/me/rerere/rikkahub/plugin/model/PluginManifest.kt
+app/src/main/java/me/rerere/rikkahub/plugin/model/PluginUI.kt
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt
+app/src/main/java/me/rerere/rikkahub/plugin/repository/PluginRepository.kt
+app/src/main/java/me/rerere/rikkahub/plugin/scanner/PluginScanner.kt
+app/src/main/java/me/rerere/rikkahub/plugin/ui/PluginDetailPage.kt
+app/src/main/java/me/rerere/rikkahub/plugin/ui/PluginFolderPage.kt
+app/src/main/java/me/rerere/rikkahub/plugin/ui/PluginManagePage.kt
+app/src/main/java/me/rerere/rikkahub/plugin/ui/PluginUIDeclarativePage.kt
+app/src/main/java/me/rerere/rikkahub/plugin/ui/PluginViewModel.kt
+app/src/main/java/me/rerere/rikkahub/plugin/webview/MusicPlayerService.kt
+app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt
+app/src/main/java/me/rerere/rikkahub/plugin/webview/PomodoroTimerService.kt
+app/src/main/java/me/rerere/rikkahub/workflow/condition/ConditionEvaluator.kt
+app/src/main/java/me/rerere/rikkahub/workflow/condition/ContextProvider.kt
+app/src/main/java/me/rerere/rikkahub/workflow/condition/SolarTimes.kt
+app/src/main/java/me/rerere/rikkahub/workflow/db/WorkflowDao.kt
+app/src/main/java/me/rerere/rikkahub/workflow/db/WorkflowEntity.kt
+app/src/main/java/me/rerere/rikkahub/workflow/db/WorkflowRunDao.kt
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt
+app/src/main/java/me/rerere/rikkahub/workflow/model/ConditionSpec.kt
+app/src/main/java/me/rerere/rikkahub/workflow/model/TriggerSpec.kt
+app/src/main/java/me/rerere/rikkahub/workflow/model/Workflow.kt
+app/src/main/java/me/rerere/rikkahub/workflow/model/WorkflowContext.kt
+app/src/main/java/me/rerere/rikkahub/workflow/model/WorkflowJson.kt
+app/src/main/java/me/rerere/rikkahub/workflow/repository/WorkflowRepository.kt
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowToolsBridge.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/AppForegroundTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/BatteryTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/BootTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/BroadcastTriggers.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTriggerReceiver.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/ManualTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/NotificationTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/TimeCronTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/TriggerRegistry.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowBootReceiver.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTimeCronWorker.kt
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/WorkflowTrigger.kt
+app/src/main/java/me/rerere/rikkahub/workflow/ui/WorkflowDetailScreen.kt
+app/src/main/java/me/rerere/rikkahub/workflow/ui/WorkflowsScreen.kt
+app/src/main/java/me/rerere/rikkahub/workflow/ui/WorkflowsViewModel.kt

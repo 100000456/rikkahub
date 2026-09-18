@@ -1,0 +1,70 @@
+name: Probe Approval And Voice
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/probe-approval2.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+
+      - name: Probe
+        run: |
+          set -e
+          OC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          RIK=$(pwd)/app/src/main/java/me/rerere/rikkahub
+          {
+            echo "=========== rabbit: files mentioning approval (any case) ==========="
+            grep -rli 'approval' $RIK | sort || true
+
+            echo
+            echo "=========== rabbit: how the approval card gets its text ==========="
+            grep -rn 'isToolApprovalNeeded\|approvalNeeded\|ToolApproval\|approval' $RIK/ui/components 2>/dev/null | head -40 || true
+            echo "--- chat pages ---"
+            grep -rn 'approval' $RIK/ui/pages/chat 2>/dev/null | head -40 || true
+
+            echo
+            echo "=========== rabbit: UIMessagePart.Tool definition ==========="
+            grep -rn 'Tool' $(pwd)/ai/src/main/kotlin/me/rerere/ai/ui/UIMessagePart.kt 2>/dev/null | head -40 || true
+            find $(pwd)/ai/src -name 'UIMessagePart*.kt' 2>/dev/null || true
+
+            echo
+            echo "=========== orangechat: voice call footprint ==========="
+            find /tmp/oc/app/src/main -iname '*voice*' -o -iname '*call*' | sort || true
+            echo "--- voice call related in ui ---"
+            grep -rln 'VoiceCall\|voice_call' /tmp/oc/app/src/main/java/me/rerere/rikkahub | sort || true
+            echo "--- sizes ---"
+            for f in $(find /tmp/oc/app/src/main -iname '*voice*'); do wc -c "$f"; done || true
+
+            echo
+            echo "=========== rabbit: any voice call leftovers ==========="
+            find $RIK -iname '*voice*' -o -iname '*call*' | sort || true
+            grep -rln 'VoiceCall\|voice_call' $RIK | sort || true
+
+            echo
+            echo "=========== rabbit: LocalTools voice option? ==========="
+            grep -rn 'VoiceCall\|RequestVoiceCall' $RIK | head -20 || true
+          } > ci-probe5.txt 2>&1
+          wc -c ci-probe5.txt || true
+
+      - name: Commit probe
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f ci-probe5.txt
+          git commit -m "ci: probe approval card and voice call footprint" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

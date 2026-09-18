@@ -141,6 +141,9 @@ kotlin {
 }
 
 dependencies {
+    // SSH/SFTP：连电脑和服务器
+    implementation("com.github.mwiede:jsch:0.2.21")
+
     // 工作流：cron 解析 + 围栏触发
     implementation("com.cronutils:cron-utils:9.2.1")
     implementation("com.google.android.gms:play-services-location:21.3.0")

@@ -94,6 +94,10 @@ sealed class LocalToolOption {
     data object ScreenAutomation : LocalToolOption()
 
     @Serializable
+    @SerialName("ssh")
+    data object Ssh : LocalToolOption()
+
+    @Serializable
     @SerialName("workflows")
     data object Workflows : LocalToolOption()
 }

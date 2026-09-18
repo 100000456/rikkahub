@@ -82,6 +82,10 @@ class LocalTools(
 
     val avatarTool by lazy { buildAvatarTool(context, settingsStore) }
 
+    private val sshHostRepository by lazy {
+        me.rerere.rikkahub.data.repository.SshHostRepository(context)
+    }
+
     fun getTools(options: List<LocalToolOption>): List<Tool> {
         val tools = mutableListOf<Tool>()
         if (options.contains(LocalToolOption.JavascriptEngine)) {
@@ -183,6 +187,17 @@ class LocalTools(
             tools.add(scrollTool())
             tools.add(globalActionTool())
             tools.add(takeScreenshotTool(context))
+        }
+
+        if (options.contains(LocalToolOption.Ssh)) {
+            tools.add(sshExecTool(context))
+            tools.add(saveSshHostTool(sshHostRepository))
+            tools.add(listSshHostsTool(sshHostRepository))
+            tools.add(deleteSshHostTool(sshHostRepository))
+            tools.add(sshExecSavedTool(context, sshHostRepository))
+            tools.add(sshUploadTool(context, sshHostRepository))
+            tools.add(sshDownloadTool(context, sshHostRepository))
+            tools.add(forgetSshHostKeyTool(context))
         }
 
         // 换头像：常驻，不用开关

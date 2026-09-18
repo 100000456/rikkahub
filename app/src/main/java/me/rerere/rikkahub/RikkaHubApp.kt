@@ -116,6 +116,13 @@ class RikkaHubApp : Application() {
         // 把云端同步和亮屏事件监听接回来
         resumeDeviceSync()
 
+        // 网断网连：把远程连接那边的地址缓存清掉
+        runCatching {
+            me.rerere.rikkahub.utils.NetworkChangeMonitor.start(this)
+        }.onFailure {
+            Log.e(TAG, "startNetworkChangeMonitor failed", it)
+        }
+
         // 工作流：事件驱动的自动化
         startWorkflowTriggers()
 

@@ -1,0 +1,112 @@
+=========== rabbit: files mentioning approval (any case) ===========
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/agentrun/AgentRunRepository.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/HardlineCommandGuard.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/service/ChatService.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/service/ConversationSession.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatList.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatPage.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatVM.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailPage.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/web/dto/WebDto.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/web/routes/ConversationRoutes.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt
+
+=========== rabbit: how the approval card gets its text ===========
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt:118:    onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt:169:                onToolApproval = onToolApproval,
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt:273:    onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt:347:                                        onToolApproval = onToolApproval,
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:46:import me.rerere.ai.ui.ToolApprovalState
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:97:    onToolApproval: ((toolCallId: String, approved: Boolean, reason: String) -> Unit)? = null,
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:128:    val isDenied = tool.approvalState is ToolApprovalState.Denied
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:161:        extra = if (isPending && onToolApproval != null) {
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:177:                        onClick = { onToolApproval(tool.toolCallId, true, "") },
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:213:                        val reason = (tool.approvalState as ToolApprovalState.Denied).reason
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:228:    if (showDenyDialog && onToolApproval != null) {
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:233:                onToolApproval(tool.toolCallId, false, reason)
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:263:    val isAnswered = tool.approvalState is ToolApprovalState.Answered
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt:378:                            val answeredState = tool.approvalState as ToolApprovalState.Answered
+--- chat pages ---
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatVM.kt:268:        analytics.logEvent("ai_tool_approval", null)
+
+=========== rabbit: UIMessagePart.Tool definition ===========
+/home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/UIMessagePart.kt
+/home/runner/work/rikkahub/rikkahub/ai/src/test/java/me/rerere/ai/ui/UIMessagePartTest.kt
+
+=========== orangechat: voice call footprint ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpOAuthCallback.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/transformers/VoiceMessageTransformer.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/VoiceCallService.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/activity/McpOAuthCallbackActivity.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/IncomingCallPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceCallPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceCallState.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceOrb.kt
+--- voice call related in ui ---
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/LocalTools.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/VolumeTool.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/event/AppEvent.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/ChatService.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/ConversationSession.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/service/VoiceCallService.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/components/ai/ChatInput.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/hooks/ASR.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/assistant/detail/AssistantLocalToolPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/IncomingCallPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceCallPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceCallState.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceOrb.kt
+--- sizes ---
+1277 /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/transformers/VoiceMessageTransformer.kt
+wc: /tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice: Is a directory
+0 /tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice
+14555 /tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceCallPage.kt
+6925 /tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceOrb.kt
+925 /tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/voice/VoiceCallState.kt
+30778 /tmp/oc/app/src/main/java/me/rerere/rikkahub/service/VoiceCallService.kt
+
+=========== rabbit: any voice call leftovers ===========
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/components/ai/VoiceModeRow.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/VoiceMode.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/chat/VoiceSessionController.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt
+
+=========== rabbit: LocalTools voice option? ===========

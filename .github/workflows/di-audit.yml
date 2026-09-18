@@ -16,25 +16,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Dump blocks
+      - name: Dump workflow execute section
         run: |
           set -u
-          OUT=.di-wiring.txt
-          SP=app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingPage.kt
           WE=app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt
-          {
-            echo "===== A. SettingPage 245-292 ====="
-            sed -n '245,292p' "$SP"
-            echo
-            echo "===== B. WorkflowEngine 215-345 ====="
-            sed -n '215,345p' "$WE"
-          } > "$OUT"
-          wc -l "$OUT"
+          sed -n '215,350p' "$WE" > .di-block2.txt
+          wc -l .di-block2.txt
 
       - name: Commit dump
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git add -f .di-wiring.txt
-          git commit -m "ci: block dump" || true
+          git add -f .di-block2.txt
+          git commit -m "ci: workflow execute block" || true
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)

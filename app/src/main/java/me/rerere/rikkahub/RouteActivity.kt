@@ -116,6 +116,7 @@ import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesGeneralPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesNetworkPage
 import me.rerere.rikkahub.ui.pages.setting.SettingPreferencesUIPage
 import me.rerere.rikkahub.ui.pages.setting.SettingProactiveMessagePage
+import me.rerere.rikkahub.ui.pages.setting.SettingSecurityPage
 import me.rerere.rikkahub.ui.pages.setting.SettingQqBotPage
 import me.rerere.rikkahub.ui.pages.setting.SettingSystemToolsPage
 import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
@@ -494,6 +495,10 @@ class RouteActivity : ComponentActivity() {
                                 SettingProactiveMessagePage()
                             }
 
+                            entry<Screen.SettingSecurity> {
+                                SettingSecurityPage()
+                            }
+
                             entry<Screen.SettingQqBot> {
                                 SettingQqBotPage()
                             }
@@ -788,6 +793,9 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingProactiveMessage : Screen
+
+    @Serializable
+    data object SettingSecurity : Screen
 
     @Serializable
     data object SettingQqBot : Screen

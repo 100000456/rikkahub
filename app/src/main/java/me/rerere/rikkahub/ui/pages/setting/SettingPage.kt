@@ -261,6 +261,12 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text("主动消息") },
                     )
                     item(
+                        onClick = { navController.navigate(Screen.SettingSecurity) },
+                        leadingContent = { Text("🛡") },
+                        headlineContent = { Text("安全设置") },
+                        supportingContent = { Text("工具调用的确认方式") },
+                    )
+                    item(
                         onClick = { navController.navigate(Screen.SettingQqBot) },
                         leadingContent = { Icon(HugeIcons.Message01, null) },
                         supportingContent = { Text("填 AppID 和密钥，用 QQ 私聊跟 AI 说话") },

@@ -226,12 +226,30 @@ class WorkflowEngine(
         // Headless context — sub-agent recursion guard fires from workflow-action
         // dispatch so a workflow's actions can't spawn a sub-agent that re-fires another
         // workflow_run that re-spawns ad infinitum.
-        val tools = buildList {
+        val allTools = buildList {
             addAll(localTools.getTools(authoringAssistant.localTools))
             addAll(pluginToolProvider.getTools())
         }
 
-        // 敏感工具拦截交给动作层的硬线守卫兜底（兔子侧暂无全局开关）
+        // 安全设置里的「后台工作流拦截敏感工具」：开着的话，把声明了「要用户确认」的工具
+        // 从这一轮的工具面里摘掉。摘掉之后动作找不到工具，会记一条失败，历史里看得见。
+        // 「自动批准所有工具调用」开着时这一条自动失效（跟原版一个逻辑）。
+        val blockSensitiveTools =
+            settings.workflowHeadlessBlockSensitive && !settings.autoApproveAllTools
+        val tools = if (blockSensitiveTools) {
+            val kept = allTools.filterNot { tool ->
+                runCatching {
+                    tool.needsApproval(kotlinx.serialization.json.JsonObject(emptyMap()))
+                }.getOrDefault(false)
+            }
+            Log.i(
+                TAG,
+                "headless sensitive-tool block: kept ${kept.size}/${allTools.size} tool(s)"
+            )
+            kept
+        } else {
+            allTools
+        }
 
         // Execute the action sequence. ActionRunner enforces per-action timeout + HARDLINE.
         val result = actionRunner.run(def.actions, tools)

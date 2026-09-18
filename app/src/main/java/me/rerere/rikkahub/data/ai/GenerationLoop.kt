@@ -175,7 +175,7 @@ class GenerationLoop(
                     val toolDef = tools.find { it.name == tool.toolName }
                     when {
                         // Tool needs approval and state is Auto -> set to Pending
-                        toolDef?.needsApproval(tool.inputAsJson()) == true &&
+                        approvalOverride(toolDef?.needsApproval(tool.inputAsJson()) == true) &&
                             tool.approvalState is ToolApprovalState.Auto -> {
                             hasPendingApproval = true
                             tool.copy(approvalState = ToolApprovalState.Pending)
@@ -567,4 +567,20 @@ class GenerationLoop(
         ) + nonTextParts
     }
 
+}
+
+/**
+ * 安全设置的总开关压过单个工具自己的声明：
+ * 开着「自动批准所有工具调用」就一律放行，开着「强制确认工具调用」就一律弹窗，
+ * 两个都不开，才按工具自己声明的来。
+ */
+private fun approvalOverride(local: Boolean): Boolean {
+    val settings = runCatching {
+        org.koin.java.KoinJavaComponent.getKoin()
+            .get<me.rerere.rikkahub.data.datastore.SettingsStore>()
+            .settingsFlow.value
+    }.getOrNull() ?: return local
+    if (settings.autoApproveAllTools) return false
+    if (settings.forceConfirmToolCalls) return true
+    return local
 }

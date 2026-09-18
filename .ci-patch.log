@@ -1,0 +1,7 @@
+1. settings patched
+2. generation loop patched
+3. workflow engine patched
+4. route patched
+5. settings page patched
+PATCH_OK: settings, loop, engine, route, page
+PATCH_OK

@@ -566,6 +566,11 @@ data class Settings(
     val backupReminderConfig: BackupReminderConfig = BackupReminderConfig(),
     val launchCount: Int = 0,
     val sponsorAlertDismissedAt: Int = 0,
+
+    // 安全设置：工具调用确认方式那三个开关
+    val forceConfirmToolCalls: Boolean = false,
+    val autoApproveAllTools: Boolean = true,
+    val workflowHeadlessBlockSensitive: Boolean = false,
 ) {
     companion object {
         // 构造一个用于初始化的settings, 但它不能用于保存，防止使用初始值存储

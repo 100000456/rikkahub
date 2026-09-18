@@ -1,0 +1,58 @@
+name: Fetch Failed Log
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/fetch-log.yml'
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull the last failed Port Workflow UI run log
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          API="https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=40"
+          RESP=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$API")
+          ID=$(printf '%s' "$RESP" | python3 -c '
+          import sys, json
+          d = json.load(sys.stdin)
+          runs = d.get("workflow_runs", [])
+          for r in runs:
+              name = r.get("name") or ""
+              if r.get("conclusion") == "failure" and "Workflow UI" in name:
+                  print(r["id"])
+                  break
+          ')
+          echo "run id: [$ID]"
+          if [ -z "$ID" ]; then
+            printf 'no failed Workflow UI run found\n' > .ci-failure-ui.txt
+          else
+            curl -sSL -H "Authorization: Bearer $GH_TOKEN" -o /tmp/logs.zip \
+              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$ID/logs" || true
+            mkdir -p /tmp/logs
+            unzip -o -q /tmp/logs.zip -d /tmp/logs || true
+            {
+              echo "=== run $ID ==="
+              echo "--- jobs ---"
+              ls /tmp/logs || true
+              echo "--- errors ---"
+              grep -rh -E '^e: |^error: |ANCHOR NOT FOUND|Traceback|FAILURE: |BUILD FAILED|Unresolved reference|No such file|Cannot' /tmp/logs 2>/dev/null | head -n 300 || true
+              echo "--- patch log ---"
+              grep -rh -A100 'ALL PATCHES APPLIED|ANCHOR NOT FOUND' /tmp/logs 2>/dev/null | head -n 120 || true
+            } > .ci-failure-ui.txt
+          fi
+          head -c 4000 .ci-failure-ui.txt || true
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-ui.txt
+          git commit -m "ci: pull workflow ui failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

@@ -1,0 +1,71 @@
+name: Probe Tool Approval Renderer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/probe-approval.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+
+      - name: Probe
+        run: |
+          set -e
+          OC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          RIK=$(pwd)/app/src/main/java/me/rerere/rikkahub
+          {
+            echo "=========== orangechat WorkflowApprovalRenderer: declarations ==========="
+            grep -n 'object \|class \|interface \|fun \|val \|^import' $OC/workflow/tools/WorkflowApprovalRenderer.kt || true
+            echo
+            echo "=========== orangechat: head of WorkflowApprovalRenderer (55 lines) ==========="
+            sed -n '1,55p' $OC/workflow/tools/WorkflowApprovalRenderer.kt || true
+
+            echo
+            echo "=========== orangechat: who references it ==========="
+            grep -rn 'WorkflowApprovalRenderer\|ToolApprovalRenderer\|approvalRenderer\|ApprovalRenderer' /tmp/oc/app/src/main --include=*.kt || true
+
+            echo
+            echo "=========== orangechat: approval dialog files ==========="
+            grep -rln 'needsApproval' /tmp/oc/app/src/main/java/me/rerere/rikkahub/ui | head -20 || true
+
+            echo
+            echo "=========== rabbit: approval dialog files ==========="
+            grep -rln 'needsApproval' $RIK/ui | head -20 || true
+            echo "--- who in rabbit ui mentions renderer ---"
+            grep -rn 'ApprovalRenderer\|approvalRenderer' $RIK || true
+
+            echo
+            echo "=========== rabbit: WorkflowApprovalRenderer first 20 lines ==========="
+            sed -n '1,20p' $RIK/workflow/tools/WorkflowApprovalRenderer.kt || true
+
+            echo
+            echo "=========== rabbit: where approval UI decides text ==========="
+            grep -rn 'needsApproval' $RIK/ui | head -30 || true
+
+            echo
+            echo "=========== orangechat: WorkflowTools.kt approval-related ==========="
+            grep -n 'needsApproval\|approval\|Renderer' $OC/workflow/tools/WorkflowTools.kt || true
+          } > ci-probe4.txt 2>&1
+          wc -c ci-probe4.txt || true
+
+      - name: Commit probe
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f ci-probe4.txt
+          git commit -m "ci: probe tool approval renderer" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

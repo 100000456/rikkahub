@@ -7,7 +7,9 @@ import kotlinx.serialization.json.Json
 import me.rerere.rikkahub.AppScope
 import me.rerere.rikkahub.data.ai.tools.local.LocalTools
 import me.rerere.rikkahub.data.ai.tools.ChatToolFactory
+import me.rerere.rikkahub.data.db.AppDatabase
 import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.rikkahub.data.service.MemoryBankService
 import me.rerere.rikkahub.plugin.di.pluginModule
 import me.rerere.rikkahub.service.ChatNotificationManager
 import me.rerere.rikkahub.service.ChatService
@@ -33,6 +35,20 @@ val appModule = module {
 
     single {
         LocalTools(get(), get(), get(), get())
+    }
+
+    // 记忆库那两件：DAO 和记忆库服务。
+    // 插件沙箱的 Loader 会伸手要 MemoryBankService，没登记的话整条链断掉，
+    // 表现就是聊天页一开就崩。
+    single {
+        get<AppDatabase>().memoryBankDao()
+    }
+    single {
+        MemoryBankService(
+            memoryBankDAO = get(),
+            okHttpClient = get(),
+            context = get(),
+        )
     }
 
     // 工作流：台账 / 仓库 / 条件 / 执行器 / 引擎 / 触发器注册表

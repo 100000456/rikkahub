@@ -1,0 +1,136 @@
+                    Log.w(TAG, "fire: authoring assistant $storedId for workflow $workflowId no longer exists; falling back to first-with-Workflows")
+                }
+                settings.assistants.firstOrNull { asst ->
+                    asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.local.LocalToolOption.Workflows }
+                }
+            }
+        }
+        if (authoringAssistant == null) {
+            return persistAndReturn(workflowId, firedAtMs, started, WorkflowRunStatus.FAILED,
+                "no_workflows_assistant", "", ledgerId)
+        }
+        // Headless context — sub-agent recursion guard fires from workflow-action
+        // dispatch so a workflow's actions can't spawn a sub-agent that re-fires another
+        // workflow_run that re-spawns ad infinitum.
+        val tools = buildList {
+            addAll(localTools.getTools(authoringAssistant.localTools))
+            addAll(pluginToolProvider.getTools())
+        }
+
+        // 敏感工具拦截交给动作层的硬线守卫兜底（兔子侧暂无全局开关）
+
+        // Execute the action sequence. ActionRunner enforces per-action timeout + HARDLINE.
+        val result = actionRunner.run(def.actions, tools)
+        val status = if (result.success) WorkflowRunStatus.SUCCESS else WorkflowRunStatus.FAILED
+        return persistAndReturn(workflowId, firedAtMs, started, status, result.error, result.summary, ledgerId)
+    }
+
+    /**
+     * Pre-flight check for trigger types that depend on runtime state (a permission, a
+     * service binding, Play Services availability). Returns null if the trigger can fire,
+     * or a stable error code otherwise — the engine then records the fire as FAILED with
+     * that reason and the user sees a clear "missing setup" message in workflow_get history.
+     */
+    private fun triggerRuntimeCheck(trigger: me.rerere.rikkahub.workflow.model.TriggerSpec): String? {
+        val ctx = (this as Any).let {
+            // Static context lookup via Koin so we don't need to take it as a constructor arg
+            // (engine is shared across cron / sub-agent surfaces; minimising its DI surface
+            // is worth a tiny lookup cost on the rare-fire path).
+            org.koin.java.KoinJavaComponent.getKoin().get<android.content.Context>()
+        }
+        return when (trigger) {
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceEnter,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.GeofenceExit -> {
+                val fineGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+                    ctx, android.Manifest.permission.ACCESS_FINE_LOCATION
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                val bgGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    androidx.core.content.ContextCompat.checkSelfPermission(
+                        ctx, android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                } else true
+                when {
+                    !fineGranted -> "geofence_unavailable: ACCESS_FINE_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
+                    !bgGranted -> "geofence_unavailable: ACCESS_BACKGROUND_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
+                    else -> null
+                }
+            }
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.NotificationReceived -> {
+                if (!me.rerere.rikkahub.data.ai.tools.local.NotificationListenerHandle.isBound()) {
+                    "notification_listener_not_enabled: enable the RikkaHub notification listener in Settings → Apps → Special access → Notification access"
+                } else null
+            }
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppLaunched,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.AppForegroundDuration -> {
+                if (!me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle.isRunning()) {
+                    "accessibility_not_enabled: enable the RikkaHub accessibility service in Settings → Accessibility (required for app_launched / app_closed / app_foreground_duration triggers)"
+                } else null
+            }
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceConnected,
+            is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceDisconnected -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+                        ctx, android.Manifest.permission.BLUETOOTH_CONNECT
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    if (!granted) "bluetooth_connect_not_granted: BLUETOOTH_CONNECT runtime permission not granted — required on Android 12+ to read paired-device addresses"
+                    else null
+                } else null
+            }
+            else -> null
+        }
+    }
+
+    private suspend fun persistAndReturn(
+        workflowId: String,
+        firedAtMs: Long,
+        startedNanos: Long,
+        status: WorkflowRunStatus,
+        error: String?,
+        summary: String,
+        ledgerId: String,
+    ): FireOutcome {
+        val durationMs = (System.nanoTime() - startedNanos) / 1_000_000L
+        runCatching {
+            repository.recordFire(
+                workflowId = workflowId,
+                firedAtMs = firedAtMs,
+                status = status,
+                durationMs = durationMs,
+                errorMessage = error,
+            )
+        }.onFailure { Log.w(TAG, "recordFire failed for $workflowId", it) }
+        // Phase 24 — mirror the terminal outcome into the cross-pillar ledger. Every
+        // WorkflowRunStatus is terminal from the ledger's point of view: SUCCESS →
+        // succeeded; FAILED → failed; every SKIPPED_* variant → cancelled (the fire was
+        // accepted but a gate stopped it — not a failure, not a success).
+        val ledgerStatus = when (status) {
+            WorkflowRunStatus.SUCCESS -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.succeeded
+            WorkflowRunStatus.FAILED -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.failed
+            else -> me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled
+        }
+        agentRunRepo.markTerminal(
+            id = ledgerId,
+            status = ledgerStatus,
+            lastError = error ?: if (ledgerStatus == me.rerere.rikkahub.data.agentrun.AgentRunStatus.cancelled) status.name else null,
+        )
+        return FireOutcome(status, error, summary)
+    }
+
+    companion object { private const val TAG = "WorkflowEngine" }
+
+    data class FireOutcome(
+        val status: WorkflowRunStatus,
+        val error: String?,
+        val summary: String,
+    )
+}
+
+/**
+ * Cooldown decision in isolation so the (load-bearing) gate logic can be unit-tested
+ * without spinning up Room + the engine. The rule: use the most-recent SUCCESS/FAILED
+ * fire time, not the workflow row's projected lastRunAtMs (the projected column is
+ * bumped on every attempt — including skips — so it can't be the cooldown anchor).
+ */
+internal object CooldownGate {
+    fun isWithinCooldown(cooldownSeconds: Int, lastActualFireMs: Long?, nowMs: Long): Boolean {

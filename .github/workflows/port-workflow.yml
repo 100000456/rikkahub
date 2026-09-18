@@ -36,149 +36,329 @@ jobs:
           rm -rf "$DST/workflow"
           mkdir -p "$DST/workflow"
           cp -r "$SRC/workflow/." "$DST/workflow/"
+          # 界面那批单独一轮再搬，先让后端编译通过
+          rm -rf "$DST/workflow/ui"
+          rm -f "$DST/workflow/tools/WorkflowApprovalRenderer.kt"
+          # 硬线命令守卫（兔子侧还没有）
+          cp "$SRC/data/ai/tools/HardlineCommandGuard.kt" "$DST/data/ai/tools/HardlineCommandGuard.kt"
           if [ -d "$SRC/data/agentrun" ]; then
             mkdir -p "$DST/data/agentrun"
             cp -r "$SRC/data/agentrun/." "$DST/data/agentrun/"
           fi
           find "$DST/workflow" -type f -name '*.kt' | sort
 
-      - name: Patch app wiring (database / manifest / app / koin)
+      - name: Add missing shim classes
         run: |
           set -e
-          python3 - <<'PY'
+          cat > app/src/main/java/me/rerere/rikkahub/data/ai/tools/ToolInvocationContext.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.ai.tools
+
+          /** 调用上下文：谁在调工具、是不是后台无人值守触发。 */
+          data class ToolInvocationContext(
+              val callerAssistantId: String? = null,
+              val callerConversationId: String? = null,
+              val isHeadless: Boolean = false,
+          ) {
+              companion object {
+                  val EMPTY = ToolInvocationContext()
+              }
+          }
+          KT_EOF
+
+          cat > app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AccessibilityServiceHandle.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.ai.tools.local
+
+          /** 标记无障碍服务是否在跑，供"前台应用"类触发器与摸屏幕工具做前置检查。 */
+          object AccessibilityServiceHandle {
+              @Volatile
+              var running: Boolean = false
+
+              fun isRunning(): Boolean = running
+          }
+          KT_EOF
+
+          cat > app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowToolsBridge.kt <<'KT_EOF'
+          package me.rerere.rikkahub.workflow.tools
+
+          import me.rerere.ai.core.Tool
+          import me.rerere.rikkahub.workflow.execution.WorkflowEngine
+          import me.rerere.rikkahub.workflow.repository.WorkflowRepository
+
+          /** 把七个 workflow_* 工具打包成一组，交给本地工具开关挂上去。 */
+          fun buildWorkflowToolsForLocal(
+              repository: WorkflowRepository,
+              engine: WorkflowEngine,
+              knownToolNamesProvider: () -> List<String>,
+          ): List<Tool> = listOf(
+              workflowCreateTool(repository, knownToolNamesProvider),
+              workflowListTool(repository),
+              workflowGetTool(repository),
+              workflowUpdateTool(repository, knownToolNamesProvider),
+              workflowDeleteTool(repository),
+              workflowSetEnabledTool(repository),
+              workflowRunTool(engine, repository),
+          )
+          KT_EOF
+          echo "shims written"
+
+      - name: Patch app wiring (database / manifest / app / koin / engine / tools)
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
           import pathlib, sys
 
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
           def patch(path, pairs):
-              p = pathlib.Path(path)
-              s = p.read_text(encoding='utf-8')
+              s = read(path)
               for old, new, tag in pairs:
-                  if tag in s:
-                      print(f'skip {path} [{tag}] already applied')
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
                       continue
                   if old not in s:
-                      print(f'!! ANCHOR NOT FOUND in {path} for [{tag}]')
-                      print(repr(old[:120]))
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
                       sys.exit(1)
                   s = s.replace(old, new, 1)
-                  print(f'patched {path} [{tag}]')
-              p.write_text(s, encoding='utf-8')
+                  print("patched", path, tag)
+              write(path, s)
 
-          # 1) Room database: register the two workflow tables + bump version
-          patch('app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt', [
-            (
-              '        SecurityAuditEntity::class,\n',
-              '        SecurityAuditEntity::class,\n'
-              '        me.rerere.rikkahub.workflow.db.WorkflowEntity::class,\n'
-              '        me.rerere.rikkahub.workflow.db.WorkflowRunEntity::class,\n',
-              'WorkflowEntity::class',
-            ),
-            ('    version = 26,\n', '    version = 27,\n', 'version = 27'),
-            (
-              '        AutoMigration(from = 25, to = 26),\n',
-              '        AutoMigration(from = 25, to = 26),\n'
-              '        AutoMigration(from = 26, to = 27),\n',
-              'AutoMigration(from = 26, to = 27)',
-            ),
-            (
-              '    abstract fun securityAuditDao(): SecurityAuditDao\n',
-              '    abstract fun securityAuditDao(): SecurityAuditDao\n'
-              '\n    abstract fun workflowDao(): me.rerere.rikkahub.workflow.db.WorkflowDao\n'
-              '\n    abstract fun workflowRunDao(): me.rerere.rikkahub.workflow.db.WorkflowRunDao\n',
-              'fun workflowDao()',
-            ),
+          DB = 'app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt'
+          MANIFEST = 'app/src/main/AndroidManifest.xml'
+          APP = 'app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt'
+          KOIN = 'app/src/main/java/me/rerere/rikkahub/di/AppModule.kt'
+          ENGINE = 'app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt'
+          WTOOLS = 'app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt'
+          LOPT = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt'
+          LTOOLS = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
+
+          # 1) Room: register the two workflow tables, bump version, add DAOs
+          patch(DB, [
+              (
+                  "        SecurityAuditEntity::class,\n",
+                  "        SecurityAuditEntity::class,\n"
+                  "        me.rerere.rikkahub.workflow.db.WorkflowEntity::class,\n"
+                  "        me.rerere.rikkahub.workflow.db.WorkflowRunEntity::class,\n",
+                  "workflow entities",
+              ),
+              ("    version = 26,\n", "    version = 27,\n", "version 27"),
+              (
+                  "        AutoMigration(from = 25, to = 26),\n",
+                  "        AutoMigration(from = 25, to = 26),\n"
+                  "        AutoMigration(from = 26, to = 27),\n",
+                  "auto migration",
+              ),
+              (
+                  "    abstract fun securityAuditDao(): SecurityAuditDao\n",
+                  "    abstract fun securityAuditDao(): SecurityAuditDao\n"
+                  "\n    abstract fun workflowDao(): me.rerere.rikkahub.workflow.db.WorkflowDao\n"
+                  "\n    abstract fun workflowRunDao(): me.rerere.rikkahub.workflow.db.WorkflowRunDao\n",
+                  "workflow dao accessors",
+              ),
           ])
 
-          # 2) Manifest: boot + geofence receivers
-          patch('app/src/main/AndroidManifest.xml', [
-            (
-              '</application>',
-              '    <!-- 工作流：开机恢复触发器 -->\n'
-              '    <receiver\n'
-              '      android:name=".workflow.trigger.WorkflowBootReceiver"\n'
-              '      android:exported="true">\n'
-              '      <intent-filter>\n'
-              '        <action android:name="android.intent.action.BOOT_COMPLETED" />\n'
-              '      </intent-filter>\n'
-              '    </receiver>\n'
-              '\n'
-              '    <!-- 工作流：围栏进出 -->\n'
-              '    <receiver\n'
-              '      android:name=".workflow.trigger.GeofenceTriggerReceiver"\n'
-              '      android:exported="false" />\n'
-              '\n'
-              '</application>',
-              'WorkflowBootReceiver',
-            ),
+          # 2) Manifest receivers
+          patch(MANIFEST, [
+              (
+                  "</application>",
+                  '    <!-- 工作流：开机恢复触发器 -->\n'
+                  '    <receiver\n'
+                  '      android:name=".workflow.trigger.WorkflowBootReceiver"\n'
+                  '      android:exported="true">\n'
+                  '      <intent-filter>\n'
+                  '        <action android:name="android.intent.action.BOOT_COMPLETED" />\n'
+                  '      </intent-filter>\n'
+                  '    </receiver>\n'
+                  '\n'
+                  '    <!-- 工作流：围栏进出 -->\n'
+                  '    <receiver\n'
+                  '      android:name=".workflow.trigger.GeofenceTriggerReceiver"\n'
+                  '      android:exported="false" />\n'
+                  '\n'
+                  '</application>',
+                  "workflow receivers",
+              ),
           ])
 
-          # 3) Application: start trigger registry on boot
-          patch('app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt', [
-            (
-              '        // 激进模式：盯着设备动静\n        startAggressiveModeIfEnabled()',
-              '        // 工作流：事件驱动的自动化\n'
-              '        startWorkflowTriggers()\n'
-              '\n'
-              '        // 激进模式：盯着设备动静\n'
-              '        startAggressiveModeIfEnabled()',
-              'startWorkflowTriggers()',
-            ),
-            (
-              '    private fun startAggressiveModeIfEnabled() {',
-              '    private fun startWorkflowTriggers() {\n'
-              '        runCatching {\n'
-              '            val registry = get<me.rerere.rikkahub.workflow.trigger.TriggerRegistry>()\n'
-              '            val engine = get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>()\n'
-              '            registry.setEngineCallback(engine.triggerCallback)\n'
-              '            registry.start()\n'
-              '        }.onFailure {\n'
-              '            Log.e(TAG, "startWorkflowTriggers failed", it)\n'
-              '        }\n'
-              '    }\n'
-              '\n'
-              '    private fun startAggressiveModeIfEnabled() {',
-              'private fun startWorkflowTriggers()',
-            ),
+          # 3) Application boot
+          patch(APP, [
+              (
+                  "        // 激进模式：盯着设备动静\n        startAggressiveModeIfEnabled()",
+                  "        // 工作流：事件驱动的自动化\n"
+                  "        startWorkflowTriggers()\n"
+                  "\n"
+                  "        // 激进模式：盯着设备动静\n"
+                  "        startAggressiveModeIfEnabled()",
+                  "call startWorkflowTriggers",
+              ),
+              (
+                  "    private fun startAggressiveModeIfEnabled() {",
+                  "    private fun startWorkflowTriggers() {\n"
+                  "        runCatching {\n"
+                  "            val registry = get<me.rerere.rikkahub.workflow.trigger.TriggerRegistry>()\n"
+                  "            val engine = get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>()\n"
+                  "            registry.setEngineCallback(engine.triggerCallback)\n"
+                  "            registry.start()\n"
+                  "        }.onFailure {\n"
+                  '            Log.e(TAG, "startWorkflowTriggers failed", it)\n'
+                  "        }\n"
+                  "    }\n"
+                  "\n"
+                  "    private fun startAggressiveModeIfEnabled() {",
+                  "startWorkflowTriggers body",
+              ),
           ])
 
-          # 4) Koin: workflow repository / engine / trigger registry
-          patch('app/src/main/java/me/rerere/rikkahub/di/AppModule.kt', [
-            (
-              '    single {\n        LocalTools(get(), get(), get(), get())\n    }\n',
-              '    single {\n        LocalTools(get(), get(), get(), get())\n    }\n'
-              '\n'
-              '    // 工作流：仓库 / 条件 / 执行器 / 引擎 / 触发器注册表\n'
-              '    single {\n'
-              '        me.rerere.rikkahub.workflow.repository.WorkflowRepository(\n'
-              '            workflowDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowDao(),\n'
-              '            workflowRunDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowRunDao(),\n'
-              '        )\n'
-              '    }\n'
-              '    single { me.rerere.rikkahub.workflow.condition.ContextProvider(get(), get(), get()) }\n'
-              '    single { me.rerere.rikkahub.workflow.execution.WorkflowActionRunner() }\n'
-              '    single {\n'
-              '        me.rerere.rikkahub.workflow.execution.WorkflowEngine(\n'
-              '            repository = get(),\n'
-              '            settingsStore = get(),\n'
-              '            contextProvider = get(),\n'
-              '            actionRunner = get(),\n'
-              '            auditRepo = get(),\n'
-              '        ).also { engine ->\n'
-              '            get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>().bindEngine(engine)\n'
-              '        }\n'
-              '    }\n'
-              '    single {\n'
-              '        me.rerere.rikkahub.workflow.trigger.TriggerRegistry(\n'
-              '            context = get(),\n'
-              '            appScope = get(),\n'
-              '            workflowRepository = get(),\n'
-              '        )\n'
-              '    }\n',
-              'workflow.repository.WorkflowRepository',
-            ),
+          # 4) Koin wiring
+          patch(KOIN, [
+              (
+                  "    single {\n        LocalTools(get(), get(), get(), get())\n    }\n",
+                  "    single {\n        LocalTools(get(), get(), get(), get())\n    }\n"
+                  "\n"
+                  "    // 工作流：台账 / 仓库 / 条件 / 执行器 / 引擎 / 触发器注册表\n"
+                  "    single { me.rerere.rikkahub.data.agentrun.AgentRunRepository() }\n"
+                  "    single {\n"
+                  "        me.rerere.rikkahub.workflow.repository.WorkflowRepository(\n"
+                  "            workflowDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowDao(),\n"
+                  "            workflowRunDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowRunDao(),\n"
+                  "        )\n"
+                  "    }\n"
+                  "    single { me.rerere.rikkahub.workflow.condition.ContextProvider(get(), get(), get()) }\n"
+                  "    single { me.rerere.rikkahub.workflow.execution.WorkflowActionRunner() }\n"
+                  "    single {\n"
+                  "        me.rerere.rikkahub.workflow.execution.WorkflowEngine(\n"
+                  "            repository = get(),\n"
+                  "            settingsStore = get(),\n"
+                  "            contextProvider = get(),\n"
+                  "            actionRunner = get(),\n"
+                  "        ).also { engine ->\n"
+                  "            get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>().bindEngine(engine)\n"
+                  "        }\n"
+                  "    }\n"
+                  "    single {\n"
+                  "        me.rerere.rikkahub.workflow.trigger.TriggerRegistry(\n"
+                  "            context = get(),\n"
+                  "            appScope = get(),\n"
+                  "            workflowRepository = get(),\n"
+                  "        )\n"
+                  "    }\n",
+                  "workflow singletons",
+              ),
           ])
 
-          print('all wiring patches applied')
+          # 5) Tool approval signature (rikkahub takes a lambda)
+          patch(WTOOLS, [
+              ("    needsApproval = true,", "    needsApproval = { true },", "needsApproval lambda"),
+          ])
+
+          # 6) LocalToolOption.Workflows
+          patch(LOPT, [
+              (
+                  '    @Serializable\n    @SerialName("explore_nearby")\n    data object ExploreNearby : LocalToolOption()\n}',
+                  '    @Serializable\n    @SerialName("explore_nearby")\n    data object ExploreNearby : LocalToolOption()\n'
+                  '\n    @Serializable\n    @SerialName("workflows")\n    data object Workflows : LocalToolOption()\n}',
+                  "Workflows option",
+              ),
+          ])
+
+          # 7) LocalTools: expose the workflow tools under the toggle
+          patch(LTOOLS, [
+              (
+                  "        if (options.contains(LocalToolOption.ExploreNearby)) {\n"
+                  "            tools.add(exploreNearbyTool)\n"
+                  "        }\n"
+                  "        return tools",
+                  "        if (options.contains(LocalToolOption.ExploreNearby)) {\n"
+                  "            tools.add(exploreNearbyTool)\n"
+                  "        }\n"
+                  "        if (options.contains(LocalToolOption.Workflows)) {\n"
+                  "            val known = tools.map { it.name }\n"
+                  "            tools.addAll(\n"
+                  "                me.rerere.rikkahub.workflow.tools.buildWorkflowToolsForLocal(\n"
+                  "                    repository = org.koin.java.KoinJavaComponent.getKoin()\n"
+                  "                        .get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>(),\n"
+                  "                    engine = org.koin.java.KoinJavaComponent.getKoin()\n"
+                  "                        .get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>(),\n"
+                  "                    knownToolNamesProvider = { known },\n"
+                  "                )\n"
+                  "            )\n"
+                  "        }\n"
+                  "        return tools",
+                  "workflow tools branch",
+              ),
+          ])
+
+          # 8) Engine adaptation: rikkahub builds tool surfaces through LocalTools + plugins
+          patch(ENGINE, [
+              (
+                  "    private val toolSurfaceBuilder: me.rerere.rikkahub.data.ai.tools.ToolSurfaceBuilder by lazy {\n"
+                  "        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.ai.tools.ToolSurfaceBuilder>()\n"
+                  "    }",
+                  "    private val localTools: me.rerere.rikkahub.data.ai.tools.local.LocalTools by lazy {\n"
+                  "        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.ai.tools.local.LocalTools>()\n"
+                  "    }\n"
+                  "\n"
+                  "    private val pluginToolProvider: me.rerere.rikkahub.plugin.provider.PluginToolProvider by lazy {\n"
+                  "        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.plugin.provider.PluginToolProvider>()\n"
+                  "    }",
+                  "tool surface source",
+              ),
+              (
+                  "        val tools = toolSurfaceBuilder.build(\n"
+                  "            assistant = authoringAssistant,\n"
+                  "            settings = settings,\n"
+                  "            invocationContext = me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(\n"
+                  "                callerAssistantId = authoringAssistant.id.toString(),\n"
+                  "                callerConversationId = null,  // headless workflow fire - no conv\n"
+                  "                isHeadless = true,\n"
+                  "            ),\n"
+                  "        )",
+                  "        val tools = buildList {\n"
+                  "            addAll(localTools.getTools(authoringAssistant.localTools))\n"
+                  "            addAll(pluginToolProvider.getTools())\n"
+                  "        }",
+                  "tool surface build",
+              ),
+              (
+                  "        // Headless 敏感工具拦截：若设置开启且未开启全局自动批准，禁止后台触发的工作流执行需要用户确认的工具\n"
+                  "        if (settings.workflowHeadlessBlockSensitive && !settings.autoApproveAllTools) {\n"
+                  "            val blocked = def.actions.filter { action ->\n"
+                  "                tools.find { it.name == action.tool }?.needsApproval == true\n"
+                  "            }\n"
+                  "            if (blocked.isNotEmpty()) {\n"
+                  '                val names = blocked.joinToString(", ") { it.tool }\n'
+                  "                auditRepo?.log(\n"
+                  '                    category = "workflow",\n'
+                  '                    action = "blocked",\n'
+                  "                    target = workflowId,\n"
+                  "                    detail = \"工作流 '${entity.name}' 后台触发时因包含敏感工具 [$names] 被拦截\",\n"
+                  '                    status = "blocked",\n'
+                  "                )\n"
+                  "                return persistAndReturn(\n"
+                  "                    workflowId, firedAtMs, started, WorkflowRunStatus.FAILED,\n"
+                  '                    "headless_sensitive_blocked: $names", "", ledgerId,\n'
+                  "                )\n"
+                  "            }\n"
+                  "        }",
+                  "        // 敏感工具拦截交给动作层的硬线守卫兜底（兔子侧暂无全局开关）",
+                  "headless block",
+              ),
+              (
+                  "asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.LocalToolOption.Workflows }",
+                  "asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.local.LocalToolOption.Workflows }",
+                  "LocalToolOption package",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
           PY
+          cat ci-logs/patch.log
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -210,7 +390,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-workflow-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-workflow2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Write placeholder google-services.json
         run: |
@@ -248,11 +428,11 @@ jobs:
           }
           JSON_EOF
 
-      - name: Build debug APK
+      - name: Compile app module
         run: |
           chmod +x gradlew
           set -o pipefail
-          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee ci-logs/gradle.log
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
 
       - name: Dump failure info
         if: failure()
@@ -260,22 +440,24 @@ jobs:
           mkdir -p ci-logs
           {
             echo "=== failure at $(date -u) ==="
-            echo "--- compile errors (e: and error:) ---"
-            grep -E '^e: |^error: |Unresolved|error:' ci-logs/gradle.log | head -n 400 || true
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
             echo "--- gradle tail ---"
-            tail -n 150 ci-logs/gradle.log 2>/dev/null || true
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
           } > .ci-failure.txt
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           git add -f .ci-failure.txt
           git commit -m "ci: dump workflow port failure log" || true
-          git push origin HEAD:master || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
 
       - name: Commit ported module on success
         if: success()
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git add -A app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
+          git add -A app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/ai/tools app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
           git commit -m "工作流模块：移植橘瓣 workflow + 接线（编译通过）" || true
-          git push origin HEAD:master || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

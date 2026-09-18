@@ -16,37 +16,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Dump DI surface
+      - name: Dump approval surface
         run: |
           set -u
           OUT=.di-audit.txt
-          MODFILES=$(grep -rlE 'val [A-Za-z0-9_]*[Mm]odule *= *module' app/src/main/java --include='*.kt' || true)
           {
-            echo "===== 0. preflight: 已经打进仓库的补丁还在不在 ====="
-            F=app/src/main/java/me/rerere/rikkahub/plugin/webview/PluginWebViewPage.kt
-            echo "message.parts count = $(grep -c 'response.message.parts' "$F" || true)"
-            echo "safe-replace count = $(grep -c ')?\.replace(' "$F" || true)"
-            echo "raw-replace count = $(grep -c ')\.replace(' "$F" || true)"
-            echo "--- line 276-279 ---"
-            sed -n '276,279p' "$F"
-            echo "--- line 400-402 ---"
-            sed -n '400,402p' "$F"
-            echo "--- line 1052-1054 ---"
-            sed -n '1052,1054p' "$F"
-            echo "--- 崩溃日志截断长度 ---"
-            grep -n 'MAX_STACKTRACE_LENGTH' app/src/main/java/me/rerere/rikkahub/utils/CrashHandler.kt || true
+            echo "===== 1. 三个开关的文字在哪儿 ====="
+            grep -rn '强制确认工具调用\|自动批准所有工具调用\|后台工作流拦截敏感工具\|自动批准\|每个工具调用' app/src/main --include='*.kt' --include='*.xml' || echo "none"
             echo
-            echo "===== 1. typed lookups get<T>() ====="
-            grep -rhoE 'get<[A-Za-z0-9_.]+>' app/src/main/java --include='*.kt' | sed -e 's/^get<//' -e 's/>$//' | sort | uniq -c | sort -rn
+            echo "===== 2. 含审批字样的文件清单 ====="
+            grep -rln '审批\|approval\|Approval\|requireApproval\|needsApproval' app/src/main/java --include='*.kt' | sort || echo "none"
             echo
-            echo "===== 2. 定义清单（文件 + 类型） ====="
-            for f in $MODFILES; do
+            echo "===== 3. 那三个开关所在文件的全文 ====="
+            FILES=$(grep -rl '强制确认工具调用\|自动批准所有工具调用\|后台工作流拦截敏感工具' app/src/main --include='*.kt' || true)
+            echo "$FILES"
+            for f in $FILES; do
               echo "----- $f"
-              grep -nE 'single|factory|viewModel|get<|get\(\)|androidContext\(\)|includes\(' "$f" || true
+              cat "$f"
             done
             echo
-            echo "===== 3. 谁在往容器里伸手（inject / GlobalContext / KoinJavaComponent） ====="
-            grep -rnE 'by inject|inject<|KoinComponent|GlobalContext|KoinJavaComponent|getKoin\(\)' app/src/main/java --include='*.kt' || true
+            echo "===== 4. 工作流审批相关的界面文件全文 ====="
+            for f in app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt; do
+              echo "----- $f"
+              cat "$f"
+            done
           } > "$OUT"
           wc -l "$OUT"
 
@@ -55,5 +48,5 @@ jobs:
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           git add -f .di-audit.txt
-          git commit -m "ci: DI audit dump" || true
+          git commit -m "ci: approval surface dump" || true
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)

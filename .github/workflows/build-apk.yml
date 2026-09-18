@@ -221,8 +221,9 @@ jobs:
                       print("---- looked for ----")
                       print(old[:400])
                       sys.exit(1)
-                  s = s.replace(old, new, 1)
-                  print("patched", path, tag)
+                  n = s.count(old)
+                  s = s.replace(old, new)
+                  print("patched", path, tag, "x", n)
               write(path, s)
 
           DB = 'app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt'
@@ -494,4 +495,4 @@ jobs:
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
           echo "port committed"
 
-# rebuild marker: 2026-09-18T20:07+08:00 add cron + geofence deps, engine imports
+# rebuild marker: 2026-09-18T20:16+08:00 replace-all patch semantics

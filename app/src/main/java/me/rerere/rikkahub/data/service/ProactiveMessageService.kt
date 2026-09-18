@@ -66,7 +66,7 @@ object ProactiveMessageScheduler {
     private fun broadcastIntent(context: Context): Intent =
         Intent(context, ProactiveMessageReceiver::class.java).apply { action = ACTION_FIRE }
 
-    private fun pendingIntent(context: Context, extraFlags: Int): PendingIntent =
+    private fun pendingIntent(context: Context, extraFlags: Int): PendingIntent? =
         PendingIntent.getBroadcast(
             context,
             REQUEST_CODE,
@@ -92,7 +92,7 @@ object ProactiveMessageScheduler {
             .apply()
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val pending = pendingIntent(context, PendingIntent.FLAG_UPDATE_CURRENT)
+        val pending = pendingIntent(context, PendingIntent.FLAG_UPDATE_CURRENT) ?: return
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)

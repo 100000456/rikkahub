@@ -1,0 +1,82 @@
+name: Probe Accessibility Batch
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/probe-accessibility.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          ls /tmp/oc
+
+      - name: Probe
+        run: |
+          set -e
+          OC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          LOCAL=$OC/data/ai/tools/local
+          TOOLS=$OC/data/ai/tools
+          {
+            echo "=========== files with accessib in name ==========="
+            find /tmp/oc/app/src/main -iname '*accessib*' || true
+            echo "=========== root package ==========="
+            ls $OC || true
+            echo "=========== service dir ==========="
+            ls $OC/service || true
+            echo "=========== data dir ==========="
+            ls $OC/data || true
+            echo "=========== manifest accessibility ==========="
+            grep -n -i 'accessib' /tmp/oc/app/src/main/AndroidManifest.xml || true
+            echo "=========== manifest services ==========="
+            grep -n -A4 '<service' /tmp/oc/app/src/main/AndroidManifest.xml | head -80 || true
+            echo "=========== res xml ==========="
+            find /tmp/oc/app/src/main/res -iname '*accessib*' -o -iname '*xml*' 2>/dev/null | head -40 || true
+
+            echo "=========== SCREEN TOUCH TOOLS ==========="
+            for f in TapTool SwipeTool ScrollTool ScreenshotTool WindowTreeTool FindNodeTool GlobalActionTool AccessibilityServiceHandle WakeHelper ScreenWaker InteractiveToolStreamer; do
+              echo "----- $f -----"
+              grep -n '^package\|^import' $LOCAL/$f.kt || true
+              grep -n -E '^(internal )?(fun|suspend fun) (build|create)[A-Za-z]*\(' $LOCAL/$f.kt || true
+              grep -n -E 'LocalToolOption\.' $LOCAL/$f.kt || true
+            done
+
+            echo "=========== LATER BATCH TOOLS (imports + build fns) ==========="
+            for f in FingerprintTool SshTool SshHostsTool SshSftpTool BiometricResultBuffer; do
+              echo "----- local/$f -----"
+              grep -n '^package\|^import' $LOCAL/$f.kt || true
+              grep -n -E '^(internal )?(fun|suspend fun) (build|create)[A-Za-z]*\(' $LOCAL/$f.kt || true
+            done
+            for f in AppLockTool MemoryTools SearchTools SetWallpaperTool ZipFilesTool HtmlToText TextReplacers ToolSurfaceBuilder ToolNaming ToolInvocationContext; do
+              echo "----- tools/$f -----"
+              grep -n '^package\|^import' $TOOLS/$f.kt || true
+              grep -n -E '^(internal )?(fun|suspend fun) (build|create)[A-Za-z]*\(' $TOOLS/$f.kt || true
+            done
+
+            echo "=========== LocalToolOption (orangechat) ==========="
+            cat $LOCAL/LocalToolOption.kt || true
+
+            echo "=========== LocalTools registrations (orangechat) ==========="
+            grep -n -E 'val [a-zA-Z]+Tool by lazy|tools.add|LocalToolOption\.' $TOOLS/LocalTools.kt | head -200 || true
+          } > ci-probe.txt 2>&1
+          wc -c ci-probe.txt || true
+
+      - name: Commit probe
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f ci-probe.txt
+          git commit -m "ci: probe accessibility batch" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

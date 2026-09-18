@@ -98,6 +98,82 @@ jobs:
           KT_EOF
           echo "shims written"
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-workflow3-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      # 先把当前版本（26）的表结构导出一份存档：自动迁移要拿它做新旧对比，
+      # 而仓库里只存到 25，缺 26 那份。这一步跑在打补丁之前，导出的就是旧版结构。
+      - name: Export current Room schema (v26)
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:kspDebugKotlin --stacktrace 2>&1 | tee ci-logs/ksp.log | tail -n 30
+
       - name: Patch app wiring (database / manifest / app / koin / engine / tools)
         run: |
           set -eo pipefail
@@ -325,74 +401,6 @@ jobs:
           PY
           cat ci-logs/patch.log
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 11
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: web-ui/pnpm-lock.yaml
-
-      - name: Install web-ui dependencies
-        working-directory: web-ui
-        run: |
-          mkdir -p ../ci-logs
-          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
-
-      - name: Gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-workflow2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-
-      - name: Write placeholder google-services.json
-        run: |
-          mkdir -p app ci-logs
-          cat > app/google-services.json <<'JSON_EOF'
-          {
-            "project_info": {
-              "project_number": "123456789012",
-              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
-              "project_id": "rikkahub-placeholder",
-              "storage_bucket": "rikkahub-placeholder.appspot.com"
-            },
-            "client": [
-              {
-                "client_info": {
-                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
-                  "android_client_info": {
-                    "package_name": "me.rerere.rikkahub.debug"
-                  }
-                },
-                "oauth_client": [],
-                "api_key": [
-                  {
-                    "current_key": "AIzaSyDplaceholder000000000000000000000"
-                  }
-                ],
-                "services": {
-                  "appinvite_service": {
-                    "other_platform_oauth_client": []
-                  }
-                }
-              }
-            ],
-            "configuration_version": "1"
-          }
-          JSON_EOF
-
       - name: Compile app module
         run: |
           chmod +x gradlew
@@ -409,10 +417,12 @@ jobs:
             echo "=== failure at $(date -u) ==="
             echo "--- patch log ---"
             cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- ksp errors ---"
+            grep -E '^e: |^error: |^w: \[ksp\]|error:' ci-logs/ksp.log 2>/dev/null | head -n 120 || true
             echo "--- compile errors ---"
             grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 400 || true
             echo "--- gradle tail ---"
-            tail -n 120 ci-logs/gradle.log 2>/dev/null || true
+            tail -n 80 ci-logs/gradle.log 2>/dev/null || true
           } > /tmp/failure.txt
           NAME="ci-logs/failure-$(date +%Y%m%d-%H%M%S).txt"
           gh api -X PUT "/repos/${{ github.repository }}/contents/$NAME" \
@@ -427,9 +437,9 @@ jobs:
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git add -A app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/ai/tools app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
+          git add -A -f app/schemas app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/ai/tools app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
           git commit -m "工作流模块：移植橘瓣 workflow + 接线（编译通过）" || true
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
           echo "port committed"
 
-# rebuild marker: 2026-09-18T19:33+08:00 port via debug pipeline
+# rebuild marker: 2026-09-18T19:57+08:00 two-pass build (schema export then port)

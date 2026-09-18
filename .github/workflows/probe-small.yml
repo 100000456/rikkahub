@@ -1,0 +1,70 @@
+name: Probe Small Tools
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/probe-small.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          ls /tmp/oc
+
+      - name: Probe
+        run: |
+          set -e
+          OC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          RIK=$(pwd)/app/src/main/java/me/rerere/rikkahub
+          {
+            echo "=========== orangechat: find LocalToolOption ==========="
+            find /tmp/oc/app/src/main -name 'LocalToolOption.kt' || true
+            echo "=========== orangechat: LocalToolOption full ==========="
+            find /tmp/oc/app/src/main -name 'LocalToolOption.kt' -exec cat {} \; || true
+
+            echo "=========== orangechat: LocalTools full ==========="
+            cat $OC/data/ai/tools/local/LocalTools.kt || true
+
+            echo "=========== orangechat: local dir ==========="
+            ls $OC/data/ai/tools/local || true
+            echo "=========== orangechat: tools dir ==========="
+            ls $OC/data/ai/tools || true
+            echo "=========== orangechat: ui/activity dir ==========="
+            ls $OC/ui/activity || true
+            echo "=========== orangechat: manifest biometr/notification policy ==========="
+            grep -n -i 'biometric\|ACCESS_NOTIFICATION_POLICY\|USE_FINGERPRINT\|query_all\|QUERY_ALL' /tmp/oc/app/src/main/AndroidManifest.xml || true
+            echo "=========== orangechat: biometric related strings ==========="
+            grep -rn 'biometric' /tmp/oc/gradle/libs.versions.toml || true
+            echo "=========== orangechat: who uses DndTool / wallpaper / zip ==========="
+            grep -rn 'createSetWallpaperTool\|buildWriteFilesTool\|Dnd\|DoNotDisturb' $OC/data/ai/tools/ | head -40 || true
+
+            echo "=========== rabbit: current LocalTools ==========="
+            cat $RIK/data/ai/tools/local/LocalTools.kt || true
+            echo "=========== rabbit: current LocalToolOption ==========="
+            cat $RIK/data/ai/tools/local/LocalToolOption.kt || true
+            echo "=========== rabbit: tools dir ==========="
+            ls $RIK/data/ai/tools || true
+            echo "=========== rabbit: grep write_files / set_wallpaper / memory ==========="
+            grep -rn 'write_files\|set_wallpaper\|verify_fingerprint\|buildWriteFilesTool\|createSetWallpaperTool' $RIK/ | head -40 || true
+          } > ci-probe3.txt 2>&1
+          wc -c ci-probe3.txt || true
+
+      - name: Commit probe
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f ci-probe3.txt
+          git commit -m "ci: probe small tools batch" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

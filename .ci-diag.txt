@@ -1,0 +1,28 @@
+=== 还宣称一定返回值、但可能拿到空的 PendingIntent 的地方 ===
+none
+
+=== 用到 FLAG_NO_CREATE（找不到就返回空）的地方 ===
+app/src/main/java/me/rerere/rikkahub/data/service/SupabaseSyncService.kt:102:                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:148:                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:116:        val pending = pendingIntent(context, PendingIntent.FLAG_NO_CREATE) ?: return
+
+=== PendingIntent.get* 调用点 ===
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTrigger.kt:197:        return PendingIntent.getBroadcast(context, 0, intent, flags)
+app/src/main/java/me/rerere/rikkahub/workflow/trigger/GeofenceTriggerReceiver.kt:18: * via `PendingIntent.getBroadcast` outside of any active component.
+app/src/main/java/me/rerere/rikkahub/data/service/DeviceEventAiTriggerService.kt:281:        val launchPendingIntent = PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/data/service/SupabaseSyncService.kt:55:            val pendingIntent = PendingIntent.getBroadcast(
+app/src/main/java/me/rerere/rikkahub/data/service/SupabaseSyncService.kt:98:            val pendingIntent = PendingIntent.getBroadcast(
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:94:            val pendingIntent = PendingIntent.getBroadcast(
+app/src/main/java/me/rerere/rikkahub/data/service/DailySummaryService.kt:144:            val pendingIntent = PendingIntent.getBroadcast(
+app/src/main/java/me/rerere/rikkahub/data/service/DeviceEventTrackingService.kt:177:        val launchPendingIntent = PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:70:        PendingIntent.getBroadcast(
+app/src/main/java/me/rerere/rikkahub/data/service/ProactiveMessageService.kt:462:        val pending = PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/plugin/webview/PomodoroTimerService.kt:290:        val stopPendingIntent = PendingIntent.getService(
+app/src/main/java/me/rerere/rikkahub/plugin/webview/PomodoroTimerService.kt:297:        val launchPendingIntent = PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/plugin/webview/MusicPlayerService.kt:356:        val launchPendingIntent = PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/plugin/webview/MusicPlayerService.kt:365:        val stopPendingIntent = PendingIntent.getService(
+app/src/main/java/me/rerere/rikkahub/service/WebServerService.kt:144:    private fun buildLaunchPendingIntent() = PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/service/WebServerService.kt:164:        val stopPendingIntent = PendingIntent.getService(
+app/src/main/java/me/rerere/rikkahub/service/ChatNotificationManager.kt:192:        return PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/service/ChatGenerationForegroundService.kt:166:        return PendingIntent.getActivity(
+app/src/main/java/me/rerere/rikkahub/service/KeepAliveService.kt:106:        val pendingIntent = PendingIntent.getActivity(

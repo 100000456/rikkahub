@@ -1,0 +1,371 @@
+name: Port Pack And Wallpaper
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-pack-wallpaper.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          test -f /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/ZipFilesTool.kt
+          echo "orangechat fetched"
+
+      - name: Copy pack tool
+        run: |
+          set -e
+          SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          DST=app/src/main/java/me/rerere/rikkahub
+          mkdir -p "$DST/data/ai/tools"
+          cp "$SRC/data/ai/tools/ZipFilesTool.kt" "$DST/data/ai/tools/ZipFilesTool.kt"
+          sed -i 's/needsApproval = true/needsApproval = { true }/g' "$DST/data/ai/tools/ZipFilesTool.kt"
+          if grep -rn 'needsApproval = true' "$DST/data/ai/tools/ZipFilesTool.kt" ; then
+            echo "!! still bare needsApproval left"
+            exit 1
+          fi
+          echo "copied ZipFilesTool"
+
+      - name: Write wallpaper tool
+        run: |
+          mkdir -p app/src/main/java/me/rerere/rikkahub/data/ai/tools/local
+          cat > app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt <<'KT_EOF'
+          package me.rerere.rikkahub.data.ai.tools.local
+
+          import android.app.WallpaperManager
+          import android.content.Context
+          import android.graphics.BitmapFactory
+          import kotlinx.coroutines.Dispatchers
+          import kotlinx.coroutines.withContext
+          import kotlinx.serialization.json.add
+          import kotlinx.serialization.json.buildJsonObject
+          import kotlinx.serialization.json.contentOrNull
+          import kotlinx.serialization.json.jsonObject
+          import kotlinx.serialization.json.jsonPrimitive
+          import kotlinx.serialization.json.put
+          import kotlinx.serialization.json.putJsonArray
+          import kotlinx.serialization.json.putJsonObject
+          import me.rerere.ai.core.InputSchema
+          import me.rerere.ai.core.Tool
+          import me.rerere.ai.ui.UIMessagePart
+          import java.io.File
+          import java.net.HttpURLConnection
+          import java.net.URL
+
+          /**
+           * 设壁纸。
+           *
+           * 橘瓣那版是「从当前对话里翻最近一张图」，搬过来兔子这边工具层拿不到对话原文，
+           * 所以改成直接给图。截图存的那条路径、相册里的文件、网上的网址都吃。
+           */
+          fun buildSetWallpaperTool(context: Context): Tool = Tool(
+              name = "set_wallpaper",
+              description = "Set the device wallpaper from a local image path or an http(s) url. " +
+                  "Supports home screen, lock screen, or both.",
+              needsApproval = { true },
+              parameters = {
+                  InputSchema.Obj(
+                      properties = buildJsonObject {
+                          putJsonObject("path") {
+                              put("type", "string")
+                              put("description", "Absolute file path or http(s) url of the image to use")
+                          }
+                          putJsonObject("target") {
+                              put("type", "string")
+                              put("description", "Which wallpaper to set: home, lock, or both. Default: both")
+                              putJsonArray("enum") {
+                                  add("home")
+                                  add("lock")
+                                  add("both")
+                              }
+                          }
+                      },
+                      required = listOf("path")
+                  )
+              },
+              execute = { args ->
+                  val params = args.jsonObject
+                  val rawPath = params["path"]?.jsonPrimitive?.contentOrNull
+                  val target = params["target"]?.jsonPrimitive?.contentOrNull ?: "both"
+
+                  if (rawPath.isNullOrBlank()) {
+                      return@Tool listOf(
+                          UIMessagePart.Text(
+                              buildJsonObject {
+                                  put("success", false)
+                                  put("error", "path is required")
+                              }.toString()
+                          )
+                      )
+                  }
+                  if (target !in listOf("home", "lock", "both")) {
+                      return@Tool listOf(
+                          UIMessagePart.Text(
+                              buildJsonObject {
+                                  put("success", false)
+                                  put("error", "target must be one of: home, lock, both")
+                              }.toString()
+                          )
+                      )
+                  }
+
+                  val file = resolveWallpaperFile(context, rawPath)
+                  if (file == null || !file.exists() || !file.isFile) {
+                      return@Tool listOf(
+                          UIMessagePart.Text(
+                              buildJsonObject {
+                                  put("success", false)
+                                  put("error", "image not found or not readable: " + rawPath)
+                              }.toString()
+                          )
+                      )
+                  }
+
+                  val bitmap = withContext(Dispatchers.IO) {
+                      runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+                  }
+                  if (bitmap == null) {
+                      return@Tool listOf(
+                          UIMessagePart.Text(
+                              buildJsonObject {
+                                  put("success", false)
+                                  put("error", "cannot decode this file as an image: " + file.absolutePath)
+                              }.toString()
+                          )
+                      )
+                  }
+
+                  val flags = when (target) {
+                      "home" -> WallpaperManager.FLAG_SYSTEM
+                      "lock" -> WallpaperManager.FLAG_LOCK
+                      else -> WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK
+                  }
+
+                  val outcome = runCatching {
+                      WallpaperManager.getInstance(context).setBitmap(bitmap, null, true, flags)
+                  }
+                  outcome.getOrElse { throwable ->
+                      return@Tool listOf(
+                          UIMessagePart.Text(
+                              buildJsonObject {
+                                  put("success", false)
+                                  put("error", throwable.message ?: "failed to set wallpaper")
+                              }.toString()
+                          )
+                      )
+                  }
+
+                  listOf(
+                      UIMessagePart.Text(
+                          buildJsonObject {
+                              put("success", true)
+                              put("target", target)
+                              put("file", file.absolutePath)
+                          }.toString()
+                      )
+                  )
+              }
+          )
+
+          private suspend fun resolveWallpaperFile(context: Context, raw: String): File? =
+              withContext(Dispatchers.IO) {
+                  when {
+                      raw.startsWith("http://") || raw.startsWith("https://") -> runCatching {
+                          val connection = URL(raw).openConnection() as HttpURLConnection
+                          connection.connectTimeout = 15000
+                          connection.readTimeout = 15000
+                          connection.connect()
+                          if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                              null
+                          } else {
+                              val dir = File(context.cacheDir, "wallpaper")
+                              if (!dir.exists()) dir.mkdirs()
+                              val out = File(dir, "wallpaper_" + System.currentTimeMillis())
+                              connection.inputStream.use { input ->
+                                  out.outputStream().use { output -> input.copyTo(output) }
+                              }
+                              out
+                          }
+                      }.getOrNull()
+
+                      raw.startsWith("file://") -> File(raw.removePrefix("file://"))
+
+                      else -> File(raw)
+                  }
+              }
+          KT_EOF
+          echo "wallpaper tool written"
+
+      - name: Patch wiring
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
+                      sys.exit(1)
+                  s = s.replace(old, new)
+                  print("patched", path, tag)
+              write(path, s)
+
+          FACTORY = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt'
+          LTOOLS = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
+
+          # 1) 打包：常驻，跟橘瓣一样随时能叫
+          patch(FACTORY, [
+              (
+                  "        addAll(localTools.getTools(assistant.localTools))\n",
+                  "        addAll(localTools.getTools(assistant.localTools))\n"
+                  "        // 打包：把文件塞进一个 zip 交给她（write_files）\n"
+                  "        add(buildWriteFilesTool())\n",
+                  "write_files tool",
+              ),
+          ])
+
+          # 2) 壁纸挂在系统工具那一档下
+          patch(LTOOLS, [
+              (
+                  "            tools.add(wakeScreenTool)\n        }\n",
+                  "            tools.add(wakeScreenTool)\n"
+                  "            tools.add(buildSetWallpaperTool(context))\n"
+                  "        }\n",
+                  "wallpaper tool",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-pack-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== pack+wallpaper port failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback|SyntaxError|Could not (find|resolve)' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
+            echo "--- gradle tail ---"
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure-pack.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-pack.txt
+          git commit -m "ci: dump pack/wallpaper failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/data/ai/tools || true
+          git commit -m "打包与壁纸：write_files 和 set_wallpaper 进兔子（编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

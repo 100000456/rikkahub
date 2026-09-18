@@ -1,0 +1,82 @@
+name: Probe Accessibility Batch 2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/probe-accessibility2.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          test -d /tmp/oc/app/src/main/java/me/rerere/rikkahub
+
+      - name: Probe
+        run: |
+          set -e
+          OC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          {
+            echo "=========== sizes ==========="
+            wc -c $OC/service/RikkaAccessibilityService.kt || true
+            wc -c $OC/data/ai/tools/ToolInvocationContext.kt || true
+            wc -c $OC/data/ai/tools/local/*.kt || true
+
+            echo "=========== RikkaAccessibilityService structure ==========="
+            grep -n -E '^(class|object|data class|sealed|internal)|^    (fun|override fun|val|var|companion|suspend fun)' $OC/service/RikkaAccessibilityService.kt | head -120 || true
+
+            echo "=========== accessibility_service_config.xml ==========="
+            cat /tmp/oc/app/src/main/res/xml/accessibility_service_config.xml || true
+
+            echo "=========== ToolInvocationContext full ==========="
+            cat $OC/data/ai/tools/ToolInvocationContext.kt || true
+
+            echo "=========== InteractiveToolStreamer full ==========="
+            cat $OC/data/ai/tools/local/InteractiveToolStreamer.kt || true
+
+            echo "=========== WakeHelper + ScreenWaker full ==========="
+            cat $OC/data/ai/tools/local/WakeHelper.kt || true
+            cat $OC/data/ai/tools/local/ScreenWaker.kt || true
+
+            echo "=========== AccessibilityServiceHandle full ==========="
+            cat $OC/data/ai/tools/local/AccessibilityServiceHandle.kt || true
+
+            echo "=========== who mentions AgentTurnTracker ==========="
+            grep -rln "AgentTurnTracker" /tmp/oc/app/src/main/java --include=*.kt || true
+            echo "=========== AgentTurnTracker definition ==========="
+            grep -rn -A40 "AgentTurnTracker" /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/ --include=*.kt | head -100 || true
+
+            echo "=========== who mentions ActionLogEntry ==========="
+            grep -rln "ActionLogEntry" /tmp/oc/app/src/main/java --include=*.kt || true
+            echo "=========== ActionLogEntry definition ==========="
+            grep -rn -B2 -A20 "class ActionLogEntry" /tmp/oc/app/src/main/java --include=*.kt | head -80 || true
+
+            echo "=========== ScreenAutomation option def ==========="
+            grep -n -B2 -A4 "ScreenAutomation\|Ssh\b" $OC/data/ai/tools/LocalToolOption.kt | head -60 || true
+
+            echo "=========== android/app build.gradle deps mentioning jsch biometric ==========="
+            grep -n -i "jsch\|biometric" /tmp/oc/app/build.gradle.kts /tmp/oc/gradle/libs.versions.toml 2>/dev/null | head -20 || true
+
+            echo "=========== A11Y related strings ==========="
+            grep -rn "accessibility" /tmp/oc/app/src/main/res/values/strings.xml | head -30 || true
+          } > ci-probe2.txt 2>&1
+          wc -c ci-probe2.txt || true
+
+      - name: Commit probe
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f ci-probe2.txt
+          git commit -m "ci: probe accessibility batch 2" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

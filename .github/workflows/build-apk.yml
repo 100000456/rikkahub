@@ -11,11 +11,19 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+
+      # 顺手把工作流移植那条线也踢一脚（它自己的 push 触发不灵）
+      - name: Kick off port workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run port-workflow.yml --ref master && echo "port workflow dispatched" || echo "dispatch failed"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -100,13 +108,15 @@ jobs:
             echo "--- node ---"; node -v 2>&1 || true
             echo "--- pnpm ---"; pnpm -v 2>&1 || true
             echo "--- pnpm tail ---"; tail -n 80 ci-logs/pnpm.log 2>/dev/null || true
-            echo "--- gradle tail ---"; tail -n 500 ci-logs/gradle.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 400 || true
+            echo "--- gradle tail ---"; tail -n 200 ci-logs/gradle.log 2>/dev/null || true
           } > .ci-failure.txt
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           git add -f .ci-failure.txt
           git commit -m "ci: dump failure log" || true
-          git push origin HEAD:master || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
 
       - name: Publish debug APK
         if: success()
@@ -121,4 +131,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-17T23:30+08:00 plugin sandbox wiring (tools + routes + entry)
+# rebuild marker: 2026-09-18T19:26+08:00 kick off workflow port

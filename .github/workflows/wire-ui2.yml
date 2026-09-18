@@ -1,0 +1,265 @@
+name: Wire Workflow UI 2
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/wire-ui2.yml'
+
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Copy ui batch from orangechat
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub/workflow
+          DST=app/src/main/java/me/rerere/rikkahub/workflow
+          mkdir -p "$DST/ui"
+          cp -r "$SRC/ui/." "$DST/ui/"
+          cp "$SRC/tools/WorkflowApprovalRenderer.kt" "$DST/tools/WorkflowApprovalRenderer.kt"
+          find "$DST/ui" -type f -name '*.kt' | sort
+
+      - name: Wire settings / routes / viewmodel
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p): return pathlib.Path(p).read_text(encoding='utf-8')
+          def write(p, s): pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          SETTING = 'app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingPage.kt'
+          ROUTE = 'app/src/main/java/me/rerere/rikkahub/RouteActivity.kt'
+          VMMOD = 'app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt'
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", tag)
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND", path, tag)
+                      sys.exit(1)
+                  s = s.replace(old, new, 1)
+                  print("patched", tag)
+              write(path, s)
+
+          def insert_lines(path, anchor, new_lines, tag, before=True):
+              s = read(path)
+              if all((n.strip() in s) for n in new_lines if n.strip()):
+                  print("skip", tag)
+                  return
+              lines = s.split('\n')
+              idx = None
+              for i, l in enumerate(lines):
+                  if anchor in l:
+                      idx = i
+                      break
+              if idx is None:
+                  print("!! ANCHOR NOT FOUND", path, tag)
+                  sys.exit(1)
+              ind = lines[idx][:len(lines[idx]) - len(lines[idx].lstrip())]
+              block = [(ind + n) if n.strip() else '' for n in new_lines]
+              if before:
+                  lines[idx:idx] = block
+              else:
+                  lines[idx + 1:idx + 1] = block
+              write(path, '\n'.join(lines))
+              print("patched", tag)
+
+          # 1) Screen 定义：整块替换，别让两条 @Serializable 贴在一起
+          patch(ROUTE, [(
+              "    @Serializable\n    data object Stats : Screen\n",
+              "    @Serializable\n    data object Workflows : Screen\n"
+              "\n"
+              "    @Serializable\n    data class WorkflowDetail(val id: String) : Screen\n"
+              "\n"
+              "    @Serializable\n    data object Stats : Screen\n",
+              "screen keys",
+          )])
+
+          # 2) 导入
+          patch(ROUTE, [(
+              "import me.rerere.rikkahub.utils.CrashHandler\n",
+              "import me.rerere.rikkahub.utils.CrashHandler\n"
+              "import me.rerere.rikkahub.workflow.ui.WorkflowDetailScreen\n"
+              "import me.rerere.rikkahub.workflow.ui.WorkflowsScreen\n",
+              "ui imports",
+          )])
+
+          # 3) 路由
+          insert_lines(ROUTE, 'entry<Screen.Stats> {', [
+              'entry<Screen.Workflows> {',
+              '    WorkflowsScreen()',
+              '}',
+              '',
+              'entry<Screen.WorkflowDetail> { key ->',
+              '    WorkflowDetailScreen(key.id)',
+              '}',
+              '',
+          ], 'entries', before=True)
+
+          # 4) ViewModelModule
+          patch(VMMOD, [(
+              "import me.rerere.rikkahub.ui.pages.translator.TranslatorVM\n",
+              "import me.rerere.rikkahub.ui.pages.translator.TranslatorVM\n"
+              "import me.rerere.rikkahub.workflow.ui.WorkflowsViewModel\n",
+              "vm import",
+          )])
+          patch(VMMOD, [(
+              "    viewModelOf(::StatsVM)\n",
+              "    viewModelOf(::StatsVM)\n    viewModelOf(::WorkflowsViewModel)\n",
+              "vm registration",
+          )])
+
+          # 5) 设置页入口
+          s = read(SETTING)
+          if 'Screen.Workflows' in s:
+              print("skip settings entry")
+          else:
+              lines = s.split('\n')
+              idx = None
+              for i, l in enumerate(lines):
+                  if 'Screen.SettingPlugins' in l:
+                      idx = i
+                      break
+              if idx is None:
+                  print("!! ANCHOR NOT FOUND settings")
+                  sys.exit(1)
+              start = idx
+              while 'item(' not in lines[start]:
+                  start -= 1
+              end = start
+              while lines[end].strip() != ')':
+                  end += 1
+              ind = lines[start][:len(lines[start]) - len(lines[start].lstrip())]
+              lines[end + 1:end + 1] = [
+                  ind + 'item(',
+                  ind + '    onClick = { navController.navigate(Screen.Workflows) },',
+                  ind + '    leadingContent = { Icon(HugeIcons.Book03, null) },',
+                  ind + '    supportingContent = { Text("到点或者连上某个网络，自己干活") },',
+                  ind + '    headlineContent = { Text("工作流") },',
+                  ind + ')',
+              ]
+              write(SETTING, '\n'.join(lines))
+              print("patched settings entry")
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-wireui2-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 200 || true
+            echo "--- gradle tail ---"
+            tail -n 40 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure-ui3.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-ui3.txt
+          git commit -m "ci: dump wire-ui2 failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt app/src/main/java/me/rerere/rikkahub/RouteActivity.kt app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingPage.kt || true
+          git commit -m "工作流界面：页面 + 设置入口 + 路由（编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

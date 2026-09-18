@@ -1,0 +1,124 @@
+=== failure at Fri Sep 18 12:23:06 UTC 2026 ===
+--- diag ---
+=== diag at Fri Sep 18 12:17:56 UTC 2026 ===
+--- data/ai/tools/local listing ---
+AccessibilityServiceHandle.kt
+AlarmTool.kt
+AppSwitchTool.kt
+AppUsageTool.kt
+AskUserTool.kt
+AvatarTool.kt
+BatteryTool.kt
+BrightnessTool.kt
+CalendarTool.kt
+CameraTool.kt
+ClipboardTool.kt
+ExploreNearbyTool.kt
+GadgetbridgeTool.kt
+JavascriptTool.kt
+LocalToolOption.kt
+LocalTools.kt
+LocationTool.kt
+MediaScannerTool.kt
+MusicTool.kt
+NotificationListenerHandle.kt
+NotificationPostTool.kt
+NotificationTool.kt
+ScreenTimeTool.kt
+ShareTool.kt
+SmsTool.kt
+StorageInfoTool.kt
+TelephonyInfoTool.kt
+TextToSpeechTool.kt
+TimeInfoTool.kt
+ToastTool.kt
+TorchTool.kt
+VibrateTool.kt
+VolumeTool.kt
+WakeScreenTool.kt
+WifiInfoTool.kt
+--- LocalTools.kt head ---
+package me.rerere.rikkahub.data.ai.tools.local
+
+import android.content.Context
+import me.rerere.ai.core.Tool
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.tts.provider.TTSManager
+
+class LocalTools(
+    private val context: Context,
+    private val eventBus: AppEventBus,
+    private val ttsManager: TTSManager,
+    private val settingsStore: SettingsStore,
+) {
+    val javascriptTool by lazy { buildJavascriptTool() }
+
+    val timeTool by lazy { buildTimeInfoTool() }
+
+    val clipboardTool by lazy { buildClipboardTool(context) }
+
+--- LocalTools references in WorkflowEngine ---
+20:import me.rerere.rikkahub.data.ai.tools.local.LocalTools
+72:     *   - [LocalTools] constructor takes a [WorkflowEngine] (so workflow_run can fire)
+79:    private val localTools: me.rerere.rikkahub.data.ai.tools.local.LocalTools by lazy {
+80:        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.ai.tools.local.LocalTools>()
+--- class declaration ---
+9:class LocalTools(
+--- git status ---
+?? app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
+?? app/src/main/java/me/rerere/rikkahub/workflow/ui/
+?? ci-logs/diag.txt
+--- patch log ---
+skip app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt LocalToolOption package already correct
+skip app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt LocalTools package already correct
+patched app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingPage.kt workflow entry
+patched app/src/main/java/me/rerere/rikkahub/RouteActivity.kt workflow ui imports
+patched app/src/main/java/me/rerere/rikkahub/RouteActivity.kt workflow entries
+patched app/src/main/java/me/rerere/rikkahub/RouteActivity.kt workflow Screen keys
+patched app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt workflows vm import
+patched app/src/main/java/me/rerere/rikkahub/di/ViewModelModule.kt workflows vm registration
+ALL PATCHES APPLIED
+--- all compile errors ---
+e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:850:5 This annotation is not repeatable.
+--- gradle tail ---
+	... 30 more
+Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:320)
+	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:64)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:61)
+	at org.gradle.internal.classloader.ClassLoaderUtils.executeInClassloader(ClassLoaderUtils.java:102)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.lambda$execute$0(NoIsolationWorkerFactory.java:61)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:44)
+	at org.gradle.workers.internal.AbstractWorker$1.call(AbstractWorker.java:41)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.workers.internal.AbstractWorker.executeWrappedInBuildOperation(AbstractWorker.java:41)
+	at org.gradle.workers.internal.NoIsolationWorkerFactory$1.execute(NoIsolationWorkerFactory.java:58)
+	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:191)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$500(DefaultConditionalExecutionQueue.java:112)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:168)
+	at org.gradle.internal.Factories$1.create(Factories.java:30)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:300)
+	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:298)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:294)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:286)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:130)
+	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:135)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:163)
+	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:125)
+	... 2 more
+
+
+BUILD FAILED in 4m 57s
+119 actionable tasks: 119 executed
+Configuration cache entry stored.

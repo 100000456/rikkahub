@@ -141,6 +141,9 @@ kotlin {
 }
 
 dependencies {
+    // 指纹 / 人脸：系统验证弹窗
+    implementation("androidx.biometric:biometric:1.1.0")
+
     // SSH/SFTP：连电脑和服务器
     implementation("com.github.mwiede:jsch:0.2.21")
 

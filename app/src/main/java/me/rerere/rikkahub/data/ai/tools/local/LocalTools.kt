@@ -200,6 +200,15 @@ class LocalTools(
             tools.add(forgetSshHostKeyTool(context))
         }
 
+        if (options.contains(LocalToolOption.Fingerprint)) {
+            tools.add(
+                fingerprintTool(
+                    context,
+                    me.rerere.rikkahub.ui.activity.BiometricPromptActivity.buffer,
+                )
+            )
+        }
+
         // 换头像：常驻，不用开关
         tools.add(avatarTool)
         return tools

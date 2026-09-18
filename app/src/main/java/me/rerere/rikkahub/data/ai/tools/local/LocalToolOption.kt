@@ -98,6 +98,10 @@ sealed class LocalToolOption {
     data object Ssh : LocalToolOption()
 
     @Serializable
+    @SerialName("fingerprint")
+    data object Fingerprint : LocalToolOption()
+
+    @Serializable
     @SerialName("workflows")
     data object Workflows : LocalToolOption()
 }

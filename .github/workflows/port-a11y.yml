@@ -43,11 +43,16 @@ jobs:
 
           cp "$SRC/data/ai/AgentTurnTracker.kt" "$DST/data/ai/AgentTurnTracker.kt"
 
-          # 兔子的工具审批签名是 (JsonElement) -> Boolean，不是裸 true
+          # 兔子的工具审批签名是 (JsonElement) -> Boolean，不是裸 true。
+          # 注意有的写法后面跟逗号，所以不能锚行尾。
           for f in TapTool SwipeTool ScrollTool ScreenshotTool WindowTreeTool FindNodeTool GlobalActionTool; do
-            sed -i 's/needsApproval = true$/needsApproval = { true }/g' "$DST/data/ai/tools/local/$f.kt"
+            sed -i 's/needsApproval = true/needsApproval = { true }/g' "$DST/data/ai/tools/local/$f.kt"
           done
-          find "$DST/data/ai/tools/local" -name '*Tool.kt' -newermt '-10 minutes' | sort
+          if grep -rn 'needsApproval = true' "$DST/data/ai/tools/local/" ; then
+            echo "!! still bare needsApproval left"
+            exit 1
+          fi
+          grep -rn 'needsApproval' "$DST/data/ai/tools/local/" || true
           echo "copy done"
 
       - name: Write merged AccessibilityServiceHandle
@@ -116,7 +121,7 @@ jobs:
           import me.rerere.rikkahub.ui.activity.AppLockUnlockActivity
 
           /**
-           * App 锁的判断helper。以前它自己是一个无障碍服务，现在跟摸屏幕那套共用
+           * App 锁的判断 helper。以前它自己是一个无障碍服务，现在跟摸屏幕那套共用
            * [RikkaAccessibilityService] 一个开关，这里只留判断与推解锁页的动作。
            */
           object AppLockGuardService {

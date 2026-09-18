@@ -1,0 +1,269 @@
+name: Port Biometric Verify Tool
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-fingerprint.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Fetch orangechat sources
+        run: |
+          set -e
+          mkdir -p /tmp/oc
+          curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/master \
+            || curl -fsSL -o /tmp/oc.tar.gz https://codeload.github.com/sue1231513/orangechat/tar.gz/refs/heads/main
+          tar -xzf /tmp/oc.tar.gz -C /tmp/oc --strip-components=1
+          test -f /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt
+          echo "orangechat fetched"
+
+      - name: Copy biometric batch
+        run: |
+          set -e
+          SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
+          DST=app/src/main/java/me/rerere/rikkahub
+          mkdir -p "$DST/data/ai/tools/local" "$DST/ui/activity"
+
+          cp "$SRC/data/ai/tools/local/FingerprintTool.kt" "$DST/data/ai/tools/local/FingerprintTool.kt"
+          cp "$SRC/data/ai/tools/local/BiometricResultBuffer.kt" "$DST/data/ai/tools/local/BiometricResultBuffer.kt"
+          cp "$SRC/ui/activity/BiometricPromptActivity.kt" "$DST/ui/activity/BiometricPromptActivity.kt"
+
+          sed -i 's/needsApproval = true/needsApproval = { true }/g' "$DST/data/ai/tools/local/FingerprintTool.kt"
+          if grep -rn 'needsApproval = true' "$DST/data/ai/tools/local/" ; then
+            echo "!! still bare needsApproval left"
+            exit 1
+          fi
+          echo "copied biometric files"
+
+      - name: Patch wiring
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
+                      sys.exit(1)
+                  s = s.replace(old, new)
+                  print("patched", path, tag)
+              write(path, s)
+
+          GRADLE = 'app/build.gradle.kts'
+          MANIFEST = 'app/src/main/AndroidManifest.xml'
+          LOPT = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt'
+          LTOOLS = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
+          SYS_TOOLS = 'app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingSystemToolsPage.kt'
+
+          # 1) 生物识别依赖（权限由库自己的清单合并进来）
+          patch(GRADLE, [
+              (
+                  "    // SSH/SFTP：连电脑和服务器\n",
+                  "    // 指纹 / 人脸：系统验证弹窗\n"
+                  "    implementation(\"androidx.biometric:biometric:1.1.0\")\n"
+                  "\n"
+                  "    // SSH/SFTP：连电脑和服务器\n",
+                  "biometric dependency",
+              ),
+          ])
+
+          # 2) 承载系统弹窗的透明页
+          patch(MANIFEST, [
+              (
+                  '    <activity\n'
+                  '      android:name=".ui.activity.SafeModeActivity"\n'
+                  '      android:exported="false"\n'
+                  '      android:label="@string/title_activity_safe_mode"\n'
+                  '      android:theme="@style/Theme.Rikkahub" />\n',
+                  '    <activity\n'
+                  '      android:name=".ui.activity.SafeModeActivity"\n'
+                  '      android:exported="false"\n'
+                  '      android:label="@string/title_activity_safe_mode"\n'
+                  '      android:theme="@style/Theme.Rikkahub" />\n'
+                  '    <!-- 验证身份：透明的宿主页，承载系统指纹/人脸/锁屏密码弹窗 -->\n'
+                  '    <activity\n'
+                  '      android:name=".ui.activity.BiometricPromptActivity"\n'
+                  '      android:excludeFromRecents="true"\n'
+                  '      android:exported="false"\n'
+                  '      android:noHistory="true"\n'
+                  '      android:theme="@android:style/Theme.Translucent.NoTitleBar" />\n',
+                  "biometric host activity",
+              ),
+          ])
+
+          # 3) 开关
+          patch(LOPT, [
+              (
+                  '    @Serializable\n    @SerialName("workflows")',
+                  '    @Serializable\n'
+                  '    @SerialName("fingerprint")\n'
+                  '    data object Fingerprint : LocalToolOption()\n'
+                  '\n'
+                  '    @Serializable\n'
+                  '    @SerialName("workflows")',
+                  "Fingerprint option",
+              ),
+          ])
+
+          # 4) 注册工具
+          patch(LTOOLS, [
+              (
+                  "        // 换头像：常驻，不用开关\n",
+                  "        if (options.contains(LocalToolOption.Fingerprint)) {\n"
+                  "            tools.add(\n"
+                  "                fingerprintTool(\n"
+                  "                    context,\n"
+                  "                    me.rerere.rikkahub.ui.activity.BiometricPromptActivity.buffer,\n"
+                  "                )\n"
+                  "            )\n"
+                  "        }\n"
+                  "\n"
+                  "        // 换头像：常驻，不用开关\n",
+                  "fingerprint tool",
+              ),
+          ])
+
+          # 5) 开关页加一行
+          patch(SYS_TOOLS, [
+              (
+                  '    SystemToolRow(LocalToolOption.Ssh, "远程连接", "允许连你的电脑和服务器，跑命令、传文件。主机名和密码只存在你手机里"),\n)',
+                  '    SystemToolRow(LocalToolOption.Ssh, "远程连接", "允许连你的电脑和服务器，跑命令、传文件。主机名和密码只存在你手机里"),\n'
+                  '    SystemToolRow(LocalToolOption.Fingerprint, "验证身份", "要确认是不是你本人的时候，弹一次系统验证，指纹或人脸都行，没有就输锁屏密码"),\n'
+                  ')',
+                  "fingerprint row",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-fp-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== fingerprint port failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback|SyntaxError|Could not (find|resolve)' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
+            echo "--- gradle tail ---"
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure-fp.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure-fp.txt
+          git commit -m "ci: dump fingerprint port failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/data/ai/tools/local \
+                     app/src/main/java/me/rerere/rikkahub/ui/activity \
+                     app/src/main/java/me/rerere/rikkahub/ui/pages/setting \
+                     app/src/main/AndroidManifest.xml \
+                     app/build.gradle.kts || true
+          git commit -m "验证身份：指纹/人脸/锁屏密码那套搬进兔子（编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

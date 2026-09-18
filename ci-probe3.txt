@@ -1,0 +1,410 @@
+=========== orangechat: find LocalToolOption ===========
+=========== orangechat: LocalToolOption full ===========
+=========== orangechat: LocalTools full ===========
+cat: /tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt: No such file or directory
+=========== orangechat: local dir ===========
+AccessibilityServiceHandle.kt
+BiometricResultBuffer.kt
+DnsCache.kt
+FindNodeTool.kt
+FingerprintTool.kt
+GlobalActionTool.kt
+InteractiveToolStreamer.kt
+NotificationListenerHandle.kt
+ScreenWaker.kt
+ScreenshotTool.kt
+ScrollTool.kt
+SshHostsTool.kt
+SshSftpTool.kt
+SshTool.kt
+SwipeTool.kt
+TapTool.kt
+WakeHelper.kt
+WindowTreeTool.kt
+=========== orangechat: tools dir ===========
+AlarmTool.kt
+AppLockTool.kt
+AppSwitchTool.kt
+AppUsageTool.kt
+BatteryTool.kt
+BrightnessTool.kt
+CalendarTool.kt
+CameraTool.kt
+ExploreNearbyTool.kt
+GadgetbridgeTool.kt
+HardlineCommandGuard.kt
+HtmlToText.kt
+LocalTools.kt
+LocationHelper.kt
+MediaScannerTool.kt
+MemoryTools.kt
+MusicTool.kt
+NotificationPostTool.kt
+SearchTools.kt
+SetWallpaperTool.kt
+ShareTool.kt
+SkillsTools.kt
+SmsTool.kt
+StorageInfoTool.kt
+SystemTools.kt
+TelephonyInfoTool.kt
+TextReplacers.kt
+ToastTool.kt
+ToolInvocationContext.kt
+ToolNaming.kt
+ToolSurfaceBuilder.kt
+TorchTool.kt
+VibrateTool.kt
+VolumeTool.kt
+WakeScreenTool.kt
+WifiInfoTool.kt
+WorkspaceTools.kt
+ZipFilesTool.kt
+local
+=========== orangechat: ui/activity dir ===========
+AppLockAccessibilityPromptActivity.kt
+AppLockUnlockActivity.kt
+BiometricPromptActivity.kt
+McpOAuthCallbackActivity.kt
+SafeModeActivity.kt
+ShortcutHandlerActivity.kt
+=========== orangechat: manifest biometr/notification policy ===========
+9:  <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+161:    <!-- Fingerprint: verify_fingerprint 工具的透明宿主 Activity, 承载系统 BiometricPrompt -->
+163:      android:name=".ui.activity.BiometricPromptActivity"
+=========== orangechat: biometric related strings ===========
+55:biometric = "1.1.0"
+154:androidx-biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
+=========== orangechat: who uses DndTool / wallpaper / zip ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/VolumeTool.kt:153:            val needsDnd = streamName == "ring" || streamName == "notification"
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/VolumeTool.kt:158:                    if (needsDnd) {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/ZipFilesTool.kt:64:fun buildWriteFilesTool(conversationId: String? = null): Tool = Tool(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/ZipFilesTool.kt:264:@Deprecated("Use buildWriteFilesTool with conversationId instead", ReplaceWith("buildWriteFilesTool(conversationId)"))
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/ZipFilesTool.kt:265:fun buildWriteFilesTool(): Tool = buildWriteFilesTool(null)
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/SetWallpaperTool.kt:36:fun createSetWallpaperTool(
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/data/ai/tools/SystemTools.kt:433:        if (SystemToolOption.SetWallpaper in enabledTools) tools.add(createSetWallpaperTool(context, recentMessages, filesManager))
+=========== rabbit: current LocalTools ===========
+package me.rerere.rikkahub.data.ai.tools.local
+
+import android.content.Context
+import me.rerere.ai.core.Tool
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.event.AppEventBus
+import me.rerere.tts.provider.TTSManager
+
+class LocalTools(
+    private val context: Context,
+    private val eventBus: AppEventBus,
+    private val ttsManager: TTSManager,
+    private val settingsStore: SettingsStore,
+) {
+    val javascriptTool by lazy { buildJavascriptTool() }
+
+    val timeTool by lazy { buildTimeInfoTool() }
+
+    val clipboardTool by lazy { buildClipboardTool(context) }
+
+    val ttsTool by lazy { buildTextToSpeechTool(eventBus, ttsManager, settingsStore) }
+
+    val askUserTool by lazy { buildAskUserTool() }
+
+    val screenTimeTool by lazy { buildScreenTimeTool(context, eventBus) }
+
+    val calendarQueryTool by lazy { buildCalendarQueryTool(context) }
+
+    val calendarCreateTool by lazy { buildCalendarCreateTool(context) }
+
+    val alarmTool by lazy { buildAlarmTool(context) }
+
+    val timerTool by lazy { buildTimerTool(context) }
+
+    val torchTool by lazy { buildTorchTool(context) }
+
+    val getVolumeTool by lazy { buildGetVolumeTool(context) }
+
+    val setVolumeTool by lazy { buildSetVolumeTool(context) }
+
+    val getBrightnessTool by lazy { buildGetBrightnessTool(context) }
+
+    val setBrightnessTool by lazy { buildSetBrightnessTool(context) }
+
+    val vibrateTool by lazy { buildVibrateTool(context) }
+
+    val batteryTool by lazy { buildBatteryTool(context) }
+
+    val storageInfoTool by lazy { buildStorageInfoTool(context) }
+
+    val toastTool by lazy { buildToastTool(context) }
+
+    val wakeScreenTool by lazy { buildWakeScreenTool(context) }
+
+    val smsTool by lazy { buildSmsTool(context) }
+
+    val notificationPostTool by lazy { buildNotificationPostTool(context) }
+
+    val mediaScannerTool by lazy { buildMediaScannerTool(context) }
+
+    val shareTool by lazy { buildShareTool(context) }
+
+    val notificationsTool by lazy { buildNotificationsTool(context) }
+
+    val musicTool by lazy { buildMusicTool(context) }
+
+    val cameraTool by lazy { buildCameraTool(context) }
+
+    val appSwitchTool by lazy { buildAppSwitchTool(context) }
+
+    val appUsageTool by lazy { buildAppUsageTool(context) }
+
+    val wifiInfoTool by lazy { buildWifiInfoTool(context) }
+
+    val telephonyInfoTool by lazy { buildTelephonyInfoTool(context) }
+
+    val gadgetbridgeTool by lazy { buildGadgetbridgeTool(context) }
+
+    val locationTool by lazy { buildLocationTool(context) }
+
+    val exploreNearbyTool by lazy { buildExploreNearbyTool(context) }
+
+    val avatarTool by lazy { buildAvatarTool(context, settingsStore) }
+
+    private val sshHostRepository by lazy {
+        me.rerere.rikkahub.data.repository.SshHostRepository(context)
+    }
+
+    fun getTools(options: List<LocalToolOption>): List<Tool> {
+        val tools = mutableListOf<Tool>()
+        if (options.contains(LocalToolOption.JavascriptEngine)) {
+            tools.add(javascriptTool)
+        }
+        if (options.contains(LocalToolOption.TimeInfo)) {
+            tools.add(timeTool)
+        }
+        if (options.contains(LocalToolOption.Clipboard)) {
+            tools.add(clipboardTool)
+        }
+        if (options.contains(LocalToolOption.Tts)) {
+            tools.add(ttsTool)
+        }
+        if (options.contains(LocalToolOption.AskUser)) {
+            tools.add(askUserTool)
+        }
+        if (options.contains(LocalToolOption.ScreenTime)) {
+            tools.add(screenTimeTool)
+        }
+        if (options.contains(LocalToolOption.Calendar)) {
+            tools.add(calendarQueryTool)
+            tools.add(calendarCreateTool)
+        }
+        if (options.contains(LocalToolOption.Alarm)) {
+            tools.add(alarmTool)
+            tools.add(timerTool)
+        }
+        if (options.contains(LocalToolOption.SystemTools)) {
+            tools.add(torchTool)
+            tools.add(getVolumeTool)
+            tools.add(setVolumeTool)
+            tools.add(getBrightnessTool)
+            tools.add(setBrightnessTool)
+            tools.add(vibrateTool)
+            tools.add(batteryTool)
+            tools.add(storageInfoTool)
+            tools.add(toastTool)
+            tools.add(wakeScreenTool)
+        }
+        if (options.contains(LocalToolOption.Sms)) {
+            tools.add(smsTool)
+        }
+        if (options.contains(LocalToolOption.Notification)) {
+            tools.add(notificationPostTool)
+        }
+        if (options.contains(LocalToolOption.MediaScanner)) {
+            tools.add(mediaScannerTool)
+        }
+        if (options.contains(LocalToolOption.Share)) {
+            tools.add(shareTool)
+        }
+        if (options.contains(LocalToolOption.NotificationsReader)) {
+            tools.add(notificationsTool)
+        }
+        if (options.contains(LocalToolOption.Music)) {
+            tools.add(musicTool)
+        }
+        if (options.contains(LocalToolOption.Camera)) {
+            tools.add(cameraTool)
+        }
+        if (options.contains(LocalToolOption.AppControl)) {
+            tools.add(appSwitchTool)
+        }
+        if (options.contains(LocalToolOption.DeviceInfo)) {
+            tools.add(wifiInfoTool)
+            tools.add(telephonyInfoTool)
+            tools.add(appUsageTool)
+        }
+        if (options.contains(LocalToolOption.Gadgetbridge)) {
+            tools.add(gadgetbridgeTool)
+        }
+        if (options.contains(LocalToolOption.Location)) {
+            tools.add(locationTool)
+        }
+        if (options.contains(LocalToolOption.ExploreNearby)) {
+            tools.add(exploreNearbyTool)
+        }
+        if (options.contains(LocalToolOption.Workflows)) {
+            val known = tools.map { it.name }
+            tools.addAll(
+                me.rerere.rikkahub.workflow.tools.buildWorkflowToolsForLocal(
+                    repository = org.koin.java.KoinJavaComponent.getKoin()
+                        .get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>(),
+                    engine = org.koin.java.KoinJavaComponent.getKoin()
+                        .get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>(),
+                    knownToolNamesProvider = { known },
+                )
+            )
+        }
+        if (options.contains(LocalToolOption.ScreenAutomation)) {
+            tools.add(tapTool())
+            tools.add(longPressTool())
+            tools.add(swipeTool())
+            tools.add(readWindowTreeTool())
+            tools.add(findNodeTool())
+            tools.add(clickNodeTool())
+            tools.add(setTextTool())
+            tools.add(scrollTool())
+            tools.add(globalActionTool())
+            tools.add(takeScreenshotTool(context))
+        }
+
+        if (options.contains(LocalToolOption.Ssh)) {
+            tools.add(sshExecTool(context))
+            tools.add(saveSshHostTool(sshHostRepository))
+            tools.add(listSshHostsTool(sshHostRepository))
+            tools.add(deleteSshHostTool(sshHostRepository))
+            tools.add(sshExecSavedTool(context, sshHostRepository))
+            tools.add(sshUploadTool(context, sshHostRepository))
+            tools.add(sshDownloadTool(context, sshHostRepository))
+            tools.add(forgetSshHostKeyTool(context))
+        }
+
+        // 换头像：常驻，不用开关
+        tools.add(avatarTool)
+        return tools
+    }
+}
+=========== rabbit: current LocalToolOption ===========
+package me.rerere.rikkahub.data.ai.tools.local
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+sealed class LocalToolOption {
+    @Serializable
+    @SerialName("javascript_engine")
+    data object JavascriptEngine : LocalToolOption()
+
+    @Serializable
+    @SerialName("time_info")
+    data object TimeInfo : LocalToolOption()
+
+    @Serializable
+    @SerialName("clipboard")
+    data object Clipboard : LocalToolOption()
+
+    @Serializable
+    @SerialName("tts")
+    data object Tts : LocalToolOption()
+
+    @Serializable
+    @SerialName("ask_user")
+    data object AskUser : LocalToolOption()
+
+    @Serializable
+    @SerialName("screen_time")
+    data object ScreenTime : LocalToolOption()
+
+    @Serializable
+    @SerialName("calendar")
+    data object Calendar : LocalToolOption()
+
+    @Serializable
+    @SerialName("alarm")
+    data object Alarm : LocalToolOption()
+
+    @Serializable
+    @SerialName("system_tools")
+    data object SystemTools : LocalToolOption()
+
+    @Serializable
+    @SerialName("sms")
+    data object Sms : LocalToolOption()
+
+    @Serializable
+    @SerialName("notification")
+    data object Notification : LocalToolOption()
+
+    @Serializable
+    @SerialName("media_scanner")
+    data object MediaScanner : LocalToolOption()
+
+    @Serializable
+    @SerialName("share")
+    data object Share : LocalToolOption()
+
+    @Serializable
+    @SerialName("notifications_reader")
+    data object NotificationsReader : LocalToolOption()
+
+    @Serializable
+    @SerialName("music")
+    data object Music : LocalToolOption()
+
+    @Serializable
+    @SerialName("camera")
+    data object Camera : LocalToolOption()
+
+    @Serializable
+    @SerialName("app_control")
+    data object AppControl : LocalToolOption()
+
+    @Serializable
+    @SerialName("device_info")
+    data object DeviceInfo : LocalToolOption()
+
+    @Serializable
+    @SerialName("gadgetbridge")
+    data object Gadgetbridge : LocalToolOption()
+
+    @Serializable
+    @SerialName("location")
+    data object Location : LocalToolOption()
+
+    @Serializable
+    @SerialName("explore_nearby")
+    data object ExploreNearby : LocalToolOption()
+
+    @Serializable
+    @SerialName("screen_automation")
+    data object ScreenAutomation : LocalToolOption()
+
+    @Serializable
+    @SerialName("ssh")
+    data object Ssh : LocalToolOption()
+
+    @Serializable
+    @SerialName("workflows")
+    data object Workflows : LocalToolOption()
+}
+=========== rabbit: tools dir ===========
+ChatToolFactory.kt
+ConversationTools.kt
+HardlineCommandGuard.kt
+MemoryTools.kt
+SearchTools.kt
+SkillsTools.kt
+TextReplacers.kt
+ToolInvocationContext.kt
+ToolNaming.kt
+WorkspaceTools.kt
+local
+=========== rabbit: grep write_files / set_wallpaper / memory ===========

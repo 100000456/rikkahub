@@ -32,11 +32,14 @@ jobs:
           set -e
           SRC=/tmp/oc/app/src/main/java/me/rerere/rikkahub
           DST=app/src/main/java/me/rerere/rikkahub
-          mkdir -p "$DST/data/ai/tools/local" "$DST/data/db/entity" "$DST/data/repository"
+          mkdir -p "$DST/data/ai/tools/local" "$DST/data/db/entity" "$DST/data/repository" "$DST/utils"
 
           for f in SshTool SshHostsTool SshSftpTool DnsCache; do
             cp "$SRC/data/ai/tools/local/$f.kt" "$DST/data/ai/tools/local/$f.kt"
           done
+
+          # 换网就要把旧的地址缓存清掉，否则连过的机器会失联
+          cp "$SRC/utils/NetworkChangeMonitor.kt" "$DST/utils/NetworkChangeMonitor.kt"
 
           # 审批签名：兔子的 needsApproval 是 lambda，注意有的写法后面带逗号
           for f in SshTool SshHostsTool SshSftpTool DnsCache; do
@@ -160,6 +163,7 @@ jobs:
               write(path, s)
 
           GRADLE = 'app/build.gradle.kts'
+          APP = 'app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt'
           LOPT = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalToolOption.kt'
           LTOOLS = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
           SYS_TOOLS = 'app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingSystemToolsPage.kt'
@@ -176,7 +180,23 @@ jobs:
               ),
           ])
 
-          # 2) 开关
+          # 2) 开机就把换网监听挂上
+          patch(APP, [
+              (
+                  "        // 工作流：事件驱动的自动化\n        startWorkflowTriggers()\n",
+                  "        // 网断网连：把远程连接那边的地址缓存清掉\n"
+                  "        runCatching {\n"
+                  "            me.rerere.rikkahub.utils.NetworkChangeMonitor.start(this)\n"
+                  "        }.onFailure {\n"
+                  '            Log.e(TAG, "startNetworkChangeMonitor failed", it)\n'
+                  "        }\n"
+                  "\n"
+                  "        // 工作流：事件驱动的自动化\n        startWorkflowTriggers()\n",
+                  "boot network monitor",
+              ),
+          ])
+
+          # 3) 开关
           patch(LOPT, [
               (
                   '    @Serializable\n    @SerialName("workflows")',
@@ -190,7 +210,7 @@ jobs:
               ),
           ])
 
-          # 3) 注册工具 + 主机仓库
+          # 4) 注册工具 + 主机仓库
           patch(LTOOLS, [
               (
                   "    val avatarTool by lazy { buildAvatarTool(context, settingsStore) }\n",
@@ -219,7 +239,7 @@ jobs:
               ),
           ])
 
-          # 4) 开关页加一行
+          # 5) 开关页加一行
           patch(SYS_TOOLS, [
               (
                   '    SystemToolRow(LocalToolOption.ScreenAutomation, "屏幕自动化", "允许点按、滑动、长按、读界面、截图。要在系统里开无障碍（跟 App 锁同一个开关）"),\n)',
@@ -335,6 +355,8 @@ jobs:
           git add -A app/src/main/java/me/rerere/rikkahub/data/ai/tools/local \
                      app/src/main/java/me/rerere/rikkahub/data/db/entity \
                      app/src/main/java/me/rerere/rikkahub/data/repository \
+                     app/src/main/java/me/rerere/rikkahub/utils/NetworkChangeMonitor.kt \
+                     app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt \
                      app/src/main/java/me/rerere/rikkahub/ui/pages/setting \
                      app/build.gradle.kts || true
           git commit -m "远程连接：SSH/SFTP 那套搬进兔子（连电脑、跑命令、传文件），主机名和密码存在本机（编译通过）" || true

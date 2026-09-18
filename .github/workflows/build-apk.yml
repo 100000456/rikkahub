@@ -38,6 +38,8 @@ jobs:
           rm -rf "$DST/workflow/ui"
           rm -f "$DST/workflow/tools/WorkflowApprovalRenderer.kt"
           cp "$SRC/data/ai/tools/HardlineCommandGuard.kt" "$DST/data/ai/tools/HardlineCommandGuard.kt"
+          mkdir -p "$DST/service"
+          cp "$SRC/service/CronExpressionParser.kt" "$DST/service/CronExpressionParser.kt"
           if [ -d "$SRC/data/agentrun" ]; then
             mkdir -p "$DST/data/agentrun"
             cp -r "$SRC/data/agentrun/." "$DST/data/agentrun/"
@@ -98,6 +100,29 @@ jobs:
           KT_EOF
           echo "shims written"
 
+      - name: Add gradle dependencies
+        run: |
+          set -e
+          python3 - <<'PY'
+          import pathlib
+          p = pathlib.Path('app/build.gradle.kts')
+          s = p.read_text(encoding='utf-8')
+          if 'cron-utils' in s:
+              print('gradle deps already present')
+          else:
+              anchor = 'dependencies {'
+              i = s.find(anchor)
+              if i < 0:
+                  raise SystemExit('dependencies block not found in app/build.gradle.kts')
+              ins = i + len(anchor)
+              add = ('\n    // 工作流：cron 解析 + 围栏触发\n'
+                     '    implementation("com.cronutils:cron-utils:9.2.1")\n'
+                     '    implementation("com.google.android.gms:play-services-location:21.3.0")\n')
+              s = s[:ins] + add + s[ins:]
+              p.write_text(s, encoding='utf-8')
+              print('gradle deps added')
+          PY
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -128,7 +153,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-workflow3-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: ${{ runner.os }}-gradle-workflow4-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Write placeholder google-services.json
         run: |
@@ -166,8 +191,6 @@ jobs:
           }
           JSON_EOF
 
-      # 先把当前版本（26）的表结构导出一份存档：自动迁移要拿它做新旧对比，
-      # 而仓库里只存到 25，缺 26 那份。这一步跑在打补丁之前，导出的就是旧版结构。
       - name: Export current Room schema (v26)
         run: |
           chmod +x gradlew
@@ -362,6 +385,11 @@ jobs:
 
           patch(ENGINE, [
               (
+                  "import me.rerere.rikkahub.data.ai.tools.LocalTools",
+                  "import me.rerere.rikkahub.data.ai.tools.local.LocalTools",
+                  "LocalTools import",
+              ),
+              (
                   "    private val toolSurfaceBuilder: me.rerere.rikkahub.data.ai.tools.ToolSurfaceBuilder by lazy {\n"
                   "        org.koin.java.KoinJavaComponent.getKoin().get<me.rerere.rikkahub.data.ai.tools.ToolSurfaceBuilder>()\n"
                   "    }",
@@ -391,6 +419,30 @@ jobs:
                   "tool surface build",
               ),
               (
+                  "        // Headless 敏感工具拦截：若设置开启且未开启全局自动批准，禁止后台触发的工作流执行需要用户确认的工具\n"
+                  "        if (settings.workflowHeadlessBlockSensitive && !settings.autoApproveAllTools) {\n"
+                  "            val blocked = def.actions.filter { action ->\n"
+                  "                tools.find { it.name == action.tool }?.needsApproval == true\n"
+                  "            }\n"
+                  "            if (blocked.isNotEmpty()) {\n"
+                  '                val names = blocked.joinToString(", ") { it.tool }\n'
+                  "                auditRepo?.log(\n"
+                  '                    category = "workflow",\n'
+                  '                    action = "blocked",\n'
+                  "                    target = workflowId,\n"
+                  "                    detail = \"工作流 '${entity.name}' 后台触发时因包含敏感工具 [$names] 被拦截\",\n"
+                  '                    status = "blocked",\n'
+                  "                )\n"
+                  "                return persistAndReturn(\n"
+                  "                    workflowId, firedAtMs, started, WorkflowRunStatus.FAILED,\n"
+                  '                    "headless_sensitive_blocked: $names", "", ledgerId,\n'
+                  "                )\n"
+                  "            }\n"
+                  "        }",
+                  "        // 敏感工具拦截交给动作层的硬线守卫兜底（兔子侧暂无全局开关）",
+                  "headless block",
+              ),
+              (
                   "asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.LocalToolOption.Workflows }",
                   "asst.localTools.any { it is me.rerere.rikkahub.data.ai.tools.local.LocalToolOption.Workflows }",
                   "LocalToolOption package",
@@ -418,11 +470,11 @@ jobs:
             echo "--- patch log ---"
             cat ci-logs/patch.log 2>/dev/null || true
             echo "--- ksp errors ---"
-            grep -E '^e: |^error: |^w: \[ksp\]|error:' ci-logs/ksp.log 2>/dev/null | head -n 120 || true
+            grep -E '^e: |^error: |error:' ci-logs/ksp.log 2>/dev/null | head -n 120 || true
             echo "--- compile errors ---"
             grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 400 || true
             echo "--- gradle tail ---"
-            tail -n 80 ci-logs/gradle.log 2>/dev/null || true
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
           } > /tmp/failure.txt
           NAME="ci-logs/failure-$(date +%Y%m%d-%H%M%S).txt"
           gh api -X PUT "/repos/${{ github.repository }}/contents/$NAME" \
@@ -437,9 +489,9 @@ jobs:
         run: |
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git add -A -f app/schemas app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/ai/tools app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
+          git add -A -f app/schemas app/build.gradle.kts app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/agentrun app/src/main/java/me/rerere/rikkahub/data/ai/tools app/src/main/java/me/rerere/rikkahub/service app/src/main/java/me/rerere/rikkahub/data/db/AppDatabase.kt app/src/main/AndroidManifest.xml app/src/main/java/me/rerere/rikkahub/RikkaHubApp.kt app/src/main/java/me/rerere/rikkahub/di/AppModule.kt || true
           git commit -m "工作流模块：移植橘瓣 workflow + 接线（编译通过）" || true
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
           echo "port committed"
 
-# rebuild marker: 2026-09-18T19:57+08:00 two-pass build (schema export then port)
+# rebuild marker: 2026-09-18T20:07+08:00 add cron + geofence deps, engine imports

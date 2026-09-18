@@ -1,0 +1,169 @@
+=========== orangechat WorkflowApprovalRenderer: declarations ===========
+9:import kotlinx.serialization.json.Json
+10:import kotlinx.serialization.json.JsonObject
+11:import kotlinx.serialization.json.JsonPrimitive
+12:import kotlinx.serialization.json.contentOrNull
+13:import kotlinx.serialization.json.jsonPrimitive
+14:import me.rerere.rikkahub.workflow.model.ConditionSpec
+15:import me.rerere.rikkahub.workflow.model.TriggerSpec
+16:import me.rerere.rikkahub.workflow.model.WorkflowAction
+17:import me.rerere.rikkahub.workflow.model.WorkflowDefinition
+18:import me.rerere.rikkahub.workflow.model.WorkflowJson
+21: * Phase 12 — human-readable approval prompt renderer for `workflow_create` /
+22: * `workflow_update` (in-app dialog + Telegram approval keyboard message).
+24: * Output template (matches spec §"Approval prompt rendering"):
+42:object WorkflowApprovalRenderer {
+45:    fun isWorkflowTool(toolName: String): Boolean = toolName in WORKFLOW_TOOL_NAMES
+47:    /** Plain-text rendering for the in-app approval card. */
+48:    fun renderPlain(toolName: String, argsJson: String): String {
+49:        val verb = when (toolName) {
+57:        val def = parseDefinition(argsJson) ?: return argsJson
+58:        val sb = StringBuilder()
+80:    fun renderTelegramHtml(toolName: String, argsJson: String): String {
+81:        val verb = when (toolName) {
+89:        val def = parseDefinition(argsJson) ?: return escapeHtml(argsJson)
+90:        val sb = StringBuilder()
+111:    private fun parseDefinition(argsJson: String): WorkflowDefinition? {
+112:        val obj = runCatching { Json.parseToJsonElement(argsJson) as? JsonObject }.getOrNull() ?: return null
+113:        val defStr = (obj["definition"] as? JsonObject)?.toString() ?: argsJson
+117:    private fun triggerSummary(t: TriggerSpec): String = when (t) {
+120:                val days = if (t.daysOfWeek.isEmpty()) "every day" else "on day(s) ${t.daysOfWeek.joinToString(",")}"
+142:            val parts = mutableListOf<String>()
+156:    private fun conditionSummary(c: ConditionSpec): String {
+157:        val base = when (c) {
+177:    private fun actionSummary(action: WorkflowAction): String {
+178:        val hint = actionArgsHint(action)
+187:     * the secret into the user's chat history (in-app card AND Telegram approval message).
+189:    private fun actionArgsHint(action: WorkflowAction): String {
+191:        val pairs = action.args.entries.joinToString(", ") { (k, v) ->
+192:            val str = if (isSensitiveKey(k)) {
+208:    private fun isSensitiveKey(key: String): Boolean {
+209:        val lower = key.lowercase().replace("-", "_").replace(" ", "_")
+213:    private val SENSITIVE_KEY_PARTS = setOf(
+219:    private fun renderDelete(argsJson: String, html: Boolean): String {
+220:        val id = runCatching {
+224:        val msg = "Delete workflow id=$id"
+228:    private fun renderSetEnabled(argsJson: String, html: Boolean): String {
+229:        val obj = runCatching { Json.parseToJsonElement(argsJson) as? JsonObject }.getOrNull()
+230:        val id = obj?.get("id")?.jsonPrimitive?.contentOrNull ?: "?"
+231:        val enabled = obj?.get("enabled")?.jsonPrimitive?.contentOrNull
+232:        val verb = if (enabled == "true") "Enable" else "Disable"
+233:        val msg = "$verb workflow id=$id"
+237:    private fun renderRunNow(argsJson: String, html: Boolean): String {
+238:        val id = runCatching {
+242:        val msg = "Run workflow now id=$id"
+246:    private fun escapeHtml(s: String): String =
+249:    val WORKFLOW_TOOL_NAMES = setOf(
+
+=========== orangechat: head of WorkflowApprovalRenderer (55 lines) ===========
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.workflow.tools
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.rikkahub.workflow.model.ConditionSpec
+import me.rerere.rikkahub.workflow.model.TriggerSpec
+import me.rerere.rikkahub.workflow.model.WorkflowAction
+import me.rerere.rikkahub.workflow.model.WorkflowDefinition
+import me.rerere.rikkahub.workflow.model.WorkflowJson
+
+/**
+ * Phase 12 — human-readable approval prompt renderer for `workflow_create` /
+ * `workflow_update` (in-app dialog + Telegram approval keyboard message).
+ *
+ * Output template (matches spec §"Approval prompt rendering"):
+ * ```
+ * Create workflow "<name>"
+ *
+ * When: <trigger summary>
+ * Only if: <comma-separated condition summaries, or "always">
+ * Do:
+ *   1. <action 1 summary>
+ *   2. <action 2 summary>
+ *   ...
+ *
+ * Cooldown: <X seconds, or "none">
+ * Daily cap: <N runs, or "unlimited">
+ * ```
+ *
+ * Telegram variant uses HTML — `<b>` for the title, `<code>` for tool names. Same content,
+ * just lightly marked up.
+ */
+object WorkflowApprovalRenderer {
+
+    /** True if the tool is one of ours and should use this renderer (not the JSON dump). */
+    fun isWorkflowTool(toolName: String): Boolean = toolName in WORKFLOW_TOOL_NAMES
+
+    /** Plain-text rendering for the in-app approval card. */
+    fun renderPlain(toolName: String, argsJson: String): String {
+        val verb = when (toolName) {
+            "workflow_create" -> "Create"
+            "workflow_update" -> "Update"
+            "workflow_delete" -> return renderDelete(argsJson, html = false)
+            "workflow_set_enabled" -> return renderSetEnabled(argsJson, html = false)
+            "workflow_run" -> return renderRunNow(argsJson, html = false)
+            else -> return argsJson  // unknown — fall through to default
+
+=========== orangechat: who references it ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:37: * approval prompt rendered by [WorkflowApprovalRenderer] (so the user sees readable
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt:42:object WorkflowApprovalRenderer {
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt:205:     * camelCase aware). Mirrors the redaction model already used by McpApprovalRenderer
+
+=========== orangechat: approval dialog files ===========
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailPage.kt
+/tmp/oc/app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt
+
+=========== rabbit: approval dialog files ===========
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt
+--- who in rabbit ui mentions renderer ---
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:37: * approval prompt rendered by [WorkflowApprovalRenderer] (so the user sees readable
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt:42:object WorkflowApprovalRenderer {
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt:205:     * camelCase aware). Mirrors the redaction model already used by McpApprovalRenderer
+
+=========== rabbit: WorkflowApprovalRenderer first 20 lines ===========
+﻿/*
+ * 橘瓣 OrangeChat
+ * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.workflow.tools
+
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import me.rerere.rikkahub.workflow.model.ConditionSpec
+import me.rerere.rikkahub.workflow.model.TriggerSpec
+import me.rerere.rikkahub.workflow.model.WorkflowAction
+import me.rerere.rikkahub.workflow.model.WorkflowDefinition
+import me.rerere.rikkahub.workflow.model.WorkflowJson
+
+/**
+
+=========== rabbit: where approval UI decides text ===========
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt:198:    fun setToolApproval(toolName: String, needsApproval: Boolean) {
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt:201:            repository.setToolApproval(workspace.id, toolName, needsApproval)
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt:890:                                        it.copy(needsApproval = newVal)
+/home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt:946:                        checked = tool.needsApproval,
+
+=========== orangechat: WorkflowTools.kt approval-related ===========
+37: * approval prompt rendered by [WorkflowApprovalRenderer] (so the user sees readable
+39: * and workflow_get are read-only — no approval needed.
+53:        approval-bypass headless path scheduled jobs use).
+121:    needsApproval = true,
+266:    needsApproval = true,
+316:    needsApproval = true,
+349:    needsApproval = true,
+390:    needsApproval = true,

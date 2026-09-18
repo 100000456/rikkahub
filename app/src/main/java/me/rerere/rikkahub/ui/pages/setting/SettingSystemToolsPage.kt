@@ -47,7 +47,7 @@ private val SYSTEM_TOOL_ROWS = listOf(
     SystemToolRow(LocalToolOption.ExploreNearby, "探索周边", "允许用高德 API 搜索周边地点，如餐厅、商店、景点"),
     SystemToolRow(LocalToolOption.ScreenAutomation, "屏幕自动化", "允许点按、滑动、长按、读界面、截图。要在系统里开无障碍（跟 App 锁同一个开关）"),
     SystemToolRow(LocalToolOption.Ssh, "远程连接", "允许连你的电脑和服务器，跑命令、传文件。主机名和密码只存在你手机里"),
-    SystemToolRow(LocalToolOption.Fingerprint, "验证身份", "要确认是不是你本人的时候，弹一次系统验证，指纹或人脸都行，没有就输锁屏密码"),
+    SystemToolRow(LocalToolOption.Fingerprint, "验证身份", "先弹系统验证：指纹优先，然后人脸或锁屏密码。一个都没设就改成答一题（题目跟我有关）"),
 )
 
 @Composable

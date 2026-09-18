@@ -201,12 +201,12 @@ class LocalTools(
         }
 
         if (options.contains(LocalToolOption.Fingerprint)) {
-            tools.add(
-                fingerprintTool(
-                    context,
-                    me.rerere.rikkahub.ui.activity.BiometricPromptActivity.buffer,
-                )
-            )
+            val verifyBuffer = me.rerere.rikkahub.ui.activity.BiometricPromptActivity.buffer
+            val identityStore = IdentityQuestionStore(context)
+            tools.add(fingerprintTool(context, verifyBuffer))
+            tools.add(saveIdentityAnswerTool(identityStore))
+            tools.add(listIdentityQuestionsTool(identityStore))
+            tools.add(askIdentityQuestionTool(context, identityStore, verifyBuffer))
         }
 
         // 换头像：常驻，不用开关

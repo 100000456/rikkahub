@@ -33,7 +33,7 @@ jobs:
           awk 'NR>=276&&NR<=279 || NR>=400&&NR<=402 || NR>=664&&NR<=670 || NR>=1052&&NR<=1054 || NR>=1344&&NR<=1350 {printf "%d| %s\n", NR, $0}' "$F"
 
           N1=$(grep -c 'response.message.parts' "$F" || true)
-          N2=$(grep -c ')?.replace(' "$F" || true)
+          N2=$(grep -c ')?\.replace(' "$F" || true)
           echo "message.parts count = $N1 ; safe-replace count = $N2"
           test "$N1" = "2"
           test "$N2" -ge "3"
@@ -143,3 +143,5 @@ jobs:
 
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
+
+# rebuild marker: 2026-09-18T22:25+08:00 full package — 摸屏幕 + App锁 + 远程连接 + 验证身份(含答题备选) + 打包 + 壁纸 + 工作流审批说人话

@@ -149,4 +149,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-18T23:55+08:00 安全设置三个开关
+# rebuild marker: 2026-09-19T01:35+08:00 补 write_files 的下载按钮

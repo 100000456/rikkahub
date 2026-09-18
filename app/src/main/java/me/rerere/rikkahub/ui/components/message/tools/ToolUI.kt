@@ -105,6 +105,7 @@ object ToolUIRegistry {
         EditFileToolUI,
         ReadFileToolUI,
         WriteFileToolUI,
+        WriteFilesToolUI,
         ShellToolUI,
         WorkflowCreateToolUI,
         WorkflowUpdateToolUI,

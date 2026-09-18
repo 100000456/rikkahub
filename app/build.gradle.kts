@@ -71,7 +71,9 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // 自用正式包：占开发版那个包名，并用开发版那把签名，直接盖上去，数据不用搬
+            signingConfig = signingConfigs.getByName("debug")
+            applicationIdSuffix = ".debug"
             optimization {
                 enable = true
             }

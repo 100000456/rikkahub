@@ -1,6 +1,7 @@
 package me.rerere.rikkahub.di
 
 import com.google.firebase.Firebase
+import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
 import com.google.firebase.crashlytics.crashlytics
 import kotlinx.serialization.json.Json
@@ -102,8 +103,10 @@ val appModule = module {
         Firebase.crashlytics
     }
 
+    // 打点用的那个。配置是占位的，个别机器上可能压根初始化不起来，
+    // 不能让它把聊天页一起拖死：起不来就换一个什么都不做的替身顶上。
     single {
-        Firebase.analytics
+        runCatching { Firebase.analytics }.getOrElse { noOpFirebaseAnalytics() }
     }
 
     single {
@@ -170,3 +173,12 @@ val appModule = module {
         )
     }
 }
+
+/**
+ * 打点件的替身：所有调用都当没发生，不抛异常。
+ */
+private fun noOpFirebaseAnalytics(): FirebaseAnalytics =
+    java.lang.reflect.Proxy.newProxyInstance(
+        FirebaseAnalytics::class.java.classLoader,
+        arrayOf(FirebaseAnalytics::class.java),
+    ) { _, _, _ -> null } as FirebaseAnalytics

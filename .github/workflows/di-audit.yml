@@ -1,0 +1,49 @@
+name: DI Audit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/di-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Dump DI surface
+        run: |
+          set -u
+          OUT=.di-audit.txt
+          MODFILES=$(grep -rlE 'val [A-Za-z0-9_]*[Mm]odule *= *module' app/src/main/java --include='*.kt' || true)
+          {
+            echo "===== 1. typed lookups get<T>() ====="
+            grep -rhoE 'get<[A-Za-z0-9_.]+>' app/src/main/java --include='*.kt' | sed -e 's/^get<//' -e 's/>$//' | sort | uniq -c | sort -rn
+            echo
+            echo "===== 2. inject / KoinComponent / GlobalContext / startKoin ====="
+            grep -rnE 'inject<|by inject|KoinComponent|GlobalContext|startKoin|modules\(' app/src/main/java --include='*.kt' || true
+            echo
+            echo "===== 3. module files ====="
+            echo "$MODFILES"
+            for f in $MODFILES; do
+              echo "----- $f"
+              cat "$f"
+            done
+            echo
+            echo "===== 4. ported trees ====="
+            find app/src/main/java/me/rerere/rikkahub/plugin app/src/main/java/me/rerere/rikkahub/workflow app/src/main/java/me/rerere/rikkahub/data/service app/src/main/java/me/rerere/rikkahub/data/security app/src/main/java/me/rerere/rikkahub/data/agentrun -name '*.kt' 2>/dev/null | sort
+          } > "$OUT"
+          wc -l "$OUT"
+
+      - name: Commit dump
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .di-audit.txt
+          git commit -m "ci: DI audit dump" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)

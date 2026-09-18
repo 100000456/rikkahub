@@ -1,0 +1,296 @@
+name: Port Avatar Tool
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/port-avatar.yml'
+
+jobs:
+  port:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Write avatar tool
+        run: |
+          set -e
+          cat > app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AvatarTool.kt <<'KT_EOF'
+          /*
+           * 自造工具：让助手给自己换头像。
+           * 两种换法：给一个 emoji，或者直接给一段 SVG 源码（自己画的）。
+           */
+
+          package me.rerere.rikkahub.data.ai.tools.local
+
+          import android.content.Context
+          import android.net.Uri
+          import kotlinx.coroutines.runBlocking
+          import kotlinx.serialization.json.buildJsonObject
+          import kotlinx.serialization.json.contentOrNull
+          import kotlinx.serialization.json.jsonObject
+          import kotlinx.serialization.json.jsonPrimitive
+          import kotlinx.serialization.json.put
+          import kotlinx.serialization.json.putJsonObject
+          import me.rerere.ai.core.InputSchema
+          import me.rerere.ai.core.Tool
+          import me.rerere.ai.ui.UIMessagePart
+          import me.rerere.common.android.Logging
+          import me.rerere.rikkahub.data.datastore.SettingsStore
+          import me.rerere.rikkahub.data.model.Avatar
+          import java.io.File
+
+          private const val AVATAR_TAG = "AvatarTool"
+
+          internal fun buildAvatarTool(context: Context, settingsStore: SettingsStore): Tool = Tool(
+              name = "set_my_avatar",
+              description = """
+                  Change your own avatar. Two ways: pass an emoji, or pass a full SVG document
+                  and you will look like that drawing. Omit assistant_name to change the first assistant.
+                  Use this whenever you feel like a new face - no need to ask for permission.
+              """.trimIndent().replace("\n", " "),
+              parameters = {
+                  InputSchema.Obj(
+                      properties = buildJsonObject {
+                          putJsonObject("emoji") {
+                              put("type", "string")
+                              put("description", "Emoji avatar, e.g. a cat face. Use this OR svg, not both.")
+                          }
+                          putJsonObject("svg") {
+                              put("type", "string")
+                              put("description", "A full SVG document to use as an image avatar. Use this OR emoji.")
+                          }
+                          putJsonObject("assistant_name") {
+                              put("type", "string")
+                              put("description", "Which assistant to change. Omit to change the first one.")
+                          }
+                      }
+                  )
+              },
+              execute = { args ->
+                  val params = args.jsonObject
+                  val emoji = params["emoji"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                  val svg = params["svg"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+                  val wanted = params["assistant_name"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
+
+                  try {
+                      val settings = settingsStore.settingsFlow.value
+                      val target = wanted?.let { name -> settings.assistants.find { it.name == name } }
+                          ?: settings.assistants.firstOrNull()
+
+                      if (target == null) {
+                          return@Tool listOf(UIMessagePart.Text(avatarFail("no assistant found").toString()))
+                      }
+
+                      val newAvatar: Avatar = when {
+                          svg != null -> {
+                              val dir = File(context.filesDir, "avatars").apply { mkdirs() }
+                              val file = File(dir, "avatar_${System.currentTimeMillis()}.svg")
+                              file.writeText(svg)
+                              Avatar.Image(Uri.fromFile(file).toString())
+                          }
+
+                          emoji != null -> Avatar.Emoji(emoji)
+
+                          else -> return@Tool listOf(
+                              UIMessagePart.Text(avatarFail("need either emoji or svg").toString())
+                          )
+                      }
+
+                      runBlocking {
+                          settingsStore.update(
+                              settings = settings.copy(
+                                  assistants = settings.assistants.map {
+                                      if (it.id == target.id) it.copy(avatar = newAvatar) else it
+                                  }
+                              )
+                          )
+                      }
+
+                      listOf(
+                          UIMessagePart.Text(
+                              buildJsonObject {
+                                  put("success", true)
+                                  put("assistant", target.name)
+                                  put(
+                                      "avatar",
+                                      if (newAvatar is Avatar.Emoji) "emoji ${newAvatar.content}" else "image"
+                                  )
+                                  put("message", "avatar updated")
+                              }.toString()
+                          )
+                      )
+                  } catch (e: Exception) {
+                      Logging.log(AVATAR_TAG, "set_my_avatar failed: ${e.message}\n${e.stackTraceToString()}")
+                      listOf(UIMessagePart.Text(avatarFail(e.message ?: "unknown error").toString()))
+                  }
+              }
+          )
+
+          private fun avatarFail(reason: String) = buildJsonObject {
+              put("success", false)
+              put("error", reason)
+          }
+          KT_EOF
+          echo "avatar tool written"
+
+      - name: Wire avatar tool into LocalTools
+        run: |
+          set -eo pipefail
+          mkdir -p ci-logs
+          python3 - <<'PY' > ci-logs/patch.log 2>&1
+          import pathlib, sys
+
+          def read(p):
+              return pathlib.Path(p).read_text(encoding='utf-8')
+
+          def write(p, s):
+              pathlib.Path(p).write_text(s, encoding='utf-8')
+
+          def patch(path, pairs):
+              s = read(path)
+              for old, new, tag in pairs:
+                  if new and new in s:
+                      print("skip", path, tag, "already applied")
+                      continue
+                  if old not in s:
+                      print("!! ANCHOR NOT FOUND in", path, "tag:", tag)
+                      print("---- looked for ----")
+                      print(old[:400])
+                      sys.exit(1)
+                  s = s.replace(old, new, 1)
+                  print("patched", path, tag)
+              write(path, s)
+
+          LT = 'app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocalTools.kt'
+
+          patch(LT, [
+              (
+                  "    val exploreNearbyTool by lazy { buildExploreNearbyTool(context) }\n",
+                  "    val exploreNearbyTool by lazy { buildExploreNearbyTool(context) }\n"
+                  "\n"
+                  "    val avatarTool by lazy { buildAvatarTool(context, settingsStore) }\n",
+                  "avatar tool field",
+              ),
+              (
+                  "        }\n        return tools\n    }\n}\n",
+                  "        }\n"
+                  "        // 换头像：常驻，不用开关\n"
+                  "        tools.add(avatarTool)\n"
+                  "        return tools\n"
+                  "    }\n"
+                  "}\n",
+                  "avatar tool registration",
+              ),
+          ])
+
+          print("ALL PATCHES APPLIED")
+          PY
+          cat ci-logs/patch.log
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web-ui/pnpm-lock.yaml
+
+      - name: Install web-ui dependencies
+        working-directory: web-ui
+        run: |
+          mkdir -p ../ci-logs
+          pnpm install --frozen-lockfile 2>&1 | tee ../ci-logs/pnpm.log
+
+      - name: Gradle cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-avatar-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+
+      - name: Write placeholder google-services.json
+        run: |
+          mkdir -p app ci-logs
+          cat > app/google-services.json <<'JSON_EOF'
+          {
+            "project_info": {
+              "project_number": "123456789012",
+              "firebase_url": "https://rikkahub-placeholder.firebaseio.com",
+              "project_id": "rikkahub-placeholder",
+              "storage_bucket": "rikkahub-placeholder.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:123456789012:android:0000000000000000000000",
+                  "android_client_info": {
+                    "package_name": "me.rerere.rikkahub.debug"
+                  }
+                },
+                "oauth_client": [],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyDplaceholder000000000000000000000"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": []
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON_EOF
+
+      - name: Compile app module
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:compileDebugKotlin --stacktrace 2>&1 | tee ci-logs/gradle.log
+
+      - name: Dump failure info
+        if: failure()
+        run: |
+          mkdir -p ci-logs
+          {
+            echo "=== failure at $(date -u) ==="
+            echo "--- patch log ---"
+            cat ci-logs/patch.log 2>/dev/null || true
+            echo "--- compile errors ---"
+            grep -E '^e: |^error: |Unresolved reference|Traceback' ci-logs/gradle.log 2>/dev/null | head -n 500 || true
+            echo "--- gradle tail ---"
+            tail -n 60 ci-logs/gradle.log 2>/dev/null || true
+          } > .ci-failure.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f .ci-failure.txt
+          git commit -m "ci: dump avatar tool failure log" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true
+
+      - name: Commit on success
+        if: success()
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A app/src/main/java/me/rerere/rikkahub/data/ai/tools/local || true
+          git commit -m "头像工具：set_my_avatar（共编译通过）" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master) || true

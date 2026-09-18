@@ -158,6 +158,18 @@ class LocalTools(
         if (options.contains(LocalToolOption.ExploreNearby)) {
             tools.add(exploreNearbyTool)
         }
+        if (options.contains(LocalToolOption.Workflows)) {
+            val known = tools.map { it.name }
+            tools.addAll(
+                me.rerere.rikkahub.workflow.tools.buildWorkflowToolsForLocal(
+                    repository = org.koin.java.KoinJavaComponent.getKoin()
+                        .get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>(),
+                    engine = org.koin.java.KoinJavaComponent.getKoin()
+                        .get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>(),
+                    knownToolNamesProvider = { known },
+                )
+            )
+        }
         return tools
     }
 }

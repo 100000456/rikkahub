@@ -141,6 +141,10 @@ kotlin {
 }
 
 dependencies {
+    // 工作流：cron 解析 + 围栏触发
+    implementation("com.cronutils:cron-utils:9.2.1")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.process)

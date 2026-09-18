@@ -43,8 +43,10 @@ import me.rerere.rikkahub.utils.JsonInstant
         WorkspaceEntity::class,
         FolderEntity::class,
         SecurityAuditEntity::class,
+        me.rerere.rikkahub.workflow.db.WorkflowEntity::class,
+        me.rerere.rikkahub.workflow.db.WorkflowRunEntity::class,
     ],
-    version = 26,
+    version = 27,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -66,6 +68,7 @@ import me.rerere.rikkahub.utils.JsonInstant
         AutoMigration(from = 23, to = 24),
         AutoMigration(from = 24, to = 25),
         AutoMigration(from = 25, to = 26),
+        AutoMigration(from = 26, to = 27),
     ]
 )
 @TypeConverters(TokenUsageConverter::class)
@@ -89,6 +92,10 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun folderDao(): FolderDAO
 
     abstract fun securityAuditDao(): SecurityAuditDao
+
+    abstract fun workflowDao(): me.rerere.rikkahub.workflow.db.WorkflowDao
+
+    abstract fun workflowRunDao(): me.rerere.rikkahub.workflow.db.WorkflowRunDao
 }
 
 object TokenUsageConverter {

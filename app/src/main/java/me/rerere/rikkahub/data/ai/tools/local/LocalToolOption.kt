@@ -88,4 +88,8 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("explore_nearby")
     data object ExploreNearby : LocalToolOption()
+
+    @Serializable
+    @SerialName("workflows")
+    data object Workflows : LocalToolOption()
 }

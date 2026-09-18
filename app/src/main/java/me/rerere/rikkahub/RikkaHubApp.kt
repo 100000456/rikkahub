@@ -116,6 +116,9 @@ class RikkaHubApp : Application() {
         // 把云端同步和亮屏事件监听接回来
         resumeDeviceSync()
 
+        // 工作流：事件驱动的自动化
+        startWorkflowTriggers()
+
         // 激进模式：盯着设备动静
         startAggressiveModeIfEnabled()
 
@@ -149,6 +152,17 @@ class RikkaHubApp : Application() {
             }.onFailure {
                 Log.e(TAG, "resumeDeviceSync failed", it)
             }
+        }
+    }
+
+    private fun startWorkflowTriggers() {
+        runCatching {
+            val registry = get<me.rerere.rikkahub.workflow.trigger.TriggerRegistry>()
+            val engine = get<me.rerere.rikkahub.workflow.execution.WorkflowEngine>()
+            registry.setEngineCallback(engine.triggerCallback)
+            registry.start()
+        }.onFailure {
+            Log.e(TAG, "startWorkflowTriggers failed", it)
         }
     }
 

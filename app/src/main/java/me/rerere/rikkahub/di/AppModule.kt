@@ -35,6 +35,34 @@ val appModule = module {
         LocalTools(get(), get(), get(), get())
     }
 
+    // 工作流：台账 / 仓库 / 条件 / 执行器 / 引擎 / 触发器注册表
+    single { me.rerere.rikkahub.data.agentrun.AgentRunRepository() }
+    single {
+        me.rerere.rikkahub.workflow.repository.WorkflowRepository(
+            workflowDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowDao(),
+            workflowRunDao = get<me.rerere.rikkahub.data.db.AppDatabase>().workflowRunDao(),
+        )
+    }
+    single { me.rerere.rikkahub.workflow.condition.ContextProvider(get(), get(), get()) }
+    single { me.rerere.rikkahub.workflow.execution.WorkflowActionRunner() }
+    single {
+        me.rerere.rikkahub.workflow.execution.WorkflowEngine(
+            repository = get(),
+            settingsStore = get(),
+            contextProvider = get(),
+            actionRunner = get(),
+        ).also { engine ->
+            get<me.rerere.rikkahub.workflow.repository.WorkflowRepository>().bindEngine(engine)
+        }
+    }
+    single {
+        me.rerere.rikkahub.workflow.trigger.TriggerRegistry(
+            context = get(),
+            appScope = get(),
+            workflowRepository = get(),
+        )
+    }
+
     single {
         UpdateChecker(
             client = get(),

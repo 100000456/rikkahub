@@ -1,12 +1,1173 @@
-===== 1. 三个开关的文字在哪儿 =====
-none
+===== A. Settings 类（前 150 行） =====
+package me.rerere.rikkahub.data.datastore
 
-===== 2. 含审批字样的文件清单 =====
+import android.content.Context
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.core.IOException
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import io.pebbletemplates.pebble.PebbleEngine
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import me.rerere.ai.core.MessageRole
+import me.rerere.ai.core.ReasoningLevel
+import me.rerere.ai.provider.Model
+import me.rerere.ai.provider.ProviderSetting
+import me.rerere.rikkahub.AppScope
+import me.rerere.rikkahub.data.ai.mcp.McpServerConfig
+import me.rerere.rikkahub.data.ai.prompts.DEFAULT_COMPRESS_PROMPT
+import me.rerere.rikkahub.data.ai.prompts.DEFAULT_OCR_PROMPT
+import me.rerere.rikkahub.data.ai.prompts.DEFAULT_SUGGESTION_PROMPT
+import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TITLE_PROMPT
+import me.rerere.rikkahub.data.ai.prompts.DEFAULT_TRANSLATION_PROMPT
+import me.rerere.rikkahub.data.ai.prompts.LEARNING_MODE_PROMPT
+import me.rerere.asr.ASRProviderSetting
+import me.rerere.rikkahub.data.datastore.migration.PreferenceStoreV1Migration
+import me.rerere.rikkahub.data.datastore.migration.PreferenceStoreV2Migration
+import me.rerere.rikkahub.data.datastore.migration.PreferenceStoreV3Migration
+import me.rerere.rikkahub.data.model.Assistant
+import me.rerere.rikkahub.data.model.Avatar
+import me.rerere.rikkahub.data.model.InjectionPosition
+import me.rerere.rikkahub.data.model.Lorebook
+import me.rerere.rikkahub.data.model.PromptInjection
+import me.rerere.rikkahub.data.model.QuickMessage
+import me.rerere.rikkahub.data.model.Tag
+import me.rerere.rikkahub.data.sync.s3.S3Config
+import me.rerere.rikkahub.ui.theme.CustomTheme
+import me.rerere.rikkahub.ui.theme.PresetThemes
+import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.rikkahub.utils.toMutableStateFlow
+import me.rerere.search.SearchCommonOptions
+import me.rerere.search.SearchServiceOptions
+import me.rerere.tts.provider.TTSProviderSetting
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import kotlin.uuid.Uuid
+
+private const val TAG = "PreferencesStore"
+
+private val Context.settingsStore by preferencesDataStore(
+    name = "settings",
+    produceMigrations = { context ->
+        listOf(
+            PreferenceStoreV1Migration(),
+            PreferenceStoreV2Migration(),
+            PreferenceStoreV3Migration()
+        )
+    }
+)
+
+class SettingsStore(
+    context: Context,
+    scope: AppScope,
+) : KoinComponent {
+    companion object {
+        // 版本号
+        val VERSION = intPreferencesKey("data_version")
+
+        // UI设置
+        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val THEME_ID = stringPreferencesKey("theme_id")
+        val CUSTOM_THEMES = stringPreferencesKey("custom_themes")
+        val DISPLAY_SETTING = stringPreferencesKey("display_setting")
+        val NETWORK_SETTING = stringPreferencesKey("network_setting")
+        val DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
+
+        // 模型选择
+        val FAVORITE_MODELS = stringPreferencesKey("favorite_models")
+        val SELECT_MODEL = stringPreferencesKey("chat_model")
+        val FAST_MODEL = stringPreferencesKey("fast_model")
+        val FAST_MODEL_REASONING_LEVEL = stringPreferencesKey("fast_model_reasoning_level")
+        val TRANSLATE_MODEL = stringPreferencesKey("translate_model")
+        val ENABLE_SUGGESTION = booleanPreferencesKey("enable_suggestion")
+        val IMAGE_GENERATION_MODEL = stringPreferencesKey("image_generation_model")
+        val TITLE_PROMPT = stringPreferencesKey("title_prompt")
+        val TRANSLATION_PROMPT = stringPreferencesKey("translation_prompt")
+        val TRANSLATE_THINKING_BUDGET = intPreferencesKey("translate_thinking_budget")
+        val SUGGESTION_PROMPT = stringPreferencesKey("suggestion_prompt")
+        val OCR_MODEL = stringPreferencesKey("ocr_model")
+        val OCR_PROMPT = stringPreferencesKey("ocr_prompt")
+        val COMPRESS_MODEL = stringPreferencesKey("compress_model")
+        val COMPRESS_PROMPT = stringPreferencesKey("compress_prompt")
+
+        // 提供商
+        val PROVIDERS = stringPreferencesKey("providers")
+
+        // 助手
+        val SELECT_ASSISTANT = stringPreferencesKey("select_assistant")
+        val ASSISTANTS = stringPreferencesKey("assistants")
+        val ASSISTANT_TAGS = stringPreferencesKey("assistant_tags")
+
+        // 搜索
+        val SEARCH_SERVICES = stringPreferencesKey("search_services")
+        val SEARCH_COMMON = stringPreferencesKey("search_common")
+        val SEARCH_SELECTED = intPreferencesKey("search_selected")
+
+        // MCP
+        val MCP_SERVERS = stringPreferencesKey("mcp_servers")
+
+        // WebDAV
+        val WEBDAV_CONFIG = stringPreferencesKey("webdav_config")
+
+        // S3
+        val S3_CONFIG = stringPreferencesKey("s3_config")
+
+        // TTS
+        val TTS_PROVIDERS = stringPreferencesKey("tts_providers")
+        val SELECTED_TTS_PROVIDER = stringPreferencesKey("selected_tts_provider")
+        val DEFAULT_TTS_PLAYBACK_SPEED = floatPreferencesKey("default_tts_playback_speed")
+
+        // ASR
+        val ASR_PROVIDERS = stringPreferencesKey("asr_providers")
+        val SELECTED_ASR_PROVIDER = stringPreferencesKey("selected_asr_provider")
+
+        // Web Server
+        val WEB_SERVER_ENABLED = booleanPreferencesKey("web_server_enabled")
+        val WEB_SERVER_PORT = intPreferencesKey("web_server_port")
+        val WEB_SERVER_JWT_ENABLED = booleanPreferencesKey("web_server_jwt_enabled")
+        val WEB_SERVER_ACCESS_PASSWORD = stringPreferencesKey("web_server_access_password")
+        val WEB_SERVER_LOCALHOST_ONLY = booleanPreferencesKey("web_server_localhost_only")
+
+        // 提示词注入
+        val MODE_INJECTIONS = stringPreferencesKey("mode_injections")
+        val LOREBOOKS = stringPreferencesKey("lorebooks")
+        val QUICK_MESSAGES = stringPreferencesKey("quick_messages")
+
+        // 备份提醒
+        val BACKUP_REMINDER_CONFIG = stringPreferencesKey("backup_reminder_config")
+
+
+===== A2. Settings 类里所有字段名 =====
+227:    val settingsFlowRaw = dataStore.data
+415:    val settingsFlow = settingsFlowRaw
+521:    val init: Boolean = false,
+522:    val dynamicColor: Boolean = true,
+523:    val themeId: String = PresetThemes[0].id,
+524:    val customThemes: List<CustomTheme> = emptyList(),
+525:    val developerMode: Boolean = false,
+526:    val displaySetting: DisplaySetting = DisplaySetting(),
+527:    val networkSetting: NetworkSetting = NetworkSetting(),
+528:    val favoriteModels: List<Uuid> = emptyList(),
+529:    val chatModelId: Uuid = Uuid.random(),
+530:    val fastModelId: Uuid = Uuid.random(),
+531:    val fastModelReasoningLevel: ReasoningLevel = ReasoningLevel.AUTO,
+532:    val imageGenerationModelId: Uuid = Uuid.random(),
+533:    val titlePrompt: String = DEFAULT_TITLE_PROMPT,
+534:    val translateModeId: Uuid = Uuid.random(),
+535:    val translatePrompt: String = DEFAULT_TRANSLATION_PROMPT,
+536:    val translateThinkingBudget: Int = 0,
+537:    val enableSuggestion: Boolean = true,
+538:    val suggestionPrompt: String = DEFAULT_SUGGESTION_PROMPT,
+539:    val ocrModelId: Uuid = Uuid.random(),
+540:    val ocrPrompt: String = DEFAULT_OCR_PROMPT,
+541:    val compressModelId: Uuid = Uuid.random(),
+542:    val compressPrompt: String = DEFAULT_COMPRESS_PROMPT,
+543:    val assistantId: Uuid = DEFAULT_ASSISTANT_ID,
+544:    val providers: List<ProviderSetting> = DEFAULT_PROVIDERS,
+545:    val assistants: List<Assistant> = DEFAULT_ASSISTANTS,
+546:    val assistantTags: List<Tag> = emptyList(),
+547:    val searchServices: List<SearchServiceOptions> = listOf(SearchServiceOptions.DEFAULT),
+548:    val searchCommonOptions: SearchCommonOptions = SearchCommonOptions(),
+549:    val searchServiceSelected: Int = 0,
+550:    val mcpServers: List<McpServerConfig> = emptyList(),
+551:    val webDavConfig: WebDavConfig = WebDavConfig(),
+552:    val s3Config: S3Config = S3Config(),
+553:    val ttsProviders: List<TTSProviderSetting> = DEFAULT_TTS_PROVIDERS,
+554:    val selectedTTSProviderId: Uuid = DEFAULT_SYSTEM_TTS_ID,
+555:    val defaultTTSPlaybackSpeed: Float = 1.0f,
+556:    val asrProviders: List<ASRProviderSetting> = emptyList(),
+557:    val selectedASRProviderId: Uuid? = null,
+558:    val modeInjections: List<PromptInjection.ModeInjection> = DEFAULT_MODE_INJECTIONS,
+559:    val lorebooks: List<Lorebook> = emptyList(),
+560:    val quickMessages: List<QuickMessage> = emptyList(),
+561:    val webServerEnabled: Boolean = false,
+562:    val webServerPort: Int = 8080,
+563:    val webServerJwtEnabled: Boolean = false,
+564:    val webServerAccessPassword: String = "",
+565:    val webServerLocalhostOnly: Boolean = false,
+566:    val backupReminderConfig: BackupReminderConfig = BackupReminderConfig(),
+567:    val launchCount: Int = 0,
+568:    val sponsorAlertDismissedAt: Int = 0,
+578:    val userAgent: String = "",
+579:    val proxyUrl: String = "",
+580:    val proxyUsername: String = "",
+581:    val proxyPassword: String = "",
+582:    val enableAutoRetry: Boolean = true,
+600:    val userAvatar: Avatar = Avatar.Dummy,
+601:    val userNickname: String = "",
+602:    val useAppIconStyleLoadingIndicator: Boolean = true,
+603:    val showUserAvatar: Boolean = true,
+604:    val showAssistantBubble: Boolean = false,
+605:    val bubbleOpacity: Float = 1.0f,
+606:    val showModelIcon: Boolean = true,
+607:    val showModelName: Boolean = true,
+608:    val showDateTimeInMessage: Boolean = false,
+609:    val showTokenUsage: Boolean = true,
+610:    val showThinkingContent: Boolean = true,
+611:    val autoCloseThinking: Boolean = true,
+612:    val updateCheckDisabledUntilEpochMillis: Long = 0L,
+613:    val showMessageJumper: Boolean = true,
+614:    val messageJumperOnLeft: Boolean = false,
+615:    val fontSizeRatio: Float = 1.0f,
+616:    val enableMessageGenerationHapticEffect: Boolean = false,
+617:    val skipCropImage: Boolean = true,
+618:    val enableNotificationOnMessageGeneration: Boolean = false,
+619:    val enableLiveUpdateNotification: Boolean = false,
+620:    val codeBlockAutoWrap: Boolean = false,
+621:    val codeBlockAutoCollapse: Boolean = false,
+622:    val showLineNumbers: Boolean = false,
+623:    val ttsOnlyReadQuoted: Boolean = false,
+624:    val ttsOnlyReadOutsideBrackets: Boolean = false,
+
+===== B. needsApproval 调用点（带上下文） =====
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-115-                        "cooldown_seconds (default 0), max_runs_per_day (default unlimited), id.")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-116-                })
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-117-            },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-118-            required = listOf("definition"),
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-119-        )
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-120-    },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:121:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-122-    execute = { json ->
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-123-        val definitionEl = json.jsonObject["definition"]
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-124-            ?: return@Tool errorResponse("missing_definition", "definition object required")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-125-        val parsed = WorkflowJson.parse(definitionEl.toString(), knownToolNamesProvider().toSet())
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-126-        when (parsed) {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-127-            is WorkflowJson.ParseResult.Err -> errorResponse(parsed.error, parsed.detail)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-128-            is WorkflowJson.ParseResult.Ok -> {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-129-                // Stamp the authoring assistant from the caller context — the engine reads
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-130-                // this back at fire time to resolve the right tool surface deterministically.
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-131-                // If the user-declared definition pre-set an authoringAssistantId we trust it
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-132-                // (allows API-driven authoring); otherwise fall back to the calling assistant.
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-133-                val def = parsed.definition.copy(
+--
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-260-                    put("description", "Full workflow definition with id matching an existing row.")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-261-                })
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-262-            },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-263-            required = listOf("definition"),
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-264-        )
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-265-    },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:266:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-267-    execute = { json ->
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-268-        val definitionEl = json.jsonObject["definition"]
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-269-            ?: return@Tool errorResponse("missing_definition", "definition object required")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-270-        val parsed = WorkflowJson.parse(definitionEl.toString(), knownToolNamesProvider().toSet())
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-271-        when (parsed) {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-272-            is WorkflowJson.ParseResult.Err -> errorResponse(parsed.error, parsed.detail)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-273-            is WorkflowJson.ParseResult.Ok -> {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-274-                val existing = repository.getById(parsed.definition.id)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-275-                    ?: return@Tool errorResponse("not_found", "no workflow with id=${parsed.definition.id}; use workflow_create instead")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-276-                // Preserve the existing authoring assistant — workflow_update is for body
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-277-                // edits, not for transferring ownership. If the LLM tries to change it,
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-278-                // we ignore that and keep the original.
+--
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-310-                    put("description", "Workflow id to delete.")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-311-                })
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-312-            },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-313-            required = listOf("id"),
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-314-        )
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-315-    },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:316:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-317-    execute = { json ->
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-318-        val id = json.jsonObject["id"]?.jsonPrimitive?.contentOrNull
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-319-            ?: return@Tool errorResponse("missing_id", "id is required")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-320-        val ok = repository.deleteCascading(id)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-321-        if (ok) listOf(UIMessagePart.Text(buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-322-            put("ok", true); put("id", id)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-323-        }.toString()))
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-324-        else errorResponse("not_found", "no workflow with id=$id")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-325-    }
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-326-)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-327-
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-328-fun workflowSetEnabledTool(repository: WorkflowRepository): Tool = Tool(
+--
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-343-                    put("description", "True to enable, false to disable.")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-344-                })
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-345-            },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-346-            required = listOf("id", "enabled"),
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-347-        )
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-348-    },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:349:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-350-    execute = { json ->
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-351-        val obj = json.jsonObject
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-352-        val id = obj["id"]?.jsonPrimitive?.contentOrNull
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-353-            ?: return@Tool errorResponse("missing_id", "id is required")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-354-        val enabledStr = obj["enabled"]?.jsonPrimitive?.contentOrNull
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-355-            ?: return@Tool errorResponse("missing_enabled", "enabled is required")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-356-        val enabled = enabledStr.toBooleanStrictOrNull()
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-357-            ?: return@Tool errorResponse("invalid_enabled", "enabled must be true or false")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-358-        if (repository.getById(id) == null) {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-359-            return@Tool errorResponse("not_found", "no workflow with id=$id")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-360-        }
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-361-        repository.setEnabled(id, enabled)
+--
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-384-                    put("description", "Workflow id to fire.")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-385-                })
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-386-            },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-387-            required = listOf("id"),
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-388-        )
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-389-    },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt:390:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-391-    execute = { json ->
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-392-        val id = json.jsonObject["id"]?.jsonPrimitive?.contentOrNull
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-393-            ?: return@Tool errorResponse("missing_id", "id is required")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-394-        if (repository.getById(id) == null) {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-395-            return@Tool errorResponse("not_found", "no workflow with id=$id")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-396-        }
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-397-        val outcome = engine.fire(id)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-398-        listOf(UIMessagePart.Text(buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-399-            put("ok", outcome.status.name == "SUCCESS")
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-400-            put("status", outcome.status.name)
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-401-            put("error", JsonPrimitive(outcome.error))
+app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt-402-            put("output_summary", outcome.summary.take(2000))
+--
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-46- *  8. Persist run row, projected last-run state, daily counter, trim history.
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-47- *
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-48- * Concurrency: per-workflow mutex so two near-simultaneous fires (e.g. WiFi flicker) can't
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-49- * race on the daily counter. Cross-workflow execution stays parallel.
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-50- *
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-51- * Approval semantics: HARDLINE applies in workflow context. Tool factories that set
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt:52: * `needsApproval = { true }` would normally pop a prompt — workflows are headless and the
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-53- * pre-authorisation is the workflow_create approval the user already granted. So the
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-54- * action runner just calls the tool's [Tool.execute] directly. This matches scheduled-jobs
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-55- * direct-mode behavior.
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-56- *
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-57- * The `Workflows` per-assistant toggle gates the seven `workflow_*` LLM tools, NOT the
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-58- * trigger pipeline. A workflow that's been authored stays armed regardless of which
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-59- * assistant the user is currently chatting with. Trigger dispatch is gated by the
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-60- * workflow's own `enabled` flag.
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-61- */
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-62-class WorkflowEngine(
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-63-    private val repository: WorkflowRepository,
+app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt-64-    private val settingsStore: SettingsStore,
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-91-        mcpTools.forEach { (serverId, serverName, tool) ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-92-            add(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-93-                Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-94-                    name = "mcp__${serverName}__${tool.name}",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-95-                    description = tool.description ?: "",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-96-                    parameters = { tool.inputSchema },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt:97:                    needsApproval = { tool.needsApproval },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-98-                    execute = { mcpManager.callTool(serverId, tool.name, it.jsonObject) },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-99-                )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-100-            )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-101-        }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-102-    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-103-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-104-    private suspend fun createWorkspaceToolsIfReady(workspaceId: String?, cwd: String?): List<Tool> {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-105-        if (workspaceId.isNullOrBlank()) return emptyList()
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-106-        val workspace = workspaceRepository.getById(workspaceId) ?: return emptyList()
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-107-        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-108-            Log.d(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt-109-                TAG,
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-86-    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-87-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-88-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-89-fun buildSetVolumeTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-90-    name = "set_volume",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-91-    description = "Set the volume for a given audio stream by percentage (0-100). Changing ring/notification requires Do Not Disturb access.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt:92:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-93-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-94-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-95-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-96-                putJsonObject("stream") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-97-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-98-                    put("description", "Audio stream name: media, ring, notification, alarm, voice_call, system")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-99-                    putJsonArray("enum") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-100-                        add("media"); add("ring"); add("notification"); add("alarm"); add("voice_call"); add("system")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-101-                    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-102-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-103-                putJsonObject("percent") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt-104-                    put("type", "integer")
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-69-    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-70-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-71-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-72-fun buildSetBrightnessTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-73-    name = "set_brightness",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-74-    description = "Set the screen brightness (1-255). Requires WRITE_SETTINGS special permission. Will disable auto-brightness first.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt:75:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-76-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-77-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-78-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-79-                putJsonObject("value") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-80-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-81-                    put("description", "Brightness value (1-255). Values below 1 will be clamped to 1.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-82-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-83-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-84-            required = listOf("value")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-85-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-86-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt-87-    execute = { args ->
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-28-    name = "get_gadgetbridge_data",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-29-    description = "Get health and fitness data from Gadgetbridge (wearable device companion app). " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-30-        "Returns step count, heart rate, sleep data, blood oxygen, stress, and calories. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-31-        "Reads from Gadgetbridge's auto-exported database. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-32-        "Requires storage access permission for the exported db file. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-33-        "data_type: all | steps | heart_rate | sleep | daily_summary. days: how many days back (default 7).",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt:34:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-35-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-36-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-37-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-38-                putJsonObject("data_type") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-39-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-40-                    put("description", "all (default) | steps | heart_rate | sleep | daily_summary")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-41-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-42-                putJsonObject("days") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-43-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-44-                    put("description", "How many days back to read (default 7, max 60)")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-45-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt-46-                putJsonObject("path") {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-33-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-34-fun globalActionTool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-35-    invocationContext: ToolInvocationContext = ToolInvocationContext.EMPTY,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-36-    streamer: InteractiveToolStreamer = InteractiveToolStreamer.NoOp,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-37-): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-38-    name = "global_action",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt:39:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-40-    description = """
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-41-        Perform an Android system-level action: back / home / recents / notifications /
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-42-        quick_settings / lock_screen / power_dialog. Routed through
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-43-        AccessibilityService.performGlobalAction. Returns {success: bool}.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-44-    """.trimIndent().replace("\n", " "),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-45-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-46-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-47-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-48-                put("action", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-49-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-50-                    put("enum", buildJsonArray { ACTION_MAP.keys.forEach { add(it) } })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt-51-                    put("description", "Which system action to perform")
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-227-        Requires title and start time at minimum. End time defaults to 1 hour after start.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-228-        The device timezone is '${ZoneId.systemDefault()}' (UTC offset ${OffsetDateTime.now().offset});
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-229-        times without an explicit offset are interpreted in this timezone.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-230-        Requires the 'Calendar' permission; if it is not granted, an error is returned and the
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-231-        permission request is triggered automatically.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-232-    """.trimIndent().replace("\n", " "),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt:233:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-234-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-235-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-236-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-237-                put("title", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-238-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-239-                    put("description", "Event title.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-240-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-241-                put("description", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-242-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-243-                    put("description", "Event description or notes.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-244-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt-245-                put("location", buildJsonObject {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-41-    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-42-}
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-43-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-44-fun takeScreenshotTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-45-    name = "take_screenshot",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-46-    description = "Capture the current display via AccessibilityService and return it as a vision attachment. PNG also saved to Pictures/RikkaHub/Screenshots/ — gallery_path in the result is the on-device absolute path. Secure surfaces (banking, DRM, password fields) error gracefully. OS-rate-limited to ~1/sec.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt:47:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-48-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-49-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-50-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-51-                put("display_id", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-52-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-53-                    put("description", "Display id to capture (default 0)")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-54-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-55-            }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-56-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-57-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-58-    execute = { input ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt-59-        val displayId = input.jsonObject["display_id"]?.jsonPrimitive?.intOrNull ?: 0
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-30-fun buildExploreNearbyTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-31-    name = "explore_nearby",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-32-    description = "Explore nearby points of interest (POI) around the current location. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-33-        "Needs location permission and an Amap API key. Returns restaurants, shops, hospitals, attractions, etc. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-34-        "keyword: e.g. restaurant / coffee / hospital / bank. radius: meters (default 1000, max 50000). " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-35-        "type: Amap POI type code (e.g. 050000 restaurants, 060000 shopping, 080000 medical). limit: max results (default 10).",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt:36:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-37-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-38-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-39-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-40-                putJsonObject("keyword") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-41-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-42-                    put("description", "Search keyword (e.g. restaurant, coffee, hospital, bank)")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-43-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-44-                putJsonObject("radius") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-45-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-46-                    put("description", "Search radius in meters (default 1000, max 50000)")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-47-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt-48-                putJsonObject("type") {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-27- * 所以改成直接给图。截图存的那条路径、相册里的文件、网上的网址都吃。
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-28- */
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-29-fun buildSetWallpaperTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-30-    name = "set_wallpaper",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-31-    description = "Set the device wallpaper from a local image path or an http(s) url. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-32-        "Supports home screen, lock screen, or both.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt:33:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-34-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-35-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-36-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-37-                putJsonObject("path") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-38-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-39-                    put("description", "Absolute file path or http(s) url of the image to use")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-40-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-41-                putJsonObject("target") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-42-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-43-                    put("description", "Which wallpaper to set: home, lock, or both. Default: both")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-44-                    putJsonArray("enum") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt-45-                        add("home")
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-16-import me.rerere.ai.ui.UIMessagePart
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-17-import me.rerere.common.android.Logging
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-18-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-19-fun buildStorageInfoTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-20-    name = "get_storage_info",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-21-    description = "Get internal and external storage space usage info (total, free, used bytes).",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt:22:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-23-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-24-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-25-            properties = buildJsonObject {}
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-26-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-27-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-28-    execute = { _ ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-29-        try {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-30-            val result = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-31-                put("success", true)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-32-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-33-                try {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt-34-                    val internalPath = Environment.getDataDirectory().path
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-60-    TelephonyManager.SIM_STATE_UNKNOWN -> "UNKNOWN"
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-61-    else -> "Unknown"
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-62-}
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-63-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-64-internal fun buildTelephonyInfoTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-65-    name = "get_telephony_info",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt:66:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-67-    description = "Get SIM card info, carrier, and network type. Requires READ_PHONE_STATE permission.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-68-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-69-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-70-            properties = buildJsonObject {}
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-71-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-72-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-73-    execute = { _ ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-74-        val hasPermission = ContextCompat.checkSelfPermission(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-75-            context, Manifest.permission.READ_PHONE_STATE
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-76-        ) == PackageManager.PERMISSION_GRANTED
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-77-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt-78-        if (!hasPermission) {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-27-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-28-fun buildLocationTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-29-    name = "get_location",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-30-    description = "Get the current location of the device. Returns latitude, longitude, accuracy, " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-31-        "whether the fix is fresh, and (if an Amap API key is configured) the readable address. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-32-        "Needs location permission. include_address: whether to reverse geocode the address (default true).",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt:33:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-34-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-35-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-36-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-37-                putJsonObject("include_address") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-38-                    put("type", "boolean")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-39-                    put("description", "Whether to turn the coordinates into a readable address (default true)")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-40-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-41-            }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-42-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-43-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-44-    execute = { args ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt-45-        try {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-23-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-24-/**
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-25- * 应用切换 / 开网页 / 把聊天拉回最前面。
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-26- */
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-27-internal fun buildAppSwitchTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-28-    name = "app_switch",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt:29:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-30-    description = "Switch the device screen to another app or bring the chat app to the front. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-31-        "Actions: 'launch_app' (launch an app by package name), " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-32-        "'bring_chat_to_front' (bring this chat app to the foreground), " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-33-        "'open_url' (open a URL in the browser). " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-34-        "Use this when the user asks to open another app, or when you want to pull the user back to the chat.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-35-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-36-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-37-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-38-                putJsonObject("action") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-39-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-40-                    put("description", "Action to perform: 'launch_app', 'bring_chat_to_front', or 'open_url'")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt-41-                    putJsonArray("enum") {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-17-import me.rerere.ai.ui.UIMessagePart
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-18-import me.rerere.common.android.Logging
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-19-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-20-fun buildTorchTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-21-    name = "set_torch",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-22-    description = "Turn the device flashlight/torch on or off.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt:23:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-24-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-25-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-26-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-27-                putJsonObject("on") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-28-                    put("type", "boolean")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-29-                    put("description", "True to turn torch on, false to turn off.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-30-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-31-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-32-            required = listOf("on")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-33-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-34-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt-35-    execute = { args ->
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-66-                    })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-67-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-68-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-69-            required = listOf("questions")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-70-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-71-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt:72:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-73-    execute = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-74-        error("ask_user tool should be handled by HITL flow")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-75-    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt-76-)
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-19-import java.text.SimpleDateFormat
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-20-import java.util.Date
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-21-import java.util.Locale
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-22-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-23-internal fun buildAppUsageTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-24-    name = "get_app_usage",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt:25:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-26-    description = "Get today's app usage statistics. Returns app names, usage time, and last used time. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-27-        "Requires the 'usage access' permission to be granted in system settings.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-28-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-29-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-30-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-31-                putJsonObject("limit") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-32-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-33-                    put("description", "Maximum number of apps to return (default 10)")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-34-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-35-            }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-36-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppUsageTool.kt-37-    },
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-31- *
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-32- * 移植自 rikkahub-agent 的 FingerprintTool.kt, 把宿主 Activity 从 ToolHostActivity
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-33- * 改为 orangechat 专用的 BiometricPromptActivity.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-34- */
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-35-fun fingerprintTool(context: Context, buffer: BiometricResultBuffer): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-36-    name = "verify_fingerprint",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt:37:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-38-    description = """
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-39-        Show the system biometric prompt to verify the user's identity using fingerprint,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-40-        face, or other registered biometric. The user must explicitly authenticate.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-41-    """.trimIndent().replace("\n", " "),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-42-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-43-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-44-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-45-                put("title", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-46-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-47-                    put("description", "Title shown at the top of the biometric prompt")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-48-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt-49-                put("subtitle", buildJsonObject {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-20-import me.rerere.common.android.Logging
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-21-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-22-@Suppress("DEPRECATION")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-23-fun buildWakeScreenTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-24-    name = "wake_screen",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-25-    description = "Wake up the screen if it is off. Holds a wake lock for a specified duration.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt:26:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-27-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-28-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-29-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-30-                putJsonObject("hold_ms") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-31-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-32-                    put("description", "How long to hold the wake lock in milliseconds (500-30000). Default: 3000")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-33-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-34-            }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-35-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-36-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-37-    execute = { args ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt-38-        val params = args.jsonObject
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-22- * 只有在系统那套（指纹、人脸、锁屏密码）都没设的时候才走这条路。
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-23- * 三件都挂在「验证身份」同一个开关下。
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-24- */
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-25-fun saveIdentityAnswerTool(store: IdentityQuestionStore): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-26-    name = "save_identity_answer",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-27-    description = "Store one backup identity question together with its answer. Only a hash is kept, never the plain answer.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt:28:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-29-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-30-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-31-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-32-                put("question", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-33-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-34-                    put("description", "The question to ask later, in plain words")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-35-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-36-                put("answer", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-37-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-38-                    put("description", "The answer only she can give")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-39-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-40-            },
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-102-    context: Context,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-103-    store: IdentityQuestionStore,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-104-    buffer: BiometricResultBuffer,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-105-): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-106-    name = "ask_identity_question",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-107-    description = "Ask her one backup identity question on a full-screen page and wait for the answer to be checked.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt:108:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-109-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-110-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-111-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-112-                put("question_id", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-113-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-114-                    put("description", "Optional id from list_identity_questions. Omit to pick one at random")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-115-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-116-                put("hint", buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-117-                    put("type", "string")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-118-                    put("description", "Optional one-line hint shown under the question")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-119-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt-120-            },
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-21-import me.rerere.ai.ui.UIMessagePart
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-22-import me.rerere.common.android.Logging
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-23-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-24-fun buildVibrateTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-25-    name = "vibrate",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-26-    description = "Vibrate the device. Provide either duration_ms (single vibration) or pattern (waveform of off/on milliseconds).",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt:27:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-28-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-29-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-30-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-31-                putJsonObject("duration_ms") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-32-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-33-                    put("description", "Duration of vibration in milliseconds (1-5000). Default 500. Use this for a single vibration.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-34-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-35-                putJsonObject("pattern") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-36-                    put("type", "array")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-37-                    put("description", "Waveform pattern of alternating off/on durations in ms (e.g. [0,500,200,500]). Max 20 elements. Mutually exclusive with duration_ms.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-38-                    putJsonObject("items") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt-39-                        put("type", "integer")
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-18-import me.rerere.ai.core.Tool
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-19-import me.rerere.ai.ui.UIMessagePart
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-20-import me.rerere.common.android.Logging
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-21-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-22-internal fun buildWifiInfoTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-23-    name = "get_wifi_info",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt:24:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-25-    description = "Get current WiFi connection info including SSID, BSSID, IP address, signal strength and link speed. " +
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-26-        "Requires location permission.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-27-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-28-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-29-            properties = buildJsonObject {}
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-30-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-31-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-32-    execute = { _ ->
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-33-        val hasLocation = ContextCompat.checkSelfPermission(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-34-            context, Manifest.permission.ACCESS_FINE_LOCATION
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-35-        ) == PackageManager.PERMISSION_GRANTED
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt-36-
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-17-import me.rerere.ai.core.Tool
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-18-import me.rerere.ai.ui.UIMessagePart
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-19-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-20-fun buildAlarmTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-21-    name = "set_alarm",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-22-    description = "Set an alarm on the user's device through the system clock app.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt:23:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-24-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-25-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-26-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-27-                putJsonObject("hour") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-28-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-29-                    put("description", "Hour in 24-hour format (0-23).")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-30-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-31-                putJsonObject("minute") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-32-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-33-                    put("description", "Minute (0-59).")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-34-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-35-                putJsonObject("label") {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-112-    }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-113-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-114-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-115-fun buildTimerTool(context: Context): Tool = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-116-    name = "set_timer",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-117-    description = "Set a countdown timer on the user's device through the system clock app. Useful for reminders like 'remind me in 10 minutes' or 'set a 5-minute timer'.",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt:118:    needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-119-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-120-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-121-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-122-                putJsonObject("seconds") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-123-                    put("type", "integer")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-124-                    put(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-125-                        "description",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-126-                        "Timer duration in seconds. For example, 300 for 5 minutes, 600 for 10 minutes. Must be positive."
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-127-                    )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-128-                }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-129-                putJsonObject("label") {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt-130-                    put("type", "string")
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-37-    workspaceId: String?,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-38-    workspaceRepository: WorkspaceRepository,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-39-    cwd: String? = null,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-40-): List<Tool> {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-41-    if (workspaceId.isNullOrBlank()) return emptyList()
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-42-    val approvalOverrides = workspaceRepository.getById(workspaceId)?.toolApprovalOverrides().orEmpty()
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:43:    fun needsApproval(name: String) = resolveWorkspaceToolApproval(name, approvalOverrides)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-44-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-45-    val shellCwd = cwd?.removePrefix("/workspace/")?.removePrefix("/workspace")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-46-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-47-    return listOf(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:48:        createReadFileTool(workspaceId, ::needsApproval, workspaceRepository),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:49:        createWriteFileTool(workspaceId, ::needsApproval, workspaceRepository),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:50:        createEditFileTool(workspaceId, ::needsApproval, workspaceRepository),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:51:        createShellTool(workspaceId, ::needsApproval, workspaceRepository, shellCwd),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-52-    )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-53-}
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-54-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-55-private val IMAGE_EXTENSIONS = setOf(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-56-    "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "heic", "heif", "avif", "ico",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-57-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-58-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-59-private fun String.isImagePath(): Boolean =
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-60-    substringAfterLast('.', "").lowercase() in IMAGE_EXTENSIONS
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-61-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-62-private fun createReadFileTool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-63-    workspaceId: String,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:64:    needsApproval: (String) -> Boolean,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-65-    workspaceRepository: WorkspaceRepository,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-66-) = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-67-    name = "workspace_read_file",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-68-    description = """
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-69-        Read a file using the assistant's bound workspace Rootfs. Paths must be absolute inside Rootfs.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-70-        Use /workspace for the workspace files area.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-71-        Supports UTF-8 text files and image files (png, jpg, jpeg, gif, webp, bmp, svg, heic, heif, avif, ico).
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-72-    """.trimIndent().replace("\n", " "),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-73-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-74-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-75-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-76-                putPathProperty(required = true)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-77-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-78-            required = listOf("path"),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-79-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-80-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:81:    needsApproval = { needsApproval("workspace_read_file") },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-82-    execute = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-83-        val path = it.jsonObject.absolutePath("path")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-84-        if (path.isImagePath()) {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-85-            workspaceRepository.readImageInRootfs(workspaceId, path)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-86-        } else {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-87-            val text = workspaceRepository.readTextInRootfs(workspaceId, path)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-88-            listOf(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-89-                UIMessagePart.Text(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-90-                    buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-91-                        put("path", path)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-92-                        put("text", text)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-93-                    }.toString()
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-96-        }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-97-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-98-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-99-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-100-private fun createWriteFileTool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-101-    workspaceId: String,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:102:    needsApproval: (String) -> Boolean,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-103-    workspaceRepository: WorkspaceRepository,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-104-) = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-105-    name = "workspace_write_file",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-106-    description = """
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-107-        Write a UTF-8 text file using the assistant's bound workspace Rootfs. Paths must be absolute inside Rootfs.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-108-        Use /workspace for the workspace files area.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-109-    """.trimIndent().replace("\n", " "),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-110-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-111-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-112-            properties = buildJsonObject {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-113-                putPathProperty(required = true)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-114-                put("text", buildJsonObject {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-120-                    put("description", "Whether to overwrite an existing file. Defaults to true.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-121-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-122-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-123-            required = listOf("path", "text"),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-124-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-125-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:126:    needsApproval = { needsApproval("workspace_write_file") || it.pathOutsideWritableRoots("path") },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-127-    execute = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-128-        val params = it.jsonObject
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-129-        val path = params.absolutePath("path")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-130-        val text = params.string("text") ?: error("text is required")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-131-        val overwrite = params["overwrite"]?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull() ?: true
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-132-        val entry = workspaceRepository.writeTextInRootfs(workspaceId, path, text, overwrite)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-133-        listOf(UIMessagePart.Text(entry.toJson().toString()))
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-134-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-135-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-136-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-137-private fun createEditFileTool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-138-    workspaceId: String,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:139:    needsApproval: (String) -> Boolean,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-140-    workspaceRepository: WorkspaceRepository,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-141-) = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-142-    name = "workspace_edit_file",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-143-    description = """
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-144-        Edit a UTF-8 text file using the assistant's bound workspace Rootfs. Paths must be absolute inside Rootfs.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-145-        Use /workspace for the workspace files area.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-146-        Provide old_text and new_text. By default old_text must occur exactly once; set replace_all=true to replace every occurrence.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-147-        If no exact match is found, whitespace-tolerant line matching is attempted automatically.
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-148-    """.trimIndent().replace("\n", " "),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-149-    parameters = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-150-        InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-151-            properties = buildJsonObject {
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-163-                    put("description", "Whether to replace every occurrence. Defaults to false.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-164-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-165-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-166-            required = listOf("path", "old_text", "new_text"),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-167-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-168-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:169:    needsApproval = { needsApproval("workspace_edit_file") || it.pathOutsideWritableRoots("path") },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-170-    execute = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-171-        val params = it.jsonObject
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-172-        val path = params.absolutePath("path")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-173-        val oldText = params.string("old_text") ?: error("old_text is required")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-174-        val newText = params.string("new_text") ?: error("new_text is required")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-175-        val replaceAll = params["replace_all"]?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull() ?: false
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-176-        require(oldText.isNotEmpty()) { "old_text must not be empty" }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-177-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-178-        val original = workspaceRepository.readTextInRootfs(workspaceId, path)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-179-        // 逐级尝试 exact -> line_trimmed -> block_anchor 替换器, 见 TextReplacers.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-180-        val result = try {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-181-            replaceText(original, oldText, newText, replaceAll)
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-199-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-200-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-201-)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-202-
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-203-private fun createShellTool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-204-    workspaceId: String,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:205:    needsApproval: (String) -> Boolean,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-206-    workspaceRepository: WorkspaceRepository,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-207-    defaultCwd: String? = null,
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-208-) = Tool(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-209-    name = "workspace_shell",
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-210-    description = buildString {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-211-        append("Run a shell command in the assistant's bound workspace Rootfs. The workspace files area is mounted at /workspace. ")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-212-        append("Use cwd for a path relative to the workspace files root. ")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-213-        if (!defaultCwd.isNullOrBlank()) {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-214-            append("Defaults to '$defaultCwd'. ")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-215-        }
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-216-        append("Requires Rootfs to be installed and ready.")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-217-    },
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-241-                    )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-242-                })
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-243-            },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-244-            required = listOf("command"),
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-245-        )
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-246-    },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt:247:    needsApproval = { needsApproval("workspace_shell") },
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-248-    execute = {
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-249-        val params = it.jsonObject
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-250-        val command = params.string("command") ?: error("command is required")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-251-        val cwd = (params.string("cwd") ?: defaultCwd.orEmpty())
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-252-            .removePrefix("/workspace/").removePrefix("/workspace")
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-253-        val timeoutMillis = params.string("timeout")?.toLongOrNull()
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-254-            ?.coerceIn(1L, SHELL_TIMEOUT_MAX_SECONDS)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-255-            ?.times(1_000L)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-256-            ?: WorkspaceManager.DEFAULT_COMMAND_TIMEOUT_MS
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-257-        val result = workspaceRepository.executeCommand(workspaceId, command, cwd, timeoutMillis)
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-258-        listOf(
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt-259-            UIMessagePart.Text(
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-53-@Serializable
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-54-data class McpTool(
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-55-    val enable: Boolean = true,
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-56-    val name: String = "",
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-57-    val description: String? = null,
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-58-    val inputSchema: InputSchema? = null,
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt:59:    val needsApproval: Boolean = false
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-60-)
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-61-
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-62-@Serializable
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-63-sealed class McpServerConfig {
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-64-    abstract val id: Uuid
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-65-    abstract val commonOptions: McpCommonOptions
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-66-
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-67-    abstract fun clone(
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-68-        id: Uuid = this.id,
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-69-        commonOptions: McpCommonOptions = this.commonOptions
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-70-    ): McpServerConfig
+app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt-71-
+--
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-172-                // Check for tools that need approval
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-173-                var hasPendingApproval = false
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-174-                val updatedTools = toolCalls.map { tool ->
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-175-                    val toolDef = tools.find { it.name == tool.toolName }
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-176-                    when {
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-177-                        // Tool needs approval and state is Auto -> set to Pending
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt:178:                        toolDef?.needsApproval(tool.inputAsJson()) == true &&
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-179-                            tool.approvalState is ToolApprovalState.Auto -> {
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-180-                            hasPendingApproval = true
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-181-                            tool.copy(approvalState = ToolApprovalState.Pending)
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-182-                        }
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-183-                        // State is Pending -> keep waiting
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-184-                        tool.approvalState is ToolApprovalState.Pending -> {
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-185-                            hasPendingApproval = true
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-186-                            tool
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-187-                        }
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-188-
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-189-                        else -> tool
+app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt-190-                    }
+--
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-98-    }
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-99-
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-100-    suspend fun setShellCompatibilityMode(id: String, enabled: Boolean) {
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-101-        dao.setShellCompatibilityMode(id, enabled, System.currentTimeMillis())
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-102-    }
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-103-
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt:104:    suspend fun setToolApproval(id: String, toolName: String, needsApproval: Boolean): Boolean {
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-105-        val workspace = dao.getById(id) ?: return false
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt:106:        val overrides = workspace.toolApprovalOverrides() + (toolName to needsApproval)
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-107-        dao.upsert(
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-108-            workspace.copy(
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-109-                toolApprovals = JsonInstant.encodeToString(overrides),
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-110-                updatedAt = System.currentTimeMillis(),
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-111-            )
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-112-        )
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-113-        return true
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-114-    }
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-115-
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-116-    suspend fun installRootfs(
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-117-        id: String,
+app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt-118-        url: String,
+--
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-27-    @ColumnInfo("created_at")
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-28-    val createdAt: Long,
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-29-    @ColumnInfo("updated_at")
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-30-    val updatedAt: Long,
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-31-    @ColumnInfo("last_access_at")
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-32-    val lastAccessAt: Long? = null,
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt:33:    // 工具审批的用户覆盖项 (toolName -> needsApproval)，未覆盖的工具沿用默认值
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-34-    @ColumnInfo("tool_approvals", defaultValue = "{}")
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-35-    val toolApprovals: String = "{}",
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-36-    @ColumnInfo("shell_compatibility_mode", defaultValue = "0")
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-37-    val shellCompatibilityMode: Boolean = false,
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-38-) {
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-39-    fun toolApprovalOverrides(): Map<String, Boolean> = runCatching {
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-40-        JsonInstant.decodeFromString<Map<String, Boolean>>(toolApprovals)
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-41-    }.getOrDefault(emptyMap())
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-42-
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-43-    fun toWorkspace(): Workspace = Workspace(
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-44-        id = id,
+app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt-45-        name = name,
+--
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-192-            } catch (error: Exception) {
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-193-                _settingsError.value = error.message.orEmpty()
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-194-            }
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-195-        }
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-196-    }
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-197-
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt:198:    fun setToolApproval(toolName: String, needsApproval: Boolean) {
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-199-        viewModelScope.launch {
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-200-            val workspace = state.value.workspace ?: return@launch
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt:201:            repository.setToolApproval(workspace.id, toolName, needsApproval)
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-202-            loadWorkspace()
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-203-        }
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-204-    }
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-205-
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-206-    fun installRootfs(url: String) {
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-207-        viewModelScope.launch {
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-208-            _installError.value = null
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-209-            val workspace = state.value.workspace ?: return@launch
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-210-            _installProgress.value = RootfsInstallProgress(stage = RootfsInstallStage.DOWNLOADING)
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-211-            try {
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-212-                terminalSessionManager.closeWorkspace(workspace.root)
+app/src/main/java/me/rerere/rikkahub/ui/pages/extensions/workspace/WorkspaceDetailVM.kt-213-                repository.installRootfs(workspace.id, url) { progress ->
+--
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-884-                onNeedsApprovalChange = { newVal ->
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-885-                    update(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-886-                        config.clone(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-887-                            commonOptions = config.commonOptions.copy(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-888-                                tools = config.commonOptions.tools.map {
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-889-                                    if (tool.name == it.name) {
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt:890:                                        it.copy(needsApproval = newVal)
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-891-                                    } else {
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-892-                                        it
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-893-                                    }
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-894-                                }
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-895-                            )
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-896-                        )
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-897-                    )
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-898-                }
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-899-            )
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-900-        }
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-901-    }
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-902-}
+--
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-940-                ) {
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-941-                    Text(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-942-                        text = stringResource(R.string.setting_mcp_page_needs_approval),
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-943-                        style = MaterialTheme.typography.labelSmall,
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-944-                    )
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-945-                    Switch(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt:946:                        checked = tool.needsApproval,
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-947-                        onCheckedChange = onNeedsApprovalChange,
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-948-                        size = SwitchSize.Small
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-949-                    )
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-950-                }
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-951-                // 启用开关
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-952-                Row(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-953-                    verticalAlignment = Alignment.CenterVertically,
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-954-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-955-                ) {
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-956-                    Text(
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-957-                        text = "启用",
+app/src/main/java/me/rerere/rikkahub/ui/pages/setting/SettingMcpPage.kt-958-                        style = MaterialTheme.typography.labelSmall,
+--
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-62-     * 创建Tool对象
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-63-     */
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-64-    private fun createTool(plugin: LoadedPlugin, toolDef: PluginToolDefinition): Tool {
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-65-        return Tool(
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-66-            name = ToolNaming.buildPluginToolName(plugin.id, toolDef.name),
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-67-            description = buildDescription(plugin, toolDef),
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt:68:            needsApproval = { true },
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-69-            parameters = {
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-70-                InputSchema.Obj(
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-71-                    properties = buildParameters(toolDef),
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-72-                    required = toolDef.parameters.filter { it.required }.map { it.name }
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-73-                )
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-74-            },
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-75-            execute = { params ->
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-76-                executeTool(plugin, toolDef, params)
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-77-            }
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-78-        )
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-79-    }
+app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt-80-
+
+===== C. 含审批/硬线字样的文件 =====
 app/src/main/java/me/rerere/rikkahub/data/agentrun/AgentRunRepository.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/GenerationLoop.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/mcp/McpConfig.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/ChatToolFactory.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/HardlineCommandGuard.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/ToolInvocationContext.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/WorkspaceTools.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AlarmTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AppSwitchTool.kt
@@ -15,29 +1176,36 @@ app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/AskUserTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/BrightnessTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/CalendarTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ExploreNearbyTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FindNodeTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/FingerprintTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GadgetbridgeTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/GlobalActionTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/IdentityQuestionTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/InteractiveToolStreamer.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/LocationTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScreenshotTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/ScrollTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/StorageInfoTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/SwipeTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TapTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TelephonyInfoTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/TorchTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VibrateTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/VolumeTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeHelper.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WakeScreenTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WallpaperTool.kt
 app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WifiInfoTool.kt
+app/src/main/java/me/rerere/rikkahub/data/ai/tools/local/WindowTreeTool.kt
 app/src/main/java/me/rerere/rikkahub/data/db/entity/WorkspaceEntity.kt
 app/src/main/java/me/rerere/rikkahub/data/repository/WorkspaceRepository.kt
+app/src/main/java/me/rerere/rikkahub/data/security/SecurityAuditEntity.kt
 app/src/main/java/me/rerere/rikkahub/plugin/provider/PluginToolProvider.kt
 app/src/main/java/me/rerere/rikkahub/service/ChatService.kt
 app/src/main/java/me/rerere/rikkahub/service/ConversationSession.kt
 app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessage.kt
 app/src/main/java/me/rerere/rikkahub/ui/components/message/ChatMessageTools.kt
 app/src/main/java/me/rerere/rikkahub/ui/components/message/tools/WorkflowToolUIs.kt
-app/src/main/java/me/rerere/rikkahub/ui/components/message/tools/WorkspaceToolUIs.kt
 app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatList.kt
 app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatPage.kt
 app/src/main/java/me/rerere/rikkahub/ui/pages/chat/ChatVM.kt
@@ -50,266 +1218,305 @@ app/src/main/java/me/rerere/rikkahub/workflow/execution/WorkflowEngine.kt
 app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
 app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowTools.kt
 
-===== 3. 那三个开关所在文件的全文 =====
+===== D. ConversationSession 里的审批段 =====
+107-
+108-    @Synchronized
+109-    fun cancelJobs(): List<Job> = activeJobs.toList().also { jobs ->
+110:        // Cancel waiters first so a predecessor finishing cannot start the next approval.
+111-        jobs.asReversed().forEach { it.cancel() }
+112-    }
+113-
+114-    private fun scheduleIdleCheck() {
+115-        idleCheckJob?.cancel()
+116-        idleCheckJob = scope.launch {
+117-            delay(IDLE_TIMEOUT_MS)
+118-            if (refCount.get() <= 0 && !isGenerating) {
+119-                onIdle(id)
+120-            }
+121-        }
+122-    }
+123-
+124-    private fun cancelIdleCheck() {
+125-        idleCheckJob?.cancel()
+126-        idleCheckJob = null
+127-    }
+128-
+--
+135-    }
+136-}
+137-
+138:/** Serialize approval saves without cancelling earlier decisions; stopping cancels the whole chain. */
+139-internal suspend fun afterPreviousGeneration(previous: Job?, block: suspend () -> Unit) {
+140-    try {
+141-        previous?.join()
+142-        block()
+143-    } catch (e: CancellationException) {
+144-        previous?.cancel()
+145-        withContext(NonCancellable) { previous?.join() }
+146-        throw e
+147-    }
+148-}
 
-
-===== 4. 工作流审批相关的界面文件全文 =====
------ app/src/main/java/me/rerere/rikkahub/workflow/tools/WorkflowApprovalRenderer.kt
+===== E. HardlineCommandGuard 全文 =====
 ﻿/*
  * 橘瓣 OrangeChat
  * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
-package me.rerere.rikkahub.workflow.tools
+package me.rerere.rikkahub.data.ai.tools
 
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import me.rerere.rikkahub.workflow.model.ConditionSpec
-import me.rerere.rikkahub.workflow.model.TriggerSpec
-import me.rerere.rikkahub.workflow.model.WorkflowAction
-import me.rerere.rikkahub.workflow.model.WorkflowDefinition
-import me.rerere.rikkahub.workflow.model.WorkflowJson
 
 /**
- * Phase 12 — human-readable approval prompt renderer for `workflow_create` /
- * `workflow_update` (in-app dialog + Telegram approval keyboard message).
+ * The "hardline" tier — unconditional command blocklist.
  *
- * Output template (matches spec §"Approval prompt rendering"):
- * ```
- * Create workflow "<name>"
+ * Patterns here are blocked BEFORE any approval prompt and BEFORE any allow-list check.
+ * Even if the user has granted "Always Allow" for the parent tool (e.g. termux_run_command),
+ * a hardline-matching command never runs. There is no way to override hardline through the
+ * UI — that's the whole point. If the user genuinely needs to run something on this list,
+ * they should run it themselves in a terminal, not through the agent.
  *
- * When: <trigger summary>
- * Only if: <comma-separated condition summaries, or "always">
- * Do:
- *   1. <action 1 summary>
- *   2. <action 2 summary>
- *   ...
+ * The list is deliberately tiny: only commands with no recovery path.
+ *   - filesystem destruction rooted at /, $HOME, /etc, /usr, /var, etc. (incl. descendants)
+ *   - raw block device overwrites (dd of=/dev/sd*, > /dev/sd*)
+ *   - kernel shutdown / reboot / halt
+ *   - fork bomb
+ *   - kill -1 / pkill the world
+ *   - encoded-payload-piped-to-shell (base64 -d | sh, printf '\xNN' | sh, eval $(…))
  *
- * Cooldown: <X seconds, or "none">
- * Daily cap: <N runs, or "unlimited">
- * ```
+ * Threat model: this is the lazy-mistake floor, NOT an adversarial-payload floor.
+ * Variable indirection (`c=rm; \$c -rf /`), heredocs, parameter expansion tricks, and
+ * obfuscation chains aren't catchable with regex and are out of scope. If the model is
+ * actively trying to circumvent the user, the protection is per-tool approval and the
+ * user noticing the prompt — not a regex floor.
  *
- * Telegram variant uses HTML — `<b>` for the title, `<code>` for tool names. Same content,
- * just lightly marked up.
+ * Recoverable-but-costly things (git reset --hard, rm -rf /tmp/x, chmod -R 777)
+ * stay in the regular approval-required flow — the user can choose to allow them.
+ *
+ * Inspired by the same shape Hermes Agent uses for its hardline floor.
  */
-object WorkflowApprovalRenderer {
+object HardlineCommandGuard {
 
-    /** True if the tool is one of ours and should use this renderer (not the JSON dump). */
-    fun isWorkflowTool(toolName: String): Boolean = toolName in WORKFLOW_TOOL_NAMES
+    /**
+     * Match a regex anchored to "command position" — start of string, after `;` `&` `|`
+     * newline or backtick, after `$(`, optionally after `sudo` / `env VAR=val` / wrappers
+     * like `exec`, `nohup`, `setsid`, `time`. Without this, "echo reboot" would match the
+     * shutdown rule.
+     *
+     * Includes the SHELL_EVAL alternation so commands smuggled inside `bash -c "…"` /
+     * `sh -c '…'` are also caught. Without this, the model could trivially escape the
+     * shutdown / reboot / mkfs rules by wrapping them in a shell-eval invocation.
+     */
+    private const val CMD_POS_BARE = "(?:^|[;&|\\n`]|\\\$\\()"
+    // `busybox sh -c "…"` is a common Android invocation form, hence the optional
+    // busybox prefix. `ash` is BusyBox's default shell.
+    private const val SHELL_EVAL_OPEN =
+        "\\b(?:busybox\\s+)?(?:bash|sh|zsh|dash|ksh|csh|tcsh|ash)\\s+(?:-[a-zA-Z]+\\s+)*-c\\s+[\"']"
 
-    /** Plain-text rendering for the in-app approval card. */
-    fun renderPlain(toolName: String, argsJson: String): String {
-        val verb = when (toolName) {
-            "workflow_create" -> "Create"
-            "workflow_update" -> "Update"
-            "workflow_delete" -> return renderDelete(argsJson, html = false)
-            "workflow_set_enabled" -> return renderSetEnabled(argsJson, html = false)
-            "workflow_run" -> return renderRunNow(argsJson, html = false)
-            else -> return argsJson  // unknown — fall through to default
-        }
-        val def = parseDefinition(argsJson) ?: return argsJson
-        val sb = StringBuilder()
-        sb.appendLine("$verb workflow \"${def.name}\"")
-        sb.appendLine()
-        sb.appendLine("When: ${triggerSummary(def.trigger)}")
-        sb.appendLine("Only if: ${
-            if (def.conditions.isEmpty()) "always"
-            else def.conditions.joinToString(", ") { conditionSummary(it) }
-        }")
-        sb.appendLine("Do:")
-        for ((idx, action) in def.actions.withIndex()) {
-            sb.appendLine("  ${idx + 1}. ${actionSummary(action)}")
-        }
-        sb.appendLine()
-        sb.appendLine("Cooldown: ${
-            if (def.cooldownSeconds == 0) "none"
-            else "${def.cooldownSeconds}s"
-        }")
-        sb.appendLine("Daily cap: ${def.maxRunsPerDay?.let { "$it runs" } ?: "unlimited"}")
-        return sb.toString().trimEnd()
-    }
+    private const val CMD_POS =
+        "(?:(?:" + CMD_POS_BARE + ")|(?:" + SHELL_EVAL_OPEN + "))" +
+        "\\s*" +
+        "(?:sudo\\s+(?:-[^\\s]+\\s+)*)?" +
+        "(?:env\\s+(?:\\w+=\\S*\\s+)*)?" +
+        "(?:(?:exec|nohup|setsid|time)\\s+)*" +
+        "\\s*" +
+        // Optional absolute-path prefix so /usr/sbin/shutdown matches the same way bare
+        // 'shutdown' does. The greedy `[\w./_-]*/` consumes everything up to the last
+        // slash so the trailing command name is what's matched by the (cmd1|cmd2) group.
+        "(?:[\\w./_-]*/)?"
 
-    /** Telegram HTML rendering — same content, with `<b>` and `<code>` markup. */
-    fun renderTelegramHtml(toolName: String, argsJson: String): String {
-        val verb = when (toolName) {
-            "workflow_create" -> "Create"
-            "workflow_update" -> "Update"
-            "workflow_delete" -> return renderDelete(argsJson, html = true)
-            "workflow_set_enabled" -> return renderSetEnabled(argsJson, html = true)
-            "workflow_run" -> return renderRunNow(argsJson, html = true)
-            else -> return escapeHtml(argsJson)
-        }
-        val def = parseDefinition(argsJson) ?: return escapeHtml(argsJson)
-        val sb = StringBuilder()
-        sb.appendLine("<b>$verb workflow \"${escapeHtml(def.name)}\"</b>")
-        sb.appendLine()
-        sb.appendLine("<b>When:</b> ${escapeHtml(triggerSummary(def.trigger))}")
-        sb.appendLine("<b>Only if:</b> ${
-            if (def.conditions.isEmpty()) "always"
-            else def.conditions.joinToString(", ") { escapeHtml(conditionSummary(it)) }
-        }")
-        sb.appendLine("<b>Do:</b>")
-        for ((idx, action) in def.actions.withIndex()) {
-            sb.appendLine("  ${idx + 1}. <code>${escapeHtml(action.tool)}</code>(${escapeHtml(actionArgsHint(action))})")
-        }
-        sb.appendLine()
-        sb.appendLine("<b>Cooldown:</b> ${
-            if (def.cooldownSeconds == 0) "none"
-            else "${def.cooldownSeconds}s"
-        }")
-        sb.appendLine("<b>Daily cap:</b> ${def.maxRunsPerDay?.let { "$it runs" } ?: "unlimited"}")
-        return sb.toString().trimEnd()
-    }
+    /** End-of-path anchor — whitespace, end-of-string, or shell-eval closing quote. */
+    private const val PATH_END = "(?:\\s|[\"']|\$)"
 
-    private fun parseDefinition(argsJson: String): WorkflowDefinition? {
-        val obj = runCatching { Json.parseToJsonElement(argsJson) as? JsonObject }.getOrNull() ?: return null
-        val defStr = (obj["definition"] as? JsonObject)?.toString() ?: argsJson
-        return WorkflowJson.parseStored(defStr)
-    }
+    private val IGNORE_CASE = setOf(RegexOption.IGNORE_CASE)
 
-    private fun triggerSummary(t: TriggerSpec): String = when (t) {
-        is TriggerSpec.TimeCron -> when {
-            !t.timeOfDay.isNullOrBlank() -> {
-                val days = if (t.daysOfWeek.isEmpty()) "every day" else "on day(s) ${t.daysOfWeek.joinToString(",")}"
-                "every ${t.timeOfDay} $days"
-            }
-            !t.cron.isNullOrBlank() -> "schedule (${t.cron})"
-            else -> "schedule"
-        }
-        is TriggerSpec.WifiConnected -> "WiFi connects" + (t.ssid?.let { " to $it" }.orEmpty())
-        is TriggerSpec.WifiDisconnected -> "WiFi disconnects" + (t.ssid?.let { " from $it" }.orEmpty())
-        is TriggerSpec.BluetoothDeviceConnected -> "Bluetooth device connects" + (t.deviceAddress?.let { " ($it)" }.orEmpty())
-        is TriggerSpec.BluetoothDeviceDisconnected -> "Bluetooth device disconnects" + (t.deviceAddress?.let { " ($it)" }.orEmpty())
-        is TriggerSpec.HeadphonesPlugged -> "headphones plugged in"
-        is TriggerSpec.HeadphonesUnplugged -> "headphones unplugged"
-        is TriggerSpec.PowerConnected -> "power connected"
-        is TriggerSpec.PowerDisconnected -> "power disconnected"
-        is TriggerSpec.BatteryBelow -> "battery drops below ${t.thresholdPercent}%"
-        is TriggerSpec.BatteryAbove -> "battery rises above ${t.thresholdPercent}%"
-        is TriggerSpec.GeofenceEnter -> "you enter ${t.label ?: "a place (${t.lat},${t.lng}, ${t.radiusM}m)"}"
-        is TriggerSpec.GeofenceExit -> "you leave ${t.label ?: "a place (${t.lat},${t.lng}, ${t.radiusM}m)"}"
-        is TriggerSpec.AppLaunched -> "${t.packageName} is launched"
-        is TriggerSpec.AppClosed -> "${t.packageName} is closed"
-        is TriggerSpec.AppForegroundDuration -> "${t.packageName} stays foreground for ${t.minutes}m"
-        is TriggerSpec.NotificationReceived -> {
-            val parts = mutableListOf<String>()
-            t.packageName?.let { parts += "from $it" }
-            t.titleContains?.let { parts += "title contains '$it'" }
-            t.textContains?.let { parts += "text contains '$it'" }
-            t.titleMatches?.let { parts += "title matches /$it/" }
-            t.textMatches?.let { parts += "text matches /$it/" }
-            "a notification arrives" + if (parts.isEmpty()) "" else " (${parts.joinToString("; ")})"
-        }
-        is TriggerSpec.BootCompleted -> "device boots"
-        is TriggerSpec.ScreenOn -> "screen turns on"
-        is TriggerSpec.ScreenOff -> "screen turns off"
-        is TriggerSpec.Manual -> "you fire it manually (Run now)"
-    }
+    /** (regex, human-readable reason) pairs. Reason is surfaced in the block envelope. */
+    private val PATTERNS: List<Pair<Regex, String>> = listOf(
+        // rm -rf the root filesystem, system dirs (incl. descendants), or HOME
+        Regex("\\brm\\s+(-[^\\s]*\\s+)*(/|/\\*|/\\s*\\*)" + PATH_END, IGNORE_CASE) to
+            "recursive delete of root filesystem",
+        // /home and /root: only the dir itself, not descendants — users have legitimate
+        // reasons to nuke a folder under /home/user, but never to nuke /home as a whole.
+        Regex("\\brm\\s+(-[^\\s]*\\s+)*(/home|/root)(/\\*?)?" + PATH_END, IGNORE_CASE) to
+            "recursive delete of home root",
+        // /etc, /usr, /var, /bin, /sbin, /boot, /lib: descendants too. `rm -rf /etc/passwd`
+        // is just as fatal as `rm -rf /etc` and there's no legitimate reason to drive
+        // either through an LLM agent — if you actually need to do this, use a terminal.
+        Regex("\\brm\\s+(-[^\\s]*\\s+)*(/etc|/usr|/var|/bin|/sbin|/boot|/lib)(/\\S*)?" + PATH_END, IGNORE_CASE) to
+            "recursive delete of system directory",
+        // ~ OR \$HOME OR \${HOME} — IGNORE_CASE handles \$home etc.
+        Regex("\\brm\\s+(-[^\\s]*\\s+)*(~|\\\$HOME|\\\$\\{HOME\\})(/?|/\\*)?" + PATH_END, IGNORE_CASE) to
+            "recursive delete of home directory",
+        // Format filesystem — anchored at command position so "grep mkfs /var/log" doesn't trip.
+        Regex(CMD_POS + "mkfs(\\.[a-z0-9]+)?\\b", IGNORE_CASE) to "format filesystem (mkfs)",
+        // Raw block device writes
+        Regex("\\bdd\\b[^\\n]*\\bof=/dev/(sd|nvme|hd|mmcblk|vd|xvd)[a-z0-9]*", IGNORE_CASE) to
+            "dd to raw block device",
+        Regex(">\\s*/dev/(sd|nvme|hd|mmcblk|vd|xvd)[a-z0-9]*\\b", IGNORE_CASE) to
+            "redirect to raw block device",
+        // Fork bomb
+        Regex(":\\(\\)\\s*\\{\\s*:\\s*\\|\\s*:\\s*&\\s*\\}\\s*;\\s*:") to "fork bomb",
+        // Kill every process
+        Regex("\\bkill\\s+(-[^\\s]+\\s+)*-1\\b", IGNORE_CASE) to "kill all processes",
+        // System shutdown / reboot — at command position OR inside a shell-eval `-c "…"`
+        Regex(CMD_POS + "(shutdown|reboot|halt|poweroff)\\b", IGNORE_CASE) to "system shutdown/reboot",
+        Regex(CMD_POS + "init\\s+[06]\\b", IGNORE_CASE) to "init 0/6 (shutdown/reboot)",
+        Regex(CMD_POS + "systemctl\\s+(poweroff|reboot|halt|kexec)\\b", IGNORE_CASE) to "systemctl poweroff/reboot",
+        Regex(CMD_POS + "telinit\\s+[06]\\b", IGNORE_CASE) to "telinit 0/6 (shutdown/reboot)",
+        // Encoded-payload pipe-to-shell — `base64 -d` / `xxd -r` / hex `printf` whose output
+        // is piped straight into a shell. This is how regex-floor circumvention is actually
+        // attempted in practice ("echo cm0gLXJmIC8= | base64 -d | sh"). We can't decode the
+        // payload, but we can refuse to evaluate the result of a decoder.
+        Regex("\\b(base64|xxd)\\s+(?:-[^\\s]*\\s+)*-[dr]\\b[^|]*\\|\\s*(?:eval\\b|(?:bash|sh|zsh|dash|ksh|csh)\\b)", IGNORE_CASE) to
+            "encoded payload piped to shell",
+        Regex("\\bprintf\\s+[\"'][^\"']*\\\\x[^\"']*[\"'][^|]*\\|\\s*(?:eval\\b|(?:bash|sh|zsh|dash|ksh|csh)\\b)", IGNORE_CASE) to
+            "hex-encoded payload piped to shell",
+        // `eval \$(…)` — running the output of an arbitrary subshell as code. The subshell
+        // body itself can be anything, by definition opaque to a regex floor.
+        Regex("\\beval\\s+\\\$\\(", IGNORE_CASE) to
+            "eval of subshell command substitution",
+    )
 
-    private fun conditionSummary(c: ConditionSpec): String {
-        val base = when (c) {
-            is ConditionSpec.TimeBetween -> "between ${c.start} and ${c.end}"
-            is ConditionSpec.TimeAfterSunset -> "after sunset" + if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
-            is ConditionSpec.TimeBeforeSunrise -> "before sunrise" + if (c.offsetMinutes != 0) " (${c.offsetMinutes}m offset)" else ""
-            is ConditionSpec.DayOfWeekIn -> "on day(s) ${c.days.joinToString(",")}"
-            is ConditionSpec.WifiSsidIs -> "WiFi is ${c.ssid}"
-            is ConditionSpec.WifiSsidIn -> "WiFi in ${c.ssids.joinToString(",")}"
-            is ConditionSpec.BatteryAbove -> "battery > ${c.percent}%"
-            is ConditionSpec.BatteryBelow -> "battery < ${c.percent}%"
-            is ConditionSpec.IsCharging -> "charging"
-            is ConditionSpec.IsNotCharging -> "not charging"
-            is ConditionSpec.ForegroundAppIs -> "${c.packageName} is foreground"
-            is ConditionSpec.ForegroundAppIn -> "${c.packageNames.size}-app foreground match"
-            is ConditionSpec.ScreenIsOn -> "screen on"
-            is ConditionSpec.ScreenIsOff -> "screen off"
-            is ConditionSpec.LastChatAgo -> "last chat ≥ ${c.minutes}m ago"
+    /**
+     * Check whether a raw command string matches any hardline pattern.
+     * Returns the human-readable reason if blocked, or null if safe.
+     * Case-insensitive; the input is lowercased before matching.
+     */
+    fun checkCommand(command: String?): String? {
+        if (command.isNullOrEmpty()) return null
+        val normalised = command.lowercase()
+        for ((pattern, reason) in PATTERNS) {
+            if (pattern.containsMatchIn(normalised)) return reason
         }
-        return if (c.invert) "NOT ($base)" else base
-    }
-
-    private fun actionSummary(action: WorkflowAction): String {
-        val hint = actionArgsHint(action)
-        return "${action.tool}($hint)"
+        return null
     }
 
     /**
-     * Truncate args at ~80 chars per spec. Best-effort `key=value` rendering. Values whose
-     * key matches the secret-redaction list (token, password, private_key, etc.) are masked
-     * with `***` regardless of length — otherwise an LLM-authored workflow whose action is
-     * `telegram_set_token({token: "..."})` or `save_ssh_host({password: "..."})` would echo
-     * the secret into the user's chat history (in-app card AND Telegram approval message).
+     * Tool-aware entrypoint: pull whichever arg of [toolName] carries shell content and
+     * run it through [checkCommand]. Returns the block reason or null. Tools that don't
+     * carry shell content return null trivially (caller's hardline check just no-ops).
+     *
+     * MCP tools (any name starting with `mcp__`) are checked by walking every string
+     * value in the input JSON — we don't know which MCP server's tool we're dealing
+     * with or what its arg shape is, but if any string arg matches a hardline pattern
+     * the call is refused. This is the floor; a clueful MCP server should also gate
+     * its own destructive tools with its own approval.
      */
-    private fun actionArgsHint(action: WorkflowAction): String {
-        if (action.args.isEmpty()) return ""
-        val pairs = action.args.entries.joinToString(", ") { (k, v) ->
-            val str = if (isSensitiveKey(k)) {
-                "***"
-            } else when (v) {
-                is JsonPrimitive -> v.contentOrNull?.take(40).orEmpty()
-                else -> v.toString().take(40)
-            }
-            "$k=\"$str\""
-        }
-        return pairs.take(80) + if (pairs.length > 80) "…" else ""
+    fun checkTool(toolName: String, inputJson: String): String? {
+        if (inputJson.isBlank()) return null
+        val obj = runCatching {
+            kotlinx.serialization.json.Json.parseToJsonElement(inputJson).jsonObject
+        }.getOrNull() ?: return null
+        return checkToolParsed(toolName, obj)
     }
 
     /**
-     * Match a key name against the redaction list (case-insensitive, snake_case AND
-     * camelCase aware). Mirrors the redaction model already used by McpApprovalRenderer
-     * for header values.
+     * Convenience for callers that already have a parsed JsonObject (e.g. tool execution
+     * paths). Mirrors [checkTool] but skips the parse step.
      */
-    private fun isSensitiveKey(key: String): Boolean {
-        val lower = key.lowercase().replace("-", "_").replace(" ", "_")
-        return SENSITIVE_KEY_PARTS.any { part -> lower == part || lower.contains(part) }
+    fun checkToolParsed(toolName: String, input: JsonObject): String? {
+        return when {
+            toolName == "termux_run_command" -> {
+                val cmd = input["command"]?.jsonPrimitive?.contentOrNull
+                checkCommand(cmd)?.let { return it }
+                val exe = input["executable"]?.jsonPrimitive?.contentOrNull
+                val args = input["arguments"]?.jsonArray
+                    ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+                    ?.joinToString(" ")
+                if (exe != null || args != null) {
+                    checkCommand("${exe.orEmpty()} ${args.orEmpty()}")
+                } else null
+            }
+            toolName == "ssh_exec" || toolName == "ssh_exec_saved" ->
+                checkCommand(input["command"]?.jsonPrimitive?.contentOrNull)
+            // Sub-agent dispatch — the spawned LLM gets the parent's full tool surface
+            // headlessly, so a `task` / `prompt` containing a literal hardline-blocked
+            // command (e.g. `rm -rf /`) shouldn't be authorised even if the parent
+            // workflow_create approval was granted. Walk all string args.
+            toolName == "subagent_dispatch" -> walkAndCheck(input)
+            // MCP-relayed tools: we don't know which server or what arg shape carries shell
+            // content, so we recursively scan every string value in the input. False
+            // positives are fine — an MCP tool whose legitimate-purpose arg happens to
+            // contain a literal `rm -rf /` is too edge-case to design around.
+            toolName.startsWith("mcp__") -> walkAndCheck(input)
+            // browser_eval_js: runs arbitrary JS in a real WebView with cookies, localStorage,
+            // and fetch — completely unlike eval_javascript (sandboxed QuickJS). This is the
+            // single highest-trust tool we ship, hence the dedicated HARDLINE arm + the
+            // NO_ALWAYS_ALLOW flag in ToolApprovalDefaults. Two checks:
+            //   (a) the model could try to chain an OS shell via fetch('http://localhost') /
+            //       sendBeacon — defence in depth, reuse the existing shell deny list.
+            //   (b) JS-specific exfiltration / privilege patterns (cookie writes, eval,
+            //       Function constructor, string-form setTimeout, data: script injection).
+            toolName == "browser_eval_js" -> {
+                val code = input["code"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                checkCommand(code)?.let { return it }
+                val matched = JS_HARDLINE_PATTERNS.firstOrNull { (rx, _) -> rx.containsMatchIn(code) }
+                matched?.second
+            }
+            // eval_javascript: no shell to match. JS-side hardline patterns are out of
+            // scope because QuickJS in this repo has no DOM / Node / fetch — realistic
+            // blast radius is bounded to local CPU. Add JS rules here when the surface
+            // grows.
+            else -> null
+        }
     }
 
-    private val SENSITIVE_KEY_PARTS = setOf(
-        "token", "password", "passphrase", "private_key", "privatekey",
-        "secret", "api_key", "apikey", "authorization", "auth_token", "access_token",
-        "client_secret", "credential", "credentials",
+    /**
+     * JS-specific hardline patterns for [BrowserToolDefaults.EVAL_JS]. Defence-in-depth
+     * against the most common exfiltration / RCE shapes. Conservative — false positives
+     * are fine; a model that legitimately needs to write document.cookie can use
+     * browser_type on a form field instead.
+     */
+    private val JS_HARDLINE_PATTERNS: List<Pair<Regex, String>> = listOf(
+        // Direct cookie writes. Reads (`document.cookie` on the right of an expression) are
+        // not blocked because they're useful for pages that pass auth via cookies.
+        Regex("""document\s*\.\s*cookie\s*=""", IGNORE_CASE) to "hardline:js_cookie_write",
+        // Dynamic-eval surfaces. eval("...") and new Function("...") let the model construct
+        // a payload at fire time that the static guard can't see ahead of time.
+        Regex("""\beval\s*\(""", IGNORE_CASE) to "hardline:js_eval",
+        Regex("""\bnew\s+Function\s*\(""", IGNORE_CASE) to "hardline:js_function_constructor",
+        // setTimeout / setInterval with a STRING first argument is a stealth-eval — the
+        // browser parses the string as code at trigger time. Function-literal callbacks
+        // (`setTimeout(()=>foo(), 1000)`) are fine and not matched here.
+        Regex("""\bsetTimeout\s*\(\s*['"`]""", IGNORE_CASE) to "hardline:js_settimeout_string",
+        Regex("""\bsetInterval\s*\(\s*['"`]""", IGNORE_CASE) to "hardline:js_setinterval_string",
+        // <script src="data:..."> — data-URI script injection, the canonical SOP-bypass
+        // payload. Same pattern works inside template strings inserted via innerHTML.
+        Regex("""<script\s+src\s*=\s*['"]?data:""", IGNORE_CASE) to "hardline:js_script_data_uri",
     )
 
-    private fun renderDelete(argsJson: String, html: Boolean): String {
-        val id = runCatching {
-            (Json.parseToJsonElement(argsJson) as? JsonObject)
-                ?.get("id")?.jsonPrimitive?.contentOrNull
-        }.getOrNull() ?: "?"
-        val msg = "Delete workflow id=$id"
-        return if (html) "<b>${escapeHtml(msg)}</b>" else msg
+    /**
+     * Walk a JSON element recursively. Run [checkCommand] on every string primitive we
+     * find. Return the first match's reason, or null if everything is clean.
+     */
+    private fun walkAndCheck(element: JsonElement): String? {
+        when (element) {
+            is JsonPrimitive -> {
+                if (element.isString) {
+                    return checkCommand(element.contentOrNull)
+                }
+            }
+            is JsonObject -> {
+                for ((_, v) in element) {
+                    val r = walkAndCheck(v)
+                    if (r != null) return r
+                }
+            }
+            is JsonArray -> {
+                for (v in element) {
+                    val r = walkAndCheck(v)
+                    if (r != null) return r
+                }
+            }
+        }
+        return null
     }
-
-    private fun renderSetEnabled(argsJson: String, html: Boolean): String {
-        val obj = runCatching { Json.parseToJsonElement(argsJson) as? JsonObject }.getOrNull()
-        val id = obj?.get("id")?.jsonPrimitive?.contentOrNull ?: "?"
-        val enabled = obj?.get("enabled")?.jsonPrimitive?.contentOrNull
-        val verb = if (enabled == "true") "Enable" else "Disable"
-        val msg = "$verb workflow id=$id"
-        return if (html) "<b>${escapeHtml(msg)}</b>" else msg
-    }
-
-    private fun renderRunNow(argsJson: String, html: Boolean): String {
-        val id = runCatching {
-            (Json.parseToJsonElement(argsJson) as? JsonObject)
-                ?.get("id")?.jsonPrimitive?.contentOrNull
-        }.getOrNull() ?: "?"
-        val msg = "Run workflow now id=$id"
-        return if (html) "<b>${escapeHtml(msg)}</b>" else msg
-    }
-
-    private fun escapeHtml(s: String): String =
-        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-    val WORKFLOW_TOOL_NAMES = setOf(
-        "workflow_create",
-        "workflow_list",
-        "workflow_get",
-        "workflow_update",
-        "workflow_delete",
-        "workflow_set_enabled",
-        "workflow_run",
-    )
 }

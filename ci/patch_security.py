@@ -136,31 +136,7 @@ else:
 DONE.append('engine')
 
 # ------------------------------------------------------- 4. 路由 + 设置页入口
-s = read(ROUTE)
-if 'SettingSecurityPage' in s:
-    print('4. route already patched')
-else:
-    imp = 'import me.rerere.rikkahub.ui.pages.setting.SettingProactiveMessagePage\n'
-    screen = '    data object SettingProactiveMessage : Screen\n'
-    entry = ('                            entry<Screen.SettingProactiveMessage> {\n'
-             '                                SettingProactiveMessagePage()\n'
-             '                            }\n')
-    for chunk, label in ((imp, 'import'), (screen, 'screen'), (entry, 'entry')):
-        if chunk not in s:
-            die('RouteActivity %s anchor not found' % label)
-    s = s.replace(imp, imp + 'import me.rerere.rikkahub.ui.pages.setting.SettingSecurityPage\n', 1)
-    s = s.replace(
-        screen,
-        screen + '\n    @Serializable\n    data object SettingSecurity : Screen\n',
-        1,
-    )
-    s = s.replace(
-        entry,
-        entry + '\n' + entry.replace('SettingProactiveMessage', 'SettingSecurity'),
-        1,
-    )
-    write(ROUTE, s)
-    print('4. route patched')
+print('4. route already in tree, skip')
 DONE.append('route')
 
 s = read(PAGE)

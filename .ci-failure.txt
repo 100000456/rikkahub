@@ -1,17 +1,122 @@
-=== failure at Sun Sep 20 14:12:45 UTC 2026 ===
+=== failure at Sun Sep 20 14:20:12 UTC 2026 ===
 --- compile errors ---
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:119:44 Unresolved reference 'SettingSecurityPage'.
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:500:33 Unresolved reference 'SettingSecurityPage'.
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:803:17 Conflicting declarations:
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:806:17 Conflicting declarations:
 --- gradle tail ---
+[2mbuild/client/[22m[2massets/[22m[36mhouston-DnULxvSX.js                       [39m[1m[2m   35.42 kB[22m[1m[22m[2m │ gzip:   5.78 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mtokyo-night-hegEt444.js                   [39m[1m[2m   35.67 kB[22m[1m[22m[2m │ gzip:   6.24 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36merlang-DsQrWhSR.js                        [39m[1m[2m   37.48 kB[22m[1m[22m[2m │ gzip:   4.40 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcobol-nwyudZeR.js                         [39m[1m[2m   39.15 kB[22m[1m[22m[2m │ gzip:  10.87 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36masm-D_Q5rh1f.js                           [39m[1m[2m   40.72 kB[22m[1m[22m[2m │ gzip:   8.21 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mshellscript-Yzrsuije.js                   [39m[1m[2m   41.48 kB[22m[1m[22m[2m │ gzip:   6.09 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mhaskell-Df6bDoY_.js                       [39m[1m[2m   41.49 kB[22m[1m[22m[2m │ gzip:   6.44 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mperl-C0TMdlhV.js                          [39m[1m[2m   43.16 kB[22m[1m[22m[2m │ gzip:   4.67 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36md-85-TOEBH.js                             [39m[1m[2m   43.80 kB[22m[1m[22m[2m │ gzip:   8.47 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mruby-Dw2BHqvy.js                          [39m[1m[2m   45.95 kB[22m[1m[22m[2m │ gzip:   5.68 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mgo-CxLEBnE3.js                            [39m[1m[2m   46.81 kB[22m[1m[22m[2m │ gzip:   5.18 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mapex-D8_7TLub.js                          [39m[1m[2m   46.99 kB[22m[1m[22m[2m │ gzip:   6.77 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcatppuccin-mocha-D87Tk5Gz.js              [39m[1m[2m   47.26 kB[22m[1m[22m[2m │ gzip:   8.00 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcatppuccin-latte-C9dUb6Cb.js              [39m[1m[2m   47.26 kB[22m[1m[22m[2m │ gzip:   8.00 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcatppuccin-frappe-DFWUc33u.js             [39m[1m[2m   47.26 kB[22m[1m[22m[2m │ gzip:   8.02 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcatppuccin-macchiato-DQyhUUbL.js          [39m[1m[2m   47.26 kB[22m[1m[22m[2m │ gzip:   8.01 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mada-bCR0ucgS.js                           [39m[1m[2m   48.08 kB[22m[1m[22m[2m │ gzip:   6.03 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcss-DPfMkruS.js                           [39m[1m[2m   49.02 kB[22m[1m[22m[2m │ gzip:  11.85 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mimba-DGztddWO.js                          [39m[1m[2m   49.93 kB[22m[1m[22m[2m │ gzip:   9.46 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36meverforest-dark-BgDCqdQA.js               [39m[1m[2m   53.75 kB[22m[1m[22m[2m │ gzip:   8.42 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36meverforest-light-C8M2exoo.js              [39m[1m[2m   53.75 kB[22m[1m[22m[2m │ gzip:   8.42 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mwikitext-BhOHFoWU.js                      [39m[1m[2m   55.89 kB[22m[1m[22m[2m │ gzip:   4.76 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mstata-BH5u7GGu.js                         [39m[1m[2m   56.99 kB[22m[1m[22m[2m │ gzip:  12.36 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mhtml-GMplVEZG.js                          [39m[1m[2m   57.25 kB[22m[1m[22m[2m │ gzip:  11.69 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mballerina-BFfxhgS-.js                     [39m[1m[2m   58.69 kB[22m[1m[22m[2m │ gzip:   8.15 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mmarkdown-Cvjx9yec.js                      [39m[1m[2m   59.34 kB[22m[1m[22m[2m │ gzip:   5.64 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mocaml-C0hk2d4L.js                         [39m[1m[2m   62.45 kB[22m[1m[22m[2m │ gzip:   5.02 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mmojo-rZm6bMo-.js                          [39m[1m[2m   69.80 kB[22m[1m[22m[2m │ gzip:   9.27 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mpython-B6aJPvgy.js                        [39m[1m[2m   69.95 kB[22m[1m[22m[2m │ gzip:   9.13 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mc-BIGW1oBm.js                             [39m[1m[2m   72.11 kB[22m[1m[22m[2m │ gzip:  10.51 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mlatex-CWtU0Tv5.js                         [39m[1m[2m   72.64 kB[22m[1m[22m[2m │ gzip:   6.72 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mvyper-CDx5xZoG.js                         [39m[1m[2m   74.65 kB[22m[1m[22m[2m │ gzip:  10.74 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mhack-CaT9iCJl.js                          [39m[1m[2m   80.24 kB[22m[1m[22m[2m │ gzip:  26.21 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mswift-D82vCrfD.js                         [39m[1m[2m   86.69 kB[22m[1m[22m[2m │ gzip:  14.73 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mfortran-free-form-BxgE0vQu.js             [39m[1m[2m   88.97 kB[22m[1m[22m[2m │ gzip:  11.27 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcsharp-COcwbKMJ.js                        [39m[1m[2m   89.69 kB[22m[1m[22m[2m │ gzip:  10.69 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mracket-BqYA7rlc.js                        [39m[1m[2m   92.39 kB[22m[1m[22m[2m │ gzip:  15.02 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mless-B1dDrJ26.js                          [39m[1m[2m   97.63 kB[22m[1m[22m[2m │ gzip:  14.70 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mblade-D4QpJJKB.js                         [39m[1m[2m  104.98 kB[22m[1m[22m[2m │ gzip:  28.20 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mobjective-c-DXmwc3jG.js                   [39m[1m[2m  105.41 kB[22m[1m[22m[2m │ gzip:  23.33 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mphp-Dhbhpdrm.js                           [39m[1m[2m  111.06 kB[22m[1m[22m[2m │ gzip:  28.52 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mindex-DA3N0fFE.js                         [39m[1m[2m  127.36 kB[22m[1m[22m[2m │ gzip:  42.81 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36masciidoc-Ve4PFQV2.js                      [39m[1m[2m  131.53 kB[22m[1m[22m[2m │ gzip:   9.34 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mmdx-Cmh6b_Ma.js                           [39m[1m[2m  136.11 kB[22m[1m[22m[2m │ gzip:  23.35 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mobjective-cpp-CLxacb5B.js                 [39m[1m[2m  171.97 kB[22m[1m[22m[2m │ gzip:  30.62 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36minput-CjjzOhFY.js                         [39m[1m[2m  174.22 kB[22m[1m[22m[2m │ gzip:  55.72 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mjavascript-wDzz0qaB.js                    [39m[1m[2m  174.83 kB[22m[1m[22m[2m │ gzip:  16.51 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mtsx-COt5Ahok.js                           [39m[1m[2m  175.54 kB[22m[1m[22m[2m │ gzip:  16.51 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mjsx-g9-lgVsj.js                           [39m[1m[2m  177.79 kB[22m[1m[22m[2m │ gzip:  16.61 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mtypescript-BPQ3VLAy.js                    [39m[1m[2m  181.08 kB[22m[1m[22m[2m │ gzip:  16.04 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mangular-ts-BwZT4LLn.js                    [39m[1m[2m  183.82 kB[22m[1m[22m[2m │ gzip:  16.63 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mentry.client-ykuVUMf8.js                  [39m[1m[2m  186.73 kB[22m[1m[22m[2m │ gzip:  59.03 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mvue-vine-CQOfvN7w.js                      [39m[1m[2m  190.05 kB[22m[1m[22m[2m │ gzip:  17.98 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mwolfram-lXgVvXCa.js                       [39m[1m[2m  262.39 kB[22m[1m[22m[2m │ gzip:  77.14 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mwasm-CG6Dc4jp.js                          [39m[1m[33m  622.34 kB[39m[22m[2m │ gzip: 230.29 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mcpp-CofmeUqb.js                           [39m[1m[33m  626.08 kB[39m[22m[2m │ gzip:  44.82 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36memacs-lisp-C9XAeP06.js                    [39m[1m[33m  779.85 kB[39m[22m[2m │ gzip: 196.03 kB[22m
+[2mbuild/client/[22m[2massets/[22m[36mmermaid-GHXKKRXX-BvJFkjit.js              [39m[1m[33m1,346.68 kB[39m[22m[2m │ gzip: 408.95 kB[22m
+[32m✓ built in 8.71s[39m
+[36mvite v7.3.3 [32mbuilding ssr environment for production...[36m[39m
+transforming...
+[33mapp/components/ui/sonner.tsx (1:0): Error when using sourcemap for reporting an error: Can't resolve original location of error.[39m
+[32m✓[39m 32 modules transformed.
+rendering chunks...
+[2mbuild/server/[22m[32m.vite/manifest.json               [39m[1m[2m  0.23 kB[22m[1m[22m
+[2mbuild/server/[22m[2massets/[22m[35mserver-build-XNnjlxGf.css  [39m[1m[2m116.78 kB[22m[1m[22m
+[2mbuild/server/[22m[36mindex.js                          [39m[1m[2m 60.11 kB[22m[1m[22m
+
+[32m✓[39m 1 asset cleaned from React Router server build.
+[2mbuild/server/assets/server-build-XNnjlxGf.css[22m
+
+SPA Mode: Generated [1mbuild/client/index.html[22m
+Removing the server build in [32m/home/runner/work/rikkahub/rikkahub/web-ui/build/server[39m due to ssr:false
+[32m✓ built in 731ms[39m
+📦 Starting build output copy...
+   Source: ./build/client
+   Target: ../web/src/main/resources/static
+🧹 Cleaned target directory
+✅ Build output copied successfully!
+
+> Task :web:preBuild
+> Task :web:preDebugBuild
+> Task :web:extractDebugSupportedLocales
+> Task :app:generateDebugLocaleConfig
+> Task :app:packageDebugResources
+> Task :web:processDebugNavigationResources
+> Task :app:processDebugNavigationResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :highlight:javaPreCompileDebug
+> Task :material3:generateDebugResources
+> Task :material3:packageDebugResources
+> Task :material3:parseDebugLocalResources
+> Task :material3:generateDebugRFile
+> Task :document:compileDebugKotlin
+
+> Task :common:compileDebugKotlin
+w: file:///home/runner/work/rikkahub/rikkahub/common/src/main/java/me/rerere/common/http/AcceptLang.kt:61:28 'field locale: Locale!' is deprecated. Deprecated in Java.
+w: file:///home/runner/work/rikkahub/rikkahub/common/src/main/java/me/rerere/common/http/JsonExpression.kt:359:13 'when' is exhaustive so 'else' is redundant here.
+
+> Task :common:compileDebugJavaWithJavac NO-SOURCE
+> Task :common:bundleLibCompileToJarDebug
+> Task :document:compileDebugJavaWithJavac
+> Task :document:bundleLibCompileToJarDebug
+> Task :material3:javaPreCompileDebug
 > Task :oauth:generateDebugResources
 > Task :oauth:packageDebugResources
 > Task :oauth:parseDebugLocalResources
 > Task :oauth:generateDebugRFile
-> Task :app:processDebugNavigationResources
-> Task :app:parseDebugLocalResources
-> Task :app:generateDebugRFile
+> Task :highlight:compileDebugKotlin
+> Task :highlight:compileDebugJavaWithJavac NO-SOURCE
+> Task :highlight:bundleLibCompileToJarDebug
 > Task :oauth:javaPreCompileDebug
 > Task :search:generateDebugResources
 > Task :search:packageDebugResources
@@ -22,22 +127,6 @@ e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkah
 > Task :speech:packageDebugResources
 > Task :speech:parseDebugLocalResources
 > Task :speech:generateDebugRFile
-> Task :oauth:compileDebugKotlin
-> Task :oauth:compileDebugJavaWithJavac NO-SOURCE
-> Task :oauth:bundleLibCompileToJarDebug
-> Task :speech:javaPreCompileDebug
-> Task :videogen:generateDebugResources
-> Task :videogen:packageDebugResources
-> Task :videogen:parseDebugLocalResources
-> Task :videogen:generateDebugRFile
-> Task :videogen:compileDebugKotlin
-> Task :videogen:javaPreCompileDebug
-> Task :videogen:compileDebugJavaWithJavac NO-SOURCE
-> Task :videogen:bundleLibCompileToJarDebug
-> Task :web:generateDebugResources
-> Task :web:packageDebugResources
-> Task :web:parseDebugLocalResources
-> Task :web:generateDebugRFile
 
 > Task :material3:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities/kotlin/dynamiccolor/ColorSpec2025.kt:904:37 Unnecessary non-null assertion (!!) on a non-null receiver of type 'DynamicColor'.
@@ -46,16 +135,31 @@ w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities
 
 > Task :material3:compileDebugJavaWithJavac NO-SOURCE
 > Task :material3:bundleLibCompileToJarDebug
+> Task :speech:javaPreCompileDebug
+> Task :videogen:generateDebugResources
+> Task :videogen:packageDebugResources
+> Task :videogen:parseDebugLocalResources
+> Task :videogen:generateDebugRFile
+> Task :oauth:compileDebugKotlin
+> Task :oauth:compileDebugJavaWithJavac NO-SOURCE
+> Task :oauth:bundleLibCompileToJarDebug
+> Task :videogen:javaPreCompileDebug
+> Task :web:generateDebugResources
+> Task :web:packageDebugResources
+> Task :web:parseDebugLocalResources
+> Task :web:generateDebugRFile
+> Task :web:compileDebugKotlin
 > Task :web:javaPreCompileDebug
+> Task :web:compileDebugJavaWithJavac NO-SOURCE
+> Task :web:bundleLibCompileToJarDebug
 > Task :workspace:generateDebugResources
 > Task :workspace:packageDebugResources
 > Task :workspace:parseDebugLocalResources
 > Task :workspace:generateDebugRFile
-> Task :web:compileDebugKotlin
-> Task :web:compileDebugJavaWithJavac NO-SOURCE
-> Task :web:bundleLibCompileToJarDebug
+> Task :videogen:compileDebugKotlin
+> Task :videogen:compileDebugJavaWithJavac NO-SOURCE
+> Task :videogen:bundleLibCompileToJarDebug
 > Task :workspace:javaPreCompileDebug
-> Task :ai:compileDebugKotlin
 > Task :app:javaPreCompileDebug
 > Task :ai:generateDebugAssets UP-TO-DATE
 > Task :ai:mergeDebugAssets
@@ -80,17 +184,11 @@ w: file:///home/runner/work/rikkahub/rikkahub/material3/material-color-utilities
 > Task :web:mergeDebugAssets
 > Task :workspace:generateDebugAssets UP-TO-DATE
 > Task :workspace:mergeDebugAssets
-> Task :app:mergeDebugAssets
-> Task :app:compressDebugAssets
 > Task :workspace:compileDebugKotlin
 > Task :workspace:compileDebugJavaWithJavac NO-SOURCE
 > Task :workspace:bundleLibCompileToJarDebug
-> Task :common:processDebugJavaRes
-> Task :document:processDebugJavaRes
-> Task :highlight:processDebugJavaRes
-> Task :material3:processDebugJavaRes
-> Task :oauth:processDebugJavaRes
-> Task :videogen:processDebugJavaRes
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
 
 > Task :speech:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/asr/providers/MiMoASRController.kt:256:41 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
@@ -103,8 +201,22 @@ w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts
 w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/SystemTTSProvider.kt:112:16 Unnecessary safe call on a non-null receiver of type 'TextToSpeech'.
 w: file:///home/runner/work/rikkahub/rikkahub/speech/src/main/java/me/rerere/tts/provider/providers/XAITTSProvider.kt:50:42 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
 
+> Task :common:processDebugJavaRes
+> Task :document:processDebugJavaRes
+> Task :highlight:processDebugJavaRes
+> Task :material3:processDebugJavaRes
+> Task :oauth:processDebugJavaRes
+> Task :videogen:processDebugJavaRes
+> Task :speech:compileDebugJavaWithJavac NO-SOURCE
+> Task :speech:bundleLibCompileToJarDebug
 > Task :web:processDebugJavaRes
+> Task :speech:processDebugJavaRes
 > Task :workspace:processDebugJavaRes
+> Task :app:desugarDebugFileDependencies
+> Task :web:bundleLibRuntimeToDirDebug
+> Task :document:bundleLibRuntimeToDirDebug
+> Task :app:generateDebugGlobalSynthetics
+> Task :highlight:bundleLibRuntimeToDirDebug
 
 > Task :ai:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/provider/providers/claude/ClaudeProvider.kt:258:78 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
@@ -131,21 +243,18 @@ w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/U
 w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/ui/UIMessagePart.kt:141:20 'constructor(toolCallId: String, toolName: String, arguments: String, approvalState: ToolApprovalState = ..., metadata: JsonObject? = ...): UIMessagePart.ToolCall' is deprecated. Use UIMessagePart.Tool instead.
 w: file:///home/runner/work/rikkahub/rikkahub/ai/src/main/java/me/rerere/ai/util/ErrorParser.kt:46:9 'when' is exhaustive so 'else' is redundant here.
 
-> Task :speech:compileDebugJavaWithJavac NO-SOURCE
-> Task :speech:bundleLibCompileToJarDebug
-> Task :speech:processDebugJavaRes
-> Task :app:desugarDebugFileDependencies
-> Task :web:bundleLibRuntimeToDirDebug
 > Task :ai:compileDebugJavaWithJavac NO-SOURCE
 > Task :ai:bundleLibCompileToJarDebug
 > Task :ai:processDebugJavaRes
 > Task :ai:bundleLibRuntimeToDirDebug
-> Task :app:generateDebugGlobalSynthetics
-> Task :document:bundleLibRuntimeToDirDebug
-> Task :highlight:bundleLibRuntimeToDirDebug
-> Task :app:checkDebugDuplicateClasses
 > Task :speech:bundleLibRuntimeToDirDebug
+> Task :app:checkDebugDuplicateClasses
 > Task :videogen:bundleLibRuntimeToDirDebug
+> Task :common:bundleLibRuntimeToDirDebug
+> Task :material3:bundleLibRuntimeToDirDebug
+> Task :workspace:bundleLibRuntimeToDirDebug
+> Task :oauth:bundleLibRuntimeToDirDebug
+> Task :ai:mapDebugSourceSetPaths
 
 > Task :search:compileDebugKotlin
 w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/GrokSearchService.kt:136:74 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
@@ -159,149 +268,40 @@ w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/sea
 w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/ZhipuSearchService.kt:75:44 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
 w: file:///home/runner/work/rikkahub/rikkahub/search/src/main/java/me/rerere/search/ZhipuSearchService.kt:95:38 Unnecessary safe call on a non-null receiver of type 'ResponseBody'.
 
-> Task :search:compileDebugJavaWithJavac NO-SOURCE
-> Task :search:bundleLibCompileToJarDebug
-> Task :search:processDebugJavaRes
-> Task :search:bundleLibRuntimeToDirDebug
-> Task :common:bundleLibRuntimeToDirDebug
-> Task :material3:bundleLibRuntimeToDirDebug
-> Task :workspace:bundleLibRuntimeToDirDebug
-> Task :oauth:bundleLibRuntimeToDirDebug
-> Task :ai:mapDebugSourceSetPaths
 > Task :ai:compileDebugLibraryResources
+> Task :search:compileDebugJavaWithJavac NO-SOURCE
 > Task :ai:writeDebugAarMetadata
+> Task :search:processDebugJavaRes
+> Task :search:bundleLibCompileToJarDebug
 > Task :common:writeDebugAarMetadata
+> Task :search:bundleLibRuntimeToDirDebug
 > Task :document:writeDebugAarMetadata
 > Task :highlight:writeDebugAarMetadata
 > Task :material3:writeDebugAarMetadata
 > Task :oauth:writeDebugAarMetadata
-> Task :search:writeDebugAarMetadata
-> Task :speech:writeDebugAarMetadata
-> Task :videogen:writeDebugAarMetadata
-> Task :web:writeDebugAarMetadata
-> Task :workspace:writeDebugAarMetadata
-> Task :app:checkDebugAarMetadata
-> Task :app:compileDebugNavigationResources
 > Task :app:mergeLibDexDebug
-> Task :app:createDebugCompatibleScreenManifests
-> Task :ai:extractDeepLinksDebug
-> Task :ai:processDebugManifest
-> Task :app:extractDeepLinksDebug
-> Task :common:extractDeepLinksDebug
-> Task :common:processDebugManifest
-> Task :document:extractDeepLinksDebug
-> Task :document:processDebugManifest
-> Task :highlight:extractDeepLinksDebug
-> Task :highlight:processDebugManifest
-> Task :material3:extractDeepLinksDebug
-> Task :material3:processDebugManifest
-> Task :oauth:extractDeepLinksDebug
-> Task :oauth:processDebugManifest
-> Task :search:extractDeepLinksDebug
-> Task :search:processDebugManifest
-> Task :speech:extractDeepLinksDebug
-> Task :speech:processDebugManifest
-> Task :videogen:extractDeepLinksDebug
-> Task :videogen:processDebugManifest
-> Task :web:extractDeepLinksDebug
-> Task :web:processDebugManifest
-> Task :workspace:extractDeepLinksDebug
-> Task :workspace:processDebugManifest
-> Task :app:processDebugMainManifest
-> Task :app:processDebugManifest
-> Task :app:processDebugManifestForPackage
-> Task :common:mapDebugSourceSetPaths
-> Task :common:compileDebugLibraryResources
-> Task :document:mapDebugSourceSetPaths
-> Task :document:compileDebugLibraryResources
-> Task :highlight:mapDebugSourceSetPaths
-> Task :highlight:compileDebugLibraryResources
-> Task :material3:mapDebugSourceSetPaths
-> Task :material3:compileDebugLibraryResources
-> Task :oauth:mapDebugSourceSetPaths
-> Task :oauth:compileDebugLibraryResources
-> Task :search:mapDebugSourceSetPaths
-> Task :search:compileDebugLibraryResources
-> Task :speech:mapDebugSourceSetPaths
-> Task :speech:compileDebugLibraryResources
-> Task :videogen:mapDebugSourceSetPaths
-> Task :videogen:compileDebugLibraryResources
-> Task :web:mapDebugSourceSetPaths
-> Task :web:compileDebugLibraryResources
-> Task :workspace:mapDebugSourceSetPaths
-> Task :workspace:compileDebugLibraryResources
-> Task :ai:mergeDebugJniLibFolders
-> Task :ai:mergeDebugNativeLibs NO-SOURCE
-> Task :ai:copyDebugJniLibsProjectOnly
-> Task :app:mergeDebugJniLibFolders
-> Task :common:mergeDebugJniLibFolders
-> Task :common:mergeDebugNativeLibs NO-SOURCE
-> Task :common:copyDebugJniLibsProjectOnly
-> Task :document:mergeDebugJniLibFolders
-> Task :document:mergeDebugNativeLibs
-> Task :document:copyDebugJniLibsProjectOnly
-> Task :highlight:mergeDebugJniLibFolders
-> Task :highlight:mergeDebugNativeLibs NO-SOURCE
-> Task :highlight:copyDebugJniLibsProjectOnly
-> Task :material3:mergeDebugJniLibFolders
-> Task :material3:mergeDebugNativeLibs NO-SOURCE
-> Task :material3:copyDebugJniLibsProjectOnly
-> Task :oauth:mergeDebugJniLibFolders
-> Task :oauth:mergeDebugNativeLibs NO-SOURCE
-> Task :oauth:copyDebugJniLibsProjectOnly
-> Task :search:mergeDebugJniLibFolders
-> Task :search:mergeDebugNativeLibs NO-SOURCE
-> Task :search:copyDebugJniLibsProjectOnly
-> Task :speech:mergeDebugJniLibFolders
-> Task :speech:mergeDebugNativeLibs NO-SOURCE
-> Task :speech:copyDebugJniLibsProjectOnly
-> Task :videogen:mergeDebugJniLibFolders
-> Task :videogen:mergeDebugNativeLibs NO-SOURCE
-> Task :videogen:copyDebugJniLibsProjectOnly
-> Task :web:mergeDebugJniLibFolders
-> Task :web:mergeDebugNativeLibs NO-SOURCE
-> Task :web:copyDebugJniLibsProjectOnly
-
-> Task :workspace:configureCMakeDebug[arm64-v8a]
-Checking the license for package CMake 3.22.1 in /usr/local/lib/android/sdk/licenses
-License for package CMake 3.22.1 accepted.
-Preparing "Install CMake 3.22.1 v.3.22.1".
-
-> Task :app:mergeDebugResources
-
-> Task :workspace:configureCMakeDebug[arm64-v8a]
-"Install CMake 3.22.1 v.3.22.1" ready.
-Installing CMake 3.22.1 in /usr/local/lib/android/sdk/cmake/3.22.1
-"Install CMake 3.22.1 v.3.22.1" complete.
-"Install CMake 3.22.1 v.3.22.1" finished.
-
+> Task :speech:writeDebugAarMetadata
+> Task :search:writeDebugAarMetadata
+> Task :web:writeDebugAarMetadata
+> Task :videogen:writeDebugAarMetadata
+> Task :workspace:writeDebugAarMetadata
 > Task :app:mergeExtDexDebug
 > Task :app:kspDebugKotlin
-> Task :app:processDebugResources
-> Task :workspace:configureCMakeDebug[armeabi-v7a]
-> Task :workspace:buildCMakeDebug[arm64-v8a]
-> Task :workspace:buildCMakeDebug[armeabi-v7a]
-> Task :workspace:configureCMakeDebug[x86]
-> Task :workspace:configureCMakeDebug[x86_64]
-> Task :workspace:buildCMakeDebug[x86]
-> Task :workspace:mergeDebugJniLibFolders
-> Task :workspace:buildCMakeDebug[x86_64]
-> Task :workspace:mergeDebugNativeLibs
-> Task :workspace:copyDebugJniLibsProjectOnly
-> Task :app:validateSigningDebug
-> Task :app:writeDebugAppMetadata
-> Task :app:writeDebugSigningConfigVersions
-> Task :app:mergeDebugNativeLibs
-> Task :app:stripDebugDebugSymbols
+> Task :app:compileDebugNavigationResources
+> Task :app:checkDebugAarMetadata
+> Task :app:createDebugCompatibleScreenManifests
+> Task :ai:extractDeepLinksDebug
+> Task :app:mergeDebugResources
 > Task :app:compileDebugKotlin
+> Task :ai:processDebugManifest
+
+> Task :app:compileDebugKotlin FAILED
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:119:44 Unresolved reference 'SettingSecurityPage'.
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:500:33 Unresolved reference 'SettingSecurityPage'.
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:803:17 Conflicting declarations:
 data object SettingSecurity : Screen
 e: file:///home/runner/work/rikkahub/rikkahub/app/src/main/java/me/rerere/rikkahub/RouteActivity.kt:806:17 Conflicting declarations:
 data object SettingSecurity : Screen
-
-> Task :app:compileDebugKotlin FAILED
 
 [Incubating] Problems report is available at: file:///home/runner/work/rikkahub/rikkahub/build/reports/problems/problems-report.html
 
@@ -502,6 +502,6 @@ Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilat
 	... 2 more
 
 
-BUILD FAILED in 6m 52s
-262 actionable tasks: 262 executed
+BUILD FAILED in 5m 21s
+179 actionable tasks: 179 executed
 Configuration cache entry stored.

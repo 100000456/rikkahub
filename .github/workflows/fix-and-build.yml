@@ -23,20 +23,57 @@ jobs:
           F=app/src/main/java/me/rerere/rikkahub/RouteActivity.kt
           DUP=$(grep -c 'data object SettingSecurity : Screen' "$F" || true)
           echo "SettingSecurity declarations before repair: ${DUP}"
-          if [ "${DUP:-0}" -gt 1 ]; then
-            git checkout 283e3f70b965c691b380ebf76149009a1caa2173 -- "$F"
-            echo "RouteActivity restored from 283e3f70"
+          if [ "${DUP:-0}" != "1" ]; then
+            git checkout 48a892b524fa0b5e81ed5dd2336a63c6a4e3fb08 -- "$F"
+            echo "RouteActivity restored from 48a892b5"
           fi
-          echo "SettingSecurity declarations after repair: $(grep -c 'data object SettingSecurity : Screen' "$F" || true)"
+          sed -i 's/SettingSecurityPage/SecuritySettingPage/g' "$F"
           python3 - <<'PY'
           import io
-          p = 'ci/patch_security.py'
-          src = io.open(p, encoding='utf-8').read()
+          route = 'app/src/main/java/me/rerere/rikkahub/RouteActivity.kt'
+          lines = io.open(route, encoding='utf-8').read().split('\n')
+          count = sum(1 for line in lines if line.strip() == 'data object SettingSecurity : Screen')
+          if count != 1:
+              out = []
+              seen = False
+              for line in lines:
+                  if line.strip() == 'data object SettingSecurity : Screen':
+                      if seen:
+                          if out and out[-1].strip() == '@Serializable':
+                              out.pop()
+                          continue
+                      seen = True
+                  out.append(line)
+              lines = out
+              out = []
+              seen = False
+              i = 0
+              while i < len(lines):
+                  if 'entry<Screen.SettingSecurity>' in lines[i]:
+                      j = i
+                      while j < len(lines) and lines[j].strip() != '}':
+                          j += 1
+                      if seen:
+                          i = j + 1
+                          continue
+                      seen = True
+                      out.extend(lines[i:j + 1])
+                      i = j + 1
+                      continue
+                  out.append(lines[i])
+                  i += 1
+              lines = out
+              io.open(route, 'w', encoding='utf-8').write('\n'.join(lines))
+              print('route file de-duplicated')
+          final = io.open(route, encoding='utf-8').read().split('\n')
+          print('SettingSecurity declarations now: %d' % sum(1 for line in final if line.strip() == 'data object SettingSecurity : Screen'))
+          patcher = 'ci/patch_security.py'
+          src = io.open(patcher, encoding='utf-8').read()
           if 's = read(ROUTE)' in src:
               start = src.index('s = read(ROUTE)')
               end = src.index("DONE.append('route')")
               src = src[:start] + "print('4. route already in tree, skip')\n" + src[end:]
-              io.open(p, 'w', encoding='utf-8').write(src)
+              io.open(patcher, 'w', encoding='utf-8').write(src)
               print('route step neutralized')
           else:
               print('route step already neutralized')
@@ -174,9 +211,9 @@ jobs:
           name: Debug Build
           prerelease: true
           body: |
-            自用调试包，来源 commit ${{ github.sha }}
+            自制调制包，来源 commit ${{ github.sha }}
 
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-20T22:35+08:00 修路由重复入口，重跑下载格式那版
+# rebuild marker: 2026-09-21T00:05+08:00 路由文件换成 48a892b5 那一版

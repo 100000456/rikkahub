@@ -29,6 +29,12 @@ jobs:
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)
           grep -q 'PATCH_OK' .ci-patch-release.log
 
+      - name: Restore Android debug keystore
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       - name: Align security settings page reference
         run: |
           set -u
@@ -187,4 +193,4 @@ jobs:
             基于 RikkaHub 源码，包名和签名跟开发版一致，可以直接覆盖安装，数据不丢。
           files: app/build/outputs/apk/release/*.apk
 
-# rebuild marker: 2026-09-19T00:20+08:00 出正式版（对齐安全设置页引用名，可覆盖安装）
+# rebuild marker: 2026-09-21T00:50+08:00 正式版：固定签名缓存 + 能挑格式的发文件

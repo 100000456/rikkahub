@@ -17,6 +17,36 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Repair sources before build (route file + security patch script)
+        run: |
+          set -e
+          F=app/src/main/java/me/rerere/rikkahub/RouteActivity.kt
+          DUP=$(grep -c 'data object SettingSecurity : Screen' "$F" || true)
+          echo "SettingSecurity declarations before repair: ${DUP}"
+          if [ "${DUP:-0}" -gt 1 ]; then
+            git checkout 283e3f70b965c691b380ebf76149009a1caa2173 -- "$F"
+            echo "RouteActivity restored from 283e3f70"
+          fi
+          echo "SettingSecurity declarations after repair: $(grep -c 'data object SettingSecurity : Screen' "$F" || true)"
+          python3 - <<'PY'
+          import io
+          p = 'ci/patch_security.py'
+          src = io.open(p, encoding='utf-8').read()
+          if 's = read(ROUTE)' in src:
+              start = src.index('s = read(ROUTE)')
+              end = src.index("DONE.append('route')")
+              src = src[:start] + "print('4. route already in tree, skip')\n" + src[end:]
+              io.open(p, 'w', encoding='utf-8').write(src)
+              print('route step neutralized')
+          else:
+              print('route step already neutralized')
+          PY
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -f "$F" ci/patch_security.py
+          git commit -m "修复：路由文件恢复干净版，安全设置补丁脚本不再重复插入口" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)
+
       - name: Patch proactive message pending-intent nullability
         run: |
           set -e
@@ -149,4 +179,4 @@ jobs:
             基于 RikkaHub 源码，debug 签名，包名带 .debug 后缀，可与橘瓣共存。
           files: app/build/outputs/apk/debug/*.apk
 
-# rebuild marker: 2026-09-20T22:15+08:00 下载可以直接挑 Word 或 txt
+# rebuild marker: 2026-09-20T22:35+08:00 修路由重复入口，重跑下载格式那版

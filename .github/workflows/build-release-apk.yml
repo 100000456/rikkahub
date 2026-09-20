@@ -54,6 +54,22 @@ jobs:
           git commit -m "fix: 安全设置页引用名对齐（SettingSecurityPage -> SecuritySettingPage）" || true
           git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)
 
+      - name: Set app name to Tuzi
+        run: |
+          set -u
+          for f in app/src/main/res/values/strings.xml app/src/main/res/values-*/strings.xml; do
+            if [ -f "$f" ]; then
+              sed -i -E 's#<string name="app_name">[^<]*</string>#<string name="app_name">Tuzi</string>#' "$f"
+            fi
+          done
+          echo "--- app_name now ---"
+          grep -rn 'name="app_name"' app/src/main/res || true
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add -A
+          git commit -m "应用名改成 Tuzi" || true
+          git push origin HEAD:master || (git pull --rebase origin master && git push origin HEAD:master)
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -193,4 +209,4 @@ jobs:
             基于 RikkaHub 源码，包名和签名跟开发版一致，可以直接覆盖安装，数据不丢。
           files: app/build/outputs/apk/release/*.apk
 
-# rebuild marker: 2026-09-21T00:50+08:00 正式版：固定签名缓存 + 能挑格式的发文件
+# rebuild marker: 2026-09-21T07:45+08:00 正式版：应用名改 Tuzi

@@ -82,6 +82,8 @@ class LocalTools(
 
     val avatarTool by lazy { buildAvatarTool(context, settingsStore) }
 
+    val voiceCallTool by lazy { buildVoiceCallTool(eventBus) }
+
     private val sshHostRepository by lazy {
         me.rerere.rikkahub.data.repository.SshHostRepository(context)
     }
@@ -164,6 +166,9 @@ class LocalTools(
         }
         if (options.contains(LocalToolOption.ExploreNearby)) {
             tools.add(exploreNearbyTool)
+        }
+        if (options.contains(LocalToolOption.VoiceCall)) {
+            tools.add(voiceCallTool)
         }
         if (options.contains(LocalToolOption.Workflows)) {
             val known = tools.map { it.name }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -12,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import me.rerere.asr.ASRController
 import me.rerere.asr.ASRProviderSetting
 import me.rerere.asr.ASRState
@@ -24,6 +26,8 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.datastore.getSelectedASRProvider
 import okhttp3.OkHttpClient
 import org.koin.compose.koinInject
+
+private const val ASR_TAG = "CustomAsrState"
 
 @Composable
 fun rememberCustomAsrState(): CustomAsrState {
@@ -50,6 +54,28 @@ fun rememberCustomAsrState(): CustomAsrState {
     return asrState
 }
 
+/**
+ * 非 Compose 版本的工厂函数，供 Service 等非 UI 场景创建独立的 ASR 实例。
+ *
+ * 这是个 suspend 函数，会真正挂起等待 provider 设置完成后才返回实例。
+ * 如果改成“发射后不管”的 launch，调用方拿到的是 controller 还是 null 的半成品，
+ * 紧接着调 start() 就会静默失败，录音永远没真正启动。
+ */
+suspend fun createCustomAsrState(
+    context: Context,
+    httpClient: OkHttpClient,
+    settingsStore: SettingsStore,
+): CustomAsrState {
+    val asrState = CustomAsrStateImpl(context.applicationContext, httpClient)
+    try {
+        val settings = settingsStore.settingsFlow.first()
+        asrState.updateProvider(settings.getSelectedASRProvider())
+    } catch (e: Exception) {
+        Log.e(ASR_TAG, "createCustomAsrState: 初始化 ASR provider 失败", e)
+    }
+    return asrState
+}
+
 interface CustomAsrState {
     val state: StateFlow<ASRState>
     fun start(onTranscriptChange: (String) -> Unit)
@@ -57,7 +83,7 @@ interface CustomAsrState {
     fun cleanup()
 }
 
-private class CustomAsrStateImpl(
+internal class CustomAsrStateImpl(
     private val context: Context,
     private val httpClient: OkHttpClient
 ) : CustomAsrState {
@@ -79,57 +105,97 @@ private class CustomAsrStateImpl(
         get() = controller?.state ?: idleState
 
     fun updateProvider(provider: ASRProviderSetting?) {
-        controller?.dispose()
+        try {
+            controller?.dispose()
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "updateProvider: 释放旧 controller 失败", e)
+        }
         controller = provider?.let { createController(it) }
         if (controller == null) {
             idleState.value = ASRState()
+            Log.w(ASR_TAG, "updateProvider: provider 为空或不合法, controller 未创建")
         }
     }
 
     override fun start(onTranscriptChange: (String) -> Unit) {
-        val result = audioManager.requestAudioFocus(audioFocusRequest)
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            controller?.start(onTranscriptChange)
+        if (controller == null) {
+            Log.e(ASR_TAG, "start: controller 为 null, 无法启动录音")
+            throw IllegalStateException("ASR provider 未配置或 API Key 为空，无法启动语音识别")
+        }
+        try {
+            val result = audioManager.requestAudioFocus(audioFocusRequest)
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                controller?.start(onTranscriptChange)
+            } else {
+                Log.w(ASR_TAG, "start: requestAudioFocus 未获得焦点, result=$result")
+                throw IllegalStateException("无法获取麦克风焦点 (result=$result)")
+            }
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "start: 启动录音失败", e)
+            throw e
         }
     }
 
     override fun stop() {
-        controller?.stop()
-        audioManager.abandonAudioFocusRequest(audioFocusRequest)
+        try {
+            controller?.stop()
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "stop: 停止录音失败", e)
+        }
+        try {
+            audioManager.abandonAudioFocusRequest(audioFocusRequest)
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "stop: abandonAudioFocusRequest 失败", e)
+        }
     }
 
     override fun cleanup() {
-        controller?.dispose()
+        try {
+            controller?.dispose()
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "cleanup: dispose controller 失败", e)
+        }
         controller = null
-        audioManager.abandonAudioFocusRequest(audioFocusRequest)
+        try {
+            audioManager.abandonAudioFocusRequest(audioFocusRequest)
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "cleanup: abandonAudioFocusRequest 失败", e)
+        }
     }
 
     private fun createController(provider: ASRProviderSetting): ASRController? {
-        return when (provider) {
-            is ASRProviderSetting.OpenAIRealtime -> {
-                if (provider.apiKey.isBlank()) return null
-                OpenAIRealtimeASRController(context, httpClient, provider)
-            }
+        return try {
+            when (provider) {
+                is ASRProviderSetting.OpenAIRealtime -> {
+                    if (provider.apiKey.isBlank()) return null
+                    OpenAIRealtimeASRController(context, httpClient, provider)
+                }
 
-            is ASRProviderSetting.DashScope -> {
-                if (provider.apiKey.isBlank()) return null
-                DashScopeASRController(context, httpClient, provider)
-            }
+                is ASRProviderSetting.DashScope -> {
+                    if (provider.apiKey.isBlank()) return null
+                    DashScopeASRController(context, httpClient, provider)
+                }
 
-            is ASRProviderSetting.Volcengine -> {
-                if (provider.apiKey.isBlank()) return null
-                VolcengineASRController(context, httpClient, provider)
-            }
+                is ASRProviderSetting.Volcengine -> {
+                    if (provider.apiKey.isBlank()) return null
+                    VolcengineASRController(context, httpClient, provider)
+                }
 
-            is ASRProviderSetting.MiMo -> {
-                if (provider.apiKey.isBlank()) return null
-                MiMoASRController(context, httpClient, provider)
-            }
+                is ASRProviderSetting.MiMo -> {
+                    if (provider.apiKey.isBlank()) return null
+                    MiMoASRController(context, httpClient, provider)
+                }
 
-            is ASRProviderSetting.Step -> {
-                if (provider.apiKey.isBlank()) return null
-                StepASRController(context, httpClient, provider)
+                is ASRProviderSetting.Step -> {
+                    if (provider.apiKey.isBlank()) return null
+                    StepASRController(context, httpClient, provider)
+                }
             }
+        } catch (e: Exception) {
+            Log.e(ASR_TAG, "createController: 创建 ASRController 失败", e)
+            null
         }
     }
 }

@@ -7,6 +7,12 @@ sealed class AppEvent {
     data class Speak(val text: String) : AppEvent()
     data object OpenUsageAccessSettings : AppEvent()
 
+    /**
+     * AI 在文字聊天中主动请求发起语音通话。
+     * 由 request_voice_call 工具发出, RouteActivity 监听后弹出来电界面。
+     */
+    data object RequestVoiceCall : AppEvent()
+
     /** 聊天生成过程中的流式更新，由 ChatNotificationManager 消费用于 Live Update 通知。 */
     data class ChatGenerationUpdate(
         val conversationId: Uuid,

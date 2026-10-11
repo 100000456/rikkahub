@@ -104,4 +104,8 @@ sealed class LocalToolOption {
     @Serializable
     @SerialName("workflows")
     data object Workflows : LocalToolOption()
+
+    @Serializable
+    @SerialName("voice_call")
+    data object VoiceCall : LocalToolOption()
 }

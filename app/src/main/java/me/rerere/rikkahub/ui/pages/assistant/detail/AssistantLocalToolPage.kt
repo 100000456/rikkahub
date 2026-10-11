@@ -226,6 +226,20 @@ private fun AssistantLocalToolContent(
                     )
                 }
             )
+            item(
+                headlineContent = {
+                    Text("语音通话")
+                },
+                supportingContent = {
+                    Text("让 AI 主动给你打个电话，接起来就能直接说话")
+                },
+                trailingContent = {
+                    Switch(
+                        checked = assistant.localTools.contains(LocalToolOption.VoiceCall),
+                        onCheckedChange = { toggleLocalTool(LocalToolOption.VoiceCall, it) }
+                    )
+                }
+            )
         }
     }
 }

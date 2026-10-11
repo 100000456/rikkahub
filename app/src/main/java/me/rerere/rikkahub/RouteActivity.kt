@@ -58,6 +58,7 @@ import com.dokar.sonner.Toaster
 import com.dokar.sonner.rememberToasterState
 import kotlinx.serialization.Serializable
 import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.db.DatabaseMigrationTracker
 import me.rerere.rikkahub.data.db.MigrationState
 import me.rerere.rikkahub.data.event.AppEvent
@@ -68,6 +69,7 @@ import me.rerere.rikkahub.plugin.ui.PluginFolderPage
 import me.rerere.rikkahub.plugin.ui.PluginManagePage
 import me.rerere.rikkahub.plugin.ui.PluginUIDeclarativePage
 import me.rerere.rikkahub.plugin.webview.PluginWebViewPage
+import me.rerere.rikkahub.service.VoiceCallService
 import me.rerere.rikkahub.ui.activity.SafeModeActivity
 import me.rerere.rikkahub.ui.components.ui.TTSController
 import me.rerere.rikkahub.ui.context.LocalASRState
@@ -135,6 +137,8 @@ import me.rerere.rikkahub.ui.pages.setting.SettingWebPage
 import me.rerere.rikkahub.ui.pages.share.handler.ShareHandlerPage
 import me.rerere.rikkahub.ui.pages.stats.StatsPage
 import me.rerere.rikkahub.ui.pages.translator.TranslatorPage
+import me.rerere.rikkahub.ui.pages.voice.IncomingCallPage
+import me.rerere.rikkahub.ui.pages.voice.VoiceCallPage
 import me.rerere.rikkahub.ui.pages.webview.WebViewPage
 import me.rerere.rikkahub.ui.theme.LocalDarkMode
 import me.rerere.rikkahub.ui.theme.RikkahubTheme
@@ -237,7 +241,8 @@ class RouteActivity : ComponentActivity() {
             Intent.ACTION_PROCESS_TEXT -> Screen.ShareHandler(
                 text = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)?.toString().orEmpty(),
             )
-            else -> intent.getStringExtra("conversationId")?.let { Screen.Chat(it) }
+            else -> intent.getStringExtra("openVoiceCallConversationId")?.let { Screen.VoiceCall(it) }
+                ?: intent.getStringExtra("conversationId")?.let { Screen.Chat(it) }
         }
         if (destination != null && backStack.lastOrNull() != destination) {
             backStack.add(destination)
@@ -257,6 +262,16 @@ class RouteActivity : ComponentActivity() {
                 when (event) {
                     is AppEvent.Speak -> tts.speak(event.text)
                     is AppEvent.OpenUsageAccessSettings -> this@RouteActivity.openUsageAccessSettings()
+                    is AppEvent.RequestVoiceCall -> {
+                        // AI 主动来电：正在通话中就不弹，能找到当前聊天对话才弹
+                        val stack = navStack
+                        val chat = stack?.lastOrNull { it is Screen.Chat } as? Screen.Chat
+                        if (stack != null && chat != null &&
+                            VoiceCallService.activeConversationId.value == null
+                        ) {
+                            stack.add(Screen.IncomingCall(chat.id))
+                        }
+                    }
                     is AppEvent.ChatGenerationUpdate -> Unit // 由 ChatNotificationManager 消费
                     is AppEvent.ChatGenerationEnded -> Unit // 由 ChatNotificationManager 消费
                 }
@@ -499,6 +514,26 @@ class RouteActivity : ComponentActivity() {
                                 SecuritySettingPage()
                             }
 
+                            entry<Screen.VoiceCall> { key ->
+                                VoiceCallPage(
+                                    conversationId = Uuid.parse(key.conversationId),
+                                    onBack = { backStack.removeLastOrNull() }
+                                )
+                            }
+
+                            entry<Screen.IncomingCall> { key ->
+                                val currentSettings = LocalSettings.current
+                                IncomingCallPage(
+                                    conversationId = key.conversationId,
+                                    assistantName = currentSettings.getCurrentAssistant().name,
+                                    onStartCall = {
+                                        backStack.removeLastOrNull()
+                                        backStack.add(Screen.VoiceCall(key.conversationId))
+                                    },
+                                    onDecline = { backStack.removeLastOrNull() }
+                                )
+                            }
+
                             entry<Screen.SettingQqBot> {
                                 SettingQqBotPage()
                             }
@@ -626,16 +661,6 @@ class RouteActivity : ComponentActivity() {
                             }
                         }
                     )
-                    if (BuildConfig.DEBUG) {
-                        Text(
-                            text = "[开发模式]",
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 4.dp),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                        )
-                    }
                     AnimatedVisibility(
                         visible = migrationState is MigrationState.Migrating,
                         enter = fadeIn(),
@@ -796,6 +821,12 @@ sealed interface Screen : NavKey {
 
     @Serializable
     data object SettingSecurity : Screen
+
+    @Serializable
+    data class VoiceCall(val conversationId: String) : Screen
+
+    @Serializable
+    data class IncomingCall(val conversationId: String) : Screen
 
     @Serializable
     data object SettingQqBot : Screen

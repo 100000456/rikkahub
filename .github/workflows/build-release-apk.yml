@@ -209,4 +209,4 @@ jobs:
             基于 RikkaHub 源码，包名和签名跟开发版一致，可以直接覆盖安装，数据不丢。
           files: app/build/outputs/apk/release/*.apk
 
-# rebuild marker: 2026-10-11T10:35+08:00 正式版重编：去掉开发模式红字
+# rebuild marker: 2026-10-11T23:45+08:00 语音通话搬完，正式版重编

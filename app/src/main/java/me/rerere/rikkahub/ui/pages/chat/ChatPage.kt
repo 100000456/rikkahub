@@ -56,11 +56,13 @@ import me.rerere.ai.provider.Model
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.ai.ui.UIMessagePart
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.stroke.CallIncoming01
 import me.rerere.hugeicons.stroke.Cancel01
 import me.rerere.hugeicons.stroke.LeftToRightListBullet
 import me.rerere.hugeicons.stroke.Menu03
 import me.rerere.hugeicons.stroke.MessageAdd01
 import me.rerere.rikkahub.R
+import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
@@ -326,6 +328,9 @@ private fun ChatPageContent(
                     onClickMenu = {
                         previewMode = !previewMode
                     },
+                    onStartVoiceCall = {
+                        navController.navigate(Screen.VoiceCall(conversation.id.toString()))
+                    },
                     onUpdateTitle = {
                         vm.updateTitle(it)
                     }
@@ -410,6 +415,7 @@ private fun ChatPageContent(
                         } else {
                             vm.handleMessageSend(content = inputState.getContents(), answer = false)
                             scope.launch {
+                                delay(100.milliseconds)
                                 chatListState.requestScrollToItem(conversation.currentMessages.size + 5)
                             }
                         }
@@ -627,6 +633,7 @@ private fun TopBar(
     previewMode: Boolean,
     onClickMenu: () -> Unit,
     onNewChat: () -> Unit,
+    onStartVoiceCall: () -> Unit,
     onUpdateTitle: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -685,6 +692,14 @@ private fun TopBar(
             }
         },
         actions = {
+            IconButton(
+                onClick = {
+                    onStartVoiceCall()
+                }
+            ) {
+                Icon(HugeIcons.CallIncoming01, "Voice Call")
+            }
+
             IconButton(
                 onClick = {
                     onClickMenu()

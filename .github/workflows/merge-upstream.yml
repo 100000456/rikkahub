@@ -26,7 +26,11 @@ jobs:
           git config user.email "ci-bot@users.noreply.github.com"
           git remote add upstream https://github.com/rikkahub/rikkahub.git || true
           git fetch upstream --tags --prune
+          echo "--- tag ---"
           git tag -l '3.1.1'
+          git rev-parse 3.1.1
+          echo "upstream_ahead=$(git rev-list --count HEAD..3.1.1)"
+          echo "we_ahead=$(git rev-list --count 3.1.1..HEAD)"
 
       - name: Merge with theirs preference
         run: |
@@ -82,7 +86,8 @@ jobs:
           git add -f MERGE-NOTES.txt 2>/dev/null || true
           git commit -m "ci: notes" 2>/dev/null || true
           git checkout master 2>/dev/null || true
-          cp MERGE-NOTES.txt /tmp/MERGE-NOTES.txt 2>/dev/null || true
           git add -f MERGE-NOTES.txt 2>/dev/null || true
           git commit -m "ci: merge notes to master" 2>/dev/null || true
           git push origin master 2>/dev/null || true
+
+# retrigger: 2026-10-30T19:10+08:00 她让我开跑，重新触发一次

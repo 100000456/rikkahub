@@ -1,0 +1,88 @@
+name: Merge Upstream 3.1.1
+
+# 在 merge-3.1.1 分支上把上游合进来；两侧都改过的文件先以上游为准，
+# 我们自己的改动随后在分支上逐个补回。master 不动。
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/merge-upstream.yml'
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: git setup
+        run: |
+          set -u
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git remote add upstream https://github.com/rikkahub/rikkahub.git || true
+          git fetch upstream --tags --prune
+          git tag -l '3.1.1'
+
+      - name: Merge with theirs preference
+        run: |
+          set +e
+          git checkout -B merge-3.1.1
+          git merge 3.1.1 --no-commit --no-ff -X theirs
+          echo "merge_exit=$?"
+          git diff --name-only --diff-filter=U > /tmp/still.txt
+          echo "--- still conflicted ---"
+          cat /tmp/still.txt
+          if [ -s /tmp/still.txt ]; then
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              git checkout --theirs -- "$f" 2>/dev/null || true
+              git add -- "$f" 2>/dev/null || true
+            done < /tmp/still.txt
+          fi
+          echo "--- leftover unmerged ---"
+          git diff --name-only --diff-filter=U || true
+          exit 0
+
+      - name: Commit merge
+        run: |
+          set -u
+          git add -A
+          git commit -m "merge: upstream 3.1.1 (两侧都改过的文件先取上游版本)" || echo "nothing to commit"
+
+      - name: Write notes
+        run: |
+          set -u
+          {
+            echo "=== merged 3.1.1 at $(date -u) ==="
+            echo
+            echo "--- diff stat vs master (tail) ---"
+            git diff --stat master HEAD 2>/dev/null | tail -8 || true
+            echo
+            echo "--- files that needed manual resolution ---"
+            cat /tmp/still.txt 2>/dev/null || echo "(none)"
+            echo
+            echo "--- our branch head ---"
+            git log --oneline -3 || true
+          } > MERGE-NOTES.txt
+          cat MERGE-NOTES.txt
+          git add -f MERGE-NOTES.txt
+          git commit -m "ci: merge notes" || true
+
+      - name: Push branch
+        if: always()
+        run: |
+          set +e
+          git push -f origin merge-3.1.1
+          echo "push_exit=$?"
+          git add -f MERGE-NOTES.txt 2>/dev/null || true
+          git commit -m "ci: notes" 2>/dev/null || true
+          git checkout master 2>/dev/null || true
+          cp MERGE-NOTES.txt /tmp/MERGE-NOTES.txt 2>/dev/null || true
+          git add -f MERGE-NOTES.txt 2>/dev/null || true
+          git commit -m "ci: merge notes to master" 2>/dev/null || true
+          git push origin master 2>/dev/null || true

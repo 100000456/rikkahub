@@ -1,0 +1,75 @@
+name: Merge Probe
+
+# 一次性侦察：把上游 3.1.1 和我们的 master 合一下，看哪些文件撞车
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/merge-probe.yml'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Setup git
+        run: |
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/rikkahub/rikkahub.git || true
+          git fetch upstream --tags --prune
+
+      - name: Merge attempt
+        run: |
+          set +e
+          git checkout -B merge-probe
+          BASE=$(git merge-base HEAD 3.1.1)
+          echo "merge-base=$BASE" > .merge-out.txt
+          echo "upstream_ahead=$(git rev-list --count HEAD..3.1.1)" >> .merge-out.txt
+          echo "we_ahead=$(git rev-list --count 3.1.1..HEAD)" >> .merge-out.txt
+          git merge 3.1.1 --no-commit --no-ff >> .merge-out.txt 2>&1
+          echo "EXIT=$?" >> .merge-out.txt
+          git diff --name-only --diff-filter=U > .merge-conflicts.txt
+          echo "--- conflicted list ---" >> .merge-out.txt
+          cat .merge-conflicts.txt >> .merge-out.txt
+
+      - name: Build report
+        run: |
+          {
+            echo "=== merge report ==="
+            cat .merge-out.txt
+            echo
+            echo "--- conflicted files: hunk count + file ---"
+            if [ -s .merge-conflicts.txt ]; then
+              while IFS= read -r f; do
+                [ -z "$f" ] && continue
+                n=$(grep -c '^<<<<<<<' "$f" 2>/dev/null || echo 0)
+                sz=$(wc -l < "$f" 2>/dev/null || echo 0)
+                echo "$n hunks | $sz lines | $f"
+              done < .merge-conflicts.txt | sort -rn
+            else
+              echo "(none)"
+            fi
+            echo
+            echo "--- our own custom files (not touched by upstream) ---"
+            git diff --name-only "$BASE" HEAD 2>/dev/null | head -200
+          } > .merge-report.txt
+          wc -l .merge-report.txt
+          cat .merge-report.txt
+
+      - name: Dump report back to master
+        run: |
+          git merge --abort || true
+          git checkout master || true
+          git add -f .merge-report.txt .merge-conflicts.txt .merge-out.txt || true
+          git commit -m "ci: merge probe report for 3.1.1" || true
+          git push origin master || (git pull --rebase origin master && git push origin master) || true
